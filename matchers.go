@@ -4,8 +4,8 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	"github.com/eolatham/sawchain/internal/matchers"
-	"github.com/eolatham/sawchain/internal/options"
+	"github.com/guidewire-oss/sawchain/internal/matchers"
+	"github.com/guidewire-oss/sawchain/internal/options"
 )
 
 // MatchYAML returns a Gomega matcher that checks if a client.Object matches YAML expectations defined in a

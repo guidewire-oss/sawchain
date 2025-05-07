@@ -5,9 +5,9 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/eolatham/sawchain/internal/chainsaw"
-	"github.com/eolatham/sawchain/internal/options"
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/options"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 // Update updates resources with objects, a manifest, or a Chainsaw template, and returns an error

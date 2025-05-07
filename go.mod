@@ -1,4 +1,4 @@
-module github.com/eolatham/sawchain
+module github.com/guidewire-oss/sawchain
 
 go 1.23.0
 

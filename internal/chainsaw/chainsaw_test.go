@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/eolatham/sawchain/internal/chainsaw"
+	. "github.com/guidewire-oss/sawchain/internal/chainsaw"
 )
 
 var _ = Describe("Chainsaw", func() {

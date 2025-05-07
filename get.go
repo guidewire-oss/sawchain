@@ -6,9 +6,9 @@ import (
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/eolatham/sawchain/internal/chainsaw"
-	"github.com/eolatham/sawchain/internal/options"
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/options"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 // Get retrieves resources with objects, a manifest, or a Chainsaw template, and returns an error

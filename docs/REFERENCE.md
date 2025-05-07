@@ -3,7 +3,7 @@
 # sawchain
 
 ```go
-import "github.com/eolatham/sawchain"
+import "github.com/guidewire-oss/sawchain"
 ```
 
 ## Index
@@ -32,7 +32,7 @@ import "github.com/eolatham/sawchain"
   - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...interface\{\}\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/eolatham/sawchain/blob/main/sawchain.go#L46-L51>)
+## type Sawchain
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more. Use New to create a Sawchain instance.
 
@@ -43,7 +43,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/eolatham/sawchain/blob/main/sawchain.go#L85>)
+### func New
 
 ```go
 func New(t testing.TB, c client.Client, args ...interface{}) *Sawchain
@@ -86,7 +86,7 @@ sc := sawchain.New(t, k8sClient, "10s", "2s")
 ```
 
 <a name="Sawchain.Check"></a>
-### func \(\*Sawchain\) [Check](<https://github.com/eolatham/sawchain/blob/main/check.go#L106>)
+### func \(\*Sawchain\) Check
 
 ```go
 func (s *Sawchain) Check(ctx context.Context, args ...interface{}) error
@@ -180,7 +180,7 @@ err := sc.Check(ctx, []client.Object{configMap, secret}, `
 For more Chainsaw examples, go to https://kyverno.github.io/chainsaw/.
 
 <a name="Sawchain.CheckFunc"></a>
-### func \(\*Sawchain\) [CheckFunc](<https://github.com/eolatham/sawchain/blob/main/check.go#L156>)
+### func \(\*Sawchain\) CheckFunc
 
 ```go
 func (s *Sawchain) CheckFunc(ctx context.Context, args ...interface{}) func() error
@@ -193,7 +193,7 @@ The returned function performs the same operations as Check, but is particularly
 For details on arguments, examples, and behavior, see the documentation for Check.
 
 <a name="Sawchain.Create"></a>
-### func \(\*Sawchain\) [Create](<https://github.com/eolatham/sawchain/blob/main/create.go#L137>)
+### func \(\*Sawchain\) Create
 
 ```go
 func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error
@@ -325,7 +325,7 @@ err := sc.Create(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.CreateAndWait"></a>
-### func \(\*Sawchain\) [CreateAndWait](<https://github.com/eolatham/sawchain/blob/main/create.go#L324>)
+### func \(\*Sawchain\) CreateAndWait
 
 ```go
 func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{})
@@ -461,7 +461,7 @@ sc.CreateAndWait(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.Delete"></a>
-### func \(\*Sawchain\) [Delete](<https://github.com/eolatham/sawchain/blob/main/delete.go#L85>)
+### func \(\*Sawchain\) Delete
 
 ```go
 func (s *Sawchain) Delete(ctx context.Context, args ...interface{}) error
@@ -542,7 +542,7 @@ err := sc.Delete(ctx, `
 ```
 
 <a name="Sawchain.DeleteAndWait"></a>
-### func \(\*Sawchain\) [DeleteAndWait](<https://github.com/eolatham/sawchain/blob/main/delete.go#L205>)
+### func \(\*Sawchain\) DeleteAndWait
 
 ```go
 func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{})
@@ -627,7 +627,7 @@ sc.DeleteAndWait(ctx, `
 ```
 
 <a name="Sawchain.FetchMultiple"></a>
-### func \(\*Sawchain\) [FetchMultiple](<https://github.com/eolatham/sawchain/blob/main/fetch.go#L197>)
+### func \(\*Sawchain\) FetchMultiple
 
 ```go
 func (s *Sawchain) FetchMultiple(ctx context.Context, args ...interface{}) []client.Object
@@ -712,7 +712,7 @@ fetchedObjs := sc.FetchMultiple(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.FetchMultipleFunc"></a>
-### func \(\*Sawchain\) [FetchMultipleFunc](<https://github.com/eolatham/sawchain/blob/main/fetch.go#L297>)
+### func \(\*Sawchain\) FetchMultipleFunc
 
 ```go
 func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...interface{}) func() []client.Object
@@ -725,7 +725,7 @@ The returned function performs the same operations as FetchMultiple, but is part
 For details on arguments, examples, and behavior, see the documentation for FetchMultiple.
 
 <a name="Sawchain.FetchSingle"></a>
-### func \(\*Sawchain\) [FetchSingle](<https://github.com/eolatham/sawchain/blob/main/fetch.go#L82>)
+### func \(\*Sawchain\) FetchSingle
 
 ```go
 func (s *Sawchain) FetchSingle(ctx context.Context, args ...interface{}) client.Object
@@ -797,7 +797,7 @@ fetched := sc.FetchSingle(ctx, configMap, `
 ```
 
 <a name="Sawchain.FetchSingleFunc"></a>
-### func \(\*Sawchain\) [FetchSingleFunc](<https://github.com/eolatham/sawchain/blob/main/fetch.go#L253>)
+### func \(\*Sawchain\) FetchSingleFunc
 
 ```go
 func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...interface{}) func() client.Object
@@ -810,7 +810,7 @@ The returned function performs the same operations as FetchSingle, but is partic
 For details on arguments, examples, and behavior, see the documentation for FetchSingle.
 
 <a name="Sawchain.Get"></a>
-### func \(\*Sawchain\) [Get](<https://github.com/eolatham/sawchain/blob/main/get.go#L122>)
+### func \(\*Sawchain\) Get
 
 ```go
 func (s *Sawchain) Get(ctx context.Context, args ...interface{}) error
@@ -926,7 +926,7 @@ err := sc.Get(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.GetFunc"></a>
-### func \(\*Sawchain\) [GetFunc](<https://github.com/eolatham/sawchain/blob/main/get.go#L184>)
+### func \(\*Sawchain\) GetFunc
 
 ```go
 func (s *Sawchain) GetFunc(ctx context.Context, args ...interface{}) func() error
@@ -939,7 +939,7 @@ The returned function performs the same operations as Get, but is particularly u
 For details on arguments, examples, and behavior, see the documentation for Get.
 
 <a name="Sawchain.HaveStatusCondition"></a>
-### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/eolatham/sawchain/blob/main/matchers.go#L111>)
+### func \(\*Sawchain\) HaveStatusCondition
 
 ```go
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher
@@ -982,7 +982,7 @@ Expect(myCustomResource).To(sc.HaveStatusCondition("Ready", "True"))
 ```
 
 <a name="Sawchain.MatchYAML"></a>
-### func \(\*Sawchain\) [MatchYAML](<https://github.com/eolatham/sawchain/blob/main/matchers.go#L65>)
+### func \(\*Sawchain\) MatchYAML
 
 ```go
 func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.GomegaMatcher
@@ -1042,7 +1042,7 @@ Expect(deployment).To(sc.MatchYAML(`
 For more Chainsaw examples, go to https://kyverno.github.io/chainsaw/.
 
 <a name="Sawchain.RenderMultiple"></a>
-### func \(\*Sawchain\) [RenderMultiple](<https://github.com/eolatham/sawchain/blob/main/render.go#L195>)
+### func \(\*Sawchain\) RenderMultiple
 
 ```go
 func (s *Sawchain) RenderMultiple(args ...interface{}) []client.Object
@@ -1135,7 +1135,7 @@ sc.RenderMultiple([]client.Object{configMap, secret}, "path/to/resources.yaml")
 ```
 
 <a name="Sawchain.RenderSingle"></a>
-### func \(\*Sawchain\) [RenderSingle](<https://github.com/eolatham/sawchain/blob/main/render.go#L82>)
+### func \(\*Sawchain\) RenderSingle
 
 ```go
 func (s *Sawchain) RenderSingle(args ...interface{}) client.Object
@@ -1206,7 +1206,7 @@ sc.RenderSingle(configMap, "path/to/configmap.yaml")
 ```
 
 <a name="Sawchain.RenderToFile"></a>
-### func \(\*Sawchain\) [RenderToFile](<https://github.com/eolatham/sawchain/blob/main/render.go#L347>)
+### func \(\*Sawchain\) RenderToFile
 
 ```go
 func (s *Sawchain) RenderToFile(filepath, template string, bindings ...map[string]any)
@@ -1262,7 +1262,7 @@ sc.RenderToFile("output.yaml", "path/to/template.yaml",
 ```
 
 <a name="Sawchain.RenderToString"></a>
-### func \(\*Sawchain\) [RenderToString](<https://github.com/eolatham/sawchain/blob/main/render.go#L274>)
+### func \(\*Sawchain\) RenderToString
 
 ```go
 func (s *Sawchain) RenderToString(template string, bindings ...map[string]any) string
@@ -1316,7 +1316,7 @@ yaml := sc.RenderToString("path/to/template.yaml",
 ```
 
 <a name="Sawchain.Update"></a>
-### func \(\*Sawchain\) [Update](<https://github.com/eolatham/sawchain/blob/main/update.go#L137>)
+### func \(\*Sawchain\) Update
 
 ```go
 func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error
@@ -1448,7 +1448,7 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.UpdateAndWait"></a>
-### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/eolatham/sawchain/blob/main/update.go#L324>)
+### func \(\*Sawchain\) UpdateAndWait
 
 ```go
 func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{})

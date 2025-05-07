@@ -9,9 +9,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/eolatham/sawchain/internal/chainsaw"
-	"github.com/eolatham/sawchain/internal/options"
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/options"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 // RenderSingle renders a single-resource Chainsaw template (or unmarshals a static manifest) into

@@ -9,9 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/eolatham/sawchain"
-	"github.com/eolatham/sawchain/internal/testutil"
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain"
+	"github.com/guidewire-oss/sawchain/internal/testutil"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 var _ = Describe("Update", func() {

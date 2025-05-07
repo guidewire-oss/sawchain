@@ -8,8 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/eolatham/sawchain"
-	"github.com/eolatham/sawchain/internal/testutil"
+	"github.com/guidewire-oss/sawchain"
+	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
 var _ = Describe("Delete", func() {

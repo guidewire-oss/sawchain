@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/eolatham/sawchain/internal/testutil"
+	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
 const templateContent = `

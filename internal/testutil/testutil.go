@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 type TestResource struct {

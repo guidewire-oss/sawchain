@@ -11,8 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/eolatham/sawchain/internal/options"
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain/internal/options"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 const (

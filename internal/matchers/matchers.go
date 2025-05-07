@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/eolatham/sawchain/internal/chainsaw"
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 // chainsawMatcher is a Gomega matcher that checks if

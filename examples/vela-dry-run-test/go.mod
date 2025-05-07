@@ -2,10 +2,10 @@ module example
 
 go 1.24.2
 
-replace github.com/eolatham/sawchain => ../../
+replace github.com/guidewire-oss/sawchain => ../../
 
 require (
-	github.com/eolatham/sawchain v0.0.0
+	github.com/guidewire-oss/sawchain v0.0.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
 	k8s.io/api v0.33.0

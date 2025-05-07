@@ -7,9 +7,9 @@ import (
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/eolatham/sawchain/internal/chainsaw"
-	"github.com/eolatham/sawchain/internal/options"
-	"github.com/eolatham/sawchain/internal/util"
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/options"
+	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 // Check searches the cluster for resources matching YAML expectations defined in a template and optionally
