@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  labels:
+    app.oam.dev/component: frontend
+    app.oam.dev/name: website
+    app.oam.dev/namespace: default
+    app.oam.dev/resourceType: TRAIT
+    trait.oam.dev/resource: ingress
+    trait.oam.dev/type: gateway
+  name: frontend
+  namespace: default
+spec:
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - backend:
+              serviceName: frontend
+              servicePort: ($port) # Templated for reuse between test cases
+            path: /
+            pathType: ImplementationSpecific

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.oam.dev/appRevision: ""
+    app.oam.dev/component: frontend
+    app.oam.dev/name: website
+    app.oam.dev/namespace: default
+    app.oam.dev/resourceType: WORKLOAD
+    workload.oam.dev/type: webservice
+  name: frontend
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app.oam.dev/component: frontend
+  template:
+    metadata:
+      labels:
+        app.oam.dev/component: frontend
+        app.oam.dev/name: website
+    spec:
+      containers:
+        - image: oamdev/testapp:v1
+          name: frontend
+          ports:
+            - containerPort: 8080

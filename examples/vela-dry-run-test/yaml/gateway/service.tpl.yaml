@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.oam.dev/component: frontend
+    app.oam.dev/name: website
+    app.oam.dev/namespace: default
+    app.oam.dev/resourceType: TRAIT
+    trait.oam.dev/resource: service
+    trait.oam.dev/type: gateway
+  name: frontend
+  namespace: default
+spec:
+  ports:
+    - name: (join('-', ['port', to_string($port)])) # Templated for reuse between test cases
+      port: ($port) # Templated for reuse between test cases
+      targetPort: ($port) # Templated for reuse between test cases
+  selector:
+    app.oam.dev/component: frontend

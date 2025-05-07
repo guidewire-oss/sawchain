@@ -1,0 +1,14 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: website
+spec:
+  components:
+    - name: frontend
+      type: webservice
+      properties:
+        image: oamdev/testapp:v1
+        port: 8080
+      traits:
+        - type: annotations
+          properties: ($annotations) # Templated for reuse between test cases
