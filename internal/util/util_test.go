@@ -454,11 +454,11 @@ var _ = Describe("Util", func() {
 				expected: true,
 			}),
 			Entry("slice with nil map", testCase{
-				input:    []map[string]string{map[string]string{"a": "b"}, nil, map[string]string{}},
+				input:    []map[string]string{{"a": "b"}, nil, {}},
 				expected: true,
 			}),
 			Entry("slice with nil slice", testCase{
-				input:    [][]string{[]string{"a"}, nil, []string{}},
+				input:    [][]string{{"a"}, nil, {}},
 				expected: true,
 			}),
 			Entry("slice with no nil values", testCase{
@@ -470,7 +470,7 @@ var _ = Describe("Util", func() {
 				expected: false,
 			}),
 			Entry("slice of non-nil pointers", testCase{
-				input:    []*corev1.ConfigMap{&corev1.ConfigMap{}, &corev1.ConfigMap{}},
+				input:    []*corev1.ConfigMap{{}, {}},
 				expected: false,
 			}),
 			Entry("non-slice input", testCase{
