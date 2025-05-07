@@ -1,13 +1,14 @@
 .PHONY: init
 init:
 	go mod tidy
+	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
 .PHONY: test
-test: init
+test:
 	go test ./ ./internal/... -coverprofile=coverage.txt
 
 .PHONY: debug
-debug: init
+debug:
 	dlv test $${PACKAGE:-./} --listen=:40000 --headless=true --api-version=2
 
 .PHONY: docs
