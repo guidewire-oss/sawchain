@@ -10,7 +10,7 @@ generate:
 
 .PHONY: manifests
 manifests:
-	controller-gen crd webhook paths=./...
+	controller-gen crd paths=./...
 
 .PHONY: test
 test:

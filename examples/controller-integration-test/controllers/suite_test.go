@@ -87,9 +87,6 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	// Cancel context
 	cancel()
-
-	// Stop test environment
 	Eventually(testEnv.Stop()).Should(Succeed())
 })

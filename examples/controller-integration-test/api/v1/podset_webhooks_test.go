@@ -1,14 +1,12 @@
 package v1
 
 import (
-	"github.com/guidewire-oss/sawchain"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("PodSet Webhooks", Ordered, func() {
-	var sc *sawchain.Sawchain
-
 	const validPodSetYaml = `
 		apiVersion: apps.example.com/v1
 		kind: PodSet
@@ -23,11 +21,6 @@ var _ = Describe("PodSet Webhooks", Ordered, func() {
 		    - name: test-app
 		      image: test/app:v1
 	`
-
-	BeforeEach(func() {
-		// Initialize Sawchain
-		sc = sawchain.New(GinkgoTB(), k8sClient, map[string]any{"namespace": "default"})
-	})
 
 	Context("mutating PodSets", func() {
 		var podSet = &PodSet{}
@@ -50,10 +43,13 @@ var _ = Describe("PodSet Webhooks", Ordered, func() {
 			`)
 
 			// Verify replicas is defaulted to 1
-			Expect(podSet.Spec.Replicas).To(Equal(1))
+			Expect(podSet.Spec.Replicas).To(Equal(ptr.To(1)))
 
 			// Verify annotation is added
 			Expect(podSet.GetAnnotations()).To(HaveKeyWithValue("apps.example.com/defaulted", "true"))
+
+			// Delete PodSet
+			sc.DeleteAndWait(ctx, podSet)
 		})
 	})
 
@@ -61,12 +57,17 @@ var _ = Describe("PodSet Webhooks", Ordered, func() {
 		func(invalidPodSetYaml, expectedErr string) {
 			// Test validation on create
 			createErr := sc.Create(ctx, invalidPodSetYaml)
-			Expect(createErr).To(MatchError(expectedErr), "expected create to fail")
+			Expect(createErr).To(HaveOccurred(), "expected create to fail")
+			Expect(createErr.Error()).To(ContainSubstring(expectedErr), "unexpected create error")
 
 			// Test validation on update
 			sc.CreateAndWait(ctx, validPodSetYaml)
 			updateErr := sc.Update(ctx, invalidPodSetYaml)
-			Expect(updateErr).To(MatchError(expectedErr), "expected update to fail")
+			Expect(updateErr).To(HaveOccurred(), "expected update to fail")
+			Expect(updateErr.Error()).To(ContainSubstring(expectedErr), "unexpected update error")
+
+			// Delete PodSet
+			sc.DeleteAndWait(ctx, validPodSetYaml)
 		},
 
 		Entry("should reject negative replicas", `
@@ -82,7 +83,7 @@ var _ = Describe("PodSet Webhooks", Ordered, func() {
 			    containers:
 			    - name: test-app
 			      image: test/app:v1
-		`, "TODO"),
+		`, "spec.replicas: Invalid value: -1: replicas cannot be negative"),
 
 		Entry("should reject invalid pod name", `
 			apiVersion: apps.example.com/v1

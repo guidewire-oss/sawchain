@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/guidewire-oss/sawchain"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	admissionv1 "k8s.io/api/admission/v1"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,6 +29,7 @@ var (
 	cancel    context.CancelFunc
 	testEnv   *envtest.Environment
 	k8sClient client.Client
+	sc        *sawchain.Sawchain
 )
 
 func TestAPIs(t *testing.T) {
@@ -50,9 +52,6 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd")},
 		ErrorIfCRDPathMissing: true,
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
-		},
 	}
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
@@ -73,22 +72,86 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	// Initialize Sawchain
+	sc = sawchain.New(GinkgoTB(), k8sClient, map[string]any{"namespace": "default"})
+
+	// Create webhook configs
+	webhookOpts := testEnv.WebhookInstallOptions
+	webhookAddr := fmt.Sprintf("%s:%d", webhookOpts.LocalServingHost, webhookOpts.LocalServingPort)
+	bindings := map[string]any{
+		"caBundle":    webhookOpts.LocalServingCAData,
+		"mutateUrl":   fmt.Sprintf("https://%s/mutate-podset", webhookAddr),
+		"validateUrl": fmt.Sprintf("https://%s/validate-podset", webhookAddr),
+	}
+	// TODO: consider moving manifest to a file
+	sc.CreateAndWait(ctx, bindings, `
+		apiVersion: admissionregistration.k8s.io/v1
+		kind: MutatingWebhookConfiguration
+		metadata:
+		  name: mutating-webhook-configuration
+		webhooks:
+		- admissionReviewVersions:
+		  - v1
+		  clientConfig:
+		    url: ($mutateUrl)
+		    caBundle: ($caBundle)
+		  failurePolicy: Fail
+		  name: mpodset.kb.io
+		  rules:
+		  - apiGroups:
+		    - apps.example.com
+		    apiVersions:
+		    - v1
+		    operations:
+		    - CREATE
+		    - UPDATE
+		    resources:
+		    - podsets
+		  sideEffects: None
+		---
+		apiVersion: admissionregistration.k8s.io/v1
+		kind: ValidatingWebhookConfiguration
+		metadata:
+		  name: validating-webhook-configuration
+		webhooks:
+		- admissionReviewVersions:
+		  - v1
+		  clientConfig:
+		    url: ($validateUrl)
+		    caBundle: ($caBundle)
+		  failurePolicy: Fail
+		  name: vpodset.kb.io
+		  rules:
+		  - apiGroups:
+		    - apps.example.com
+		    apiVersions:
+		    - v1
+		    operations:
+		    - CREATE
+		    - UPDATE
+		    resources:
+		    - podsets
+		  sideEffects: None
+	`)
+
 	// Create controller manager
-	webhookInstallOpts := testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:  scheme.Scheme,
 		Metrics: server.Options{BindAddress: "0"},
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Host:    webhookInstallOpts.LocalServingHost,
-			Port:    webhookInstallOpts.LocalServingPort,
-			CertDir: webhookInstallOpts.LocalServingCertDir,
-		}),
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	// Register PodSet webhooks
-	err = (&PodSet{}).SetupWebhookWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
+	// Create webhook server
+	webhookServer := webhook.NewServer(webhook.Options{
+		Host:    webhookOpts.LocalServingHost,
+		Port:    webhookOpts.LocalServingPort,
+		CertDir: webhookOpts.LocalServingCertDir,
+	})
+	Expect(mgr.Add(webhookServer)).To(Succeed())
+
+	// Register webhooks
+	webhookServer.Register("/mutate-podset", mutatingWebhookHandler)
+	webhookServer.Register("/validate-podset", validatingWebhookHandler)
 
 	// Start controller manager
 	go func() {
@@ -99,21 +162,17 @@ var _ = BeforeSuite(func() {
 
 	// Wait for webhook server to be ready
 	dialer := &net.Dialer{Timeout: time.Second}
-	addrPort := fmt.Sprintf("%s:%d", webhookInstallOpts.LocalServingHost, webhookInstallOpts.LocalServingPort)
 	Eventually(func() error {
-		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+		conn, err := tls.DialWithDialer(dialer, "tcp", webhookAddr, &tls.Config{InsecureSkipVerify: true})
 		if err != nil {
 			return err
 		}
-		_ = conn.Close()
+		conn.Close()
 		return nil
 	}).Should(Succeed())
 })
 
 var _ = AfterSuite(func() {
-	// Cancel context
 	cancel()
-
-	// Stop test environment
 	Eventually(testEnv.Stop()).Should(Succeed())
 })
