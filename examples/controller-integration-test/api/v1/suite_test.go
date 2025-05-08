@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -75,7 +76,8 @@ var _ = BeforeSuite(func() {
 	// Create controller manager
 	webhookInstallOpts := testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme:  scheme.Scheme,
+		Metrics: server.Options{BindAddress: "0"},
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Host:    webhookInstallOpts.LocalServingHost,
 			Port:    webhookInstallOpts.LocalServingPort,

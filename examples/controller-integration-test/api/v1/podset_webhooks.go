@@ -23,7 +23,7 @@ func (r *PodSet) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:webhook:mutating=true,path=/mutate-podset,groups=apps.example.com,resources=podsets,versions=v1,verbs=create;update,name=mpodset.kb.io,sideEffects=None,admissionReviewVersions=v1,failurePolicy=fail
 
 // PodSet mutating webhook does the following:
-// - defaults replica count to 1
+// - defaults replicas to 1
 // - adds an annotation
 
 var _ admission.CustomDefaulter = &PodSet{}
@@ -37,7 +37,7 @@ func (r *PodSet) Default(ctx context.Context, obj runtime.Object) error {
 		return fmt.Errorf("expected a PodSet but got a %T", obj)
 	}
 
-	// Default replica count to 1 if not set
+	// Default replicas to 1 if not set
 	if podSet.Spec.Replicas == nil {
 		replicas := 1
 		podSet.Spec.Replicas = &replicas
@@ -55,7 +55,7 @@ func (r *PodSet) Default(ctx context.Context, obj runtime.Object) error {
 // +kubebuilder:webhook:mutating=false,path=/validate-podset,groups=apps.example.com,resources=podsets,versions=v1,verbs=create;update,name=vpodset.kb.io,sideEffects=None,admissionReviewVersions=v1,failurePolicy=fail
 
 // PodSet validating webhook rejects the following:
-// - negative replica counts
+// - negative replicas
 // - invalid pod names
 // - invalid images
 
@@ -96,7 +96,7 @@ func (r *PodSet) ValidateDelete(ctx context.Context, obj runtime.Object) (admiss
 func (r *PodSet) validatePodSet(podSet *PodSet) error {
 	var errs field.ErrorList
 
-	// Validate replica count is not negative
+	// Validate replicas is not negative
 	if podSet.Spec.Replicas != nil && *podSet.Spec.Replicas < 0 {
 		errs = append(errs, field.Invalid(
 			field.NewPath("spec").Child("replicas"),
