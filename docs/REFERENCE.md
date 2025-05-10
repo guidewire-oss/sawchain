@@ -32,7 +32,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...interface\{\}\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L46-L51>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L47-L52>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more. Use New to create a Sawchain instance.
 
@@ -43,7 +43,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L85>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L86>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...interface{}) *Sawchain
@@ -1316,7 +1316,7 @@ yaml := sc.RenderToString("path/to/template.yaml",
 ```
 
 <a name="Sawchain.Update"></a>
-### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L137>)
+### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L140>)
 
 ```go
 func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error
@@ -1448,7 +1448,7 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.UpdateAndWait"></a>
-### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L324>)
+### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L329>)
 
 ```go
 func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{})

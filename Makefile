@@ -1,7 +1,7 @@
 .PHONY: init
 init:
 	go mod tidy
-	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0
 
 .PHONY: test
 test:
