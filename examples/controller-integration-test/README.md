@@ -2,6 +2,9 @@
 
 This example demonstrates how Sawchain can be used to test K8s controllers and webhooks
 
+* Controller tests: [controllers/podset_controller_test.go](./controllers/podset_controller_test.go)
+* Webhook tests: [api/v1/podset_webhooks_test.go](./api/v1/podset_webhooks_test.go)
+
 ## How To Run
 
 ```sh
