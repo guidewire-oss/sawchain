@@ -89,25 +89,20 @@ func (m *MockT) Fatalf(format string, args ...interface{}) {
 type MockClient struct {
 	client.Client
 
-	getFailFirstN int
-	getCallCount  int
-
 	createFailFirstN int
 	createCallCount  int
+
+	deleteFailFirstN int
+	deleteCallCount  int
+
+	getFailFirstN int
+	getCallCount  int
 
 	updateFailFirstN int
 	updateCallCount  int
 
-	deleteFailFirstN int
-	deleteCallCount  int
-}
-
-func (m *MockClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	m.getCallCount++
-	if m.getFailFirstN < 0 || m.getCallCount <= m.getFailFirstN {
-		return fmt.Errorf("simulated get failure")
-	}
-	return m.Client.Get(ctx, key, obj, opts...)
+	patchFailFirstN int
+	patchCallCount  int
 }
 
 func (m *MockClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
@@ -118,6 +113,22 @@ func (m *MockClient) Create(ctx context.Context, obj client.Object, opts ...clie
 	return m.Client.Create(ctx, obj, opts...)
 }
 
+func (m *MockClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	m.deleteCallCount++
+	if m.deleteFailFirstN < 0 || m.deleteCallCount <= m.deleteFailFirstN {
+		return fmt.Errorf("simulated delete failure")
+	}
+	return m.Client.Delete(ctx, obj, opts...)
+}
+
+func (m *MockClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	m.getCallCount++
+	if m.getFailFirstN < 0 || m.getCallCount <= m.getFailFirstN {
+		return fmt.Errorf("simulated get failure")
+	}
+	return m.Client.Get(ctx, key, obj, opts...)
+}
+
 func (m *MockClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	m.updateCallCount++
 	if m.updateFailFirstN < 0 || m.updateCallCount <= m.updateFailFirstN {
@@ -126,10 +137,10 @@ func (m *MockClient) Update(ctx context.Context, obj client.Object, opts ...clie
 	return m.Client.Update(ctx, obj, opts...)
 }
 
-func (m *MockClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
-	m.deleteCallCount++
-	if m.deleteFailFirstN < 0 || m.deleteCallCount <= m.deleteFailFirstN {
-		return fmt.Errorf("simulated delete failure")
+func (m *MockClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	m.patchCallCount++
+	if m.patchFailFirstN < 0 || m.patchCallCount <= m.patchFailFirstN {
+		return fmt.Errorf("simulated patch failure")
 	}
-	return m.Client.Delete(ctx, obj, opts...)
+	return m.Client.Patch(ctx, obj, patch, opts...)
 }

@@ -2,8 +2,11 @@ package sawchain
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/guidewire-oss/sawchain/internal/chainsaw"
 	"github.com/guidewire-oss/sawchain/internal/options"
@@ -157,9 +160,11 @@ func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
 			s.g.Expect(opts.Objects).To(gomega.HaveLen(len(unstructuredObjs)), errObjectsWrongLength)
 		}
 
-		// Update resources
+		// Patch resources
 		for _, unstructuredObj := range unstructuredObjs {
-			if err := s.c.Update(ctx, &unstructuredObj); err != nil {
+			jsonPatch, err := json.Marshal(unstructuredObj.Object)
+			s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedMarshalJsonPatch)
+			if err := s.c.Patch(ctx, &unstructuredObj, client.RawPatch(types.MergePatchType, jsonPatch)); err != nil {
 				return err
 			}
 		}
@@ -345,9 +350,12 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 			s.g.Expect(opts.Objects).To(gomega.HaveLen(len(unstructuredObjs)), errObjectsWrongLength)
 		}
 
-		// Update resources
+		// Patch resources
 		for _, unstructuredObj := range unstructuredObjs {
-			s.g.Expect(s.c.Update(ctx, &unstructuredObj)).To(gomega.Succeed(), errFailedUpdateWithTemplate)
+			jsonPatch, err := json.Marshal(unstructuredObj.Object)
+			s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedMarshalJsonPatch)
+			s.g.Expect(s.c.Patch(ctx, &unstructuredObj, client.RawPatch(types.MergePatchType, jsonPatch))).
+				To(gomega.Succeed(), errFailedPatch)
 		}
 
 		// Wait for cache to sync
@@ -376,7 +384,7 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 		}
 	} else if opts.Object != nil {
 		// Update resource
-		s.g.Expect(s.c.Update(ctx, opts.Object)).To(gomega.Succeed(), errFailedUpdateWithObject)
+		s.g.Expect(s.c.Update(ctx, opts.Object)).To(gomega.Succeed(), errFailedUpdate)
 
 		// Wait for cache to sync
 		updatedResourceVersion := opts.Object.GetResourceVersion()
@@ -385,7 +393,7 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 	} else {
 		// Update resources
 		for _, obj := range opts.Objects {
-			s.g.Expect(s.c.Update(ctx, obj)).To(gomega.Succeed(), errFailedUpdateWithObject)
+			s.g.Expect(s.c.Update(ctx, obj)).To(gomega.Succeed(), errFailedUpdate)
 		}
 
 		// Wait for cache to sync

@@ -615,13 +615,13 @@ var _ = Describe("Update", func() {
 			expectedReturnErrs: []string{"simulated update failure"},
 		}),
 
-		Entry("should return update error for template", testCase{
+		Entry("should return patch error for template", testCase{
 			originalObjs: []client.Object{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{
-				Client:           testutil.NewStandardFakeClient(),
-				updateFailFirstN: 1,
+				Client:          testutil.NewStandardFakeClient(),
+				patchFailFirstN: 1,
 			},
 			methodArgs: []interface{}{
 				`
@@ -634,7 +634,7 @@ var _ = Describe("Update", func() {
 				  foo: updated-from-template
 				`,
 			},
-			expectedReturnErrs: []string{"simulated update failure"},
+			expectedReturnErrs: []string{"simulated patch failure"},
 		}),
 
 		// Failure cases
