@@ -83,56 +83,7 @@ var _ = BeforeSuite(func() {
 		"mutateUrl":   fmt.Sprintf("https://%s/mutate-podset", webhookAddr),
 		"validateUrl": fmt.Sprintf("https://%s/validate-podset", webhookAddr),
 	}
-	// TODO: consider moving manifest to a file
-	sc.CreateAndWait(ctx, bindings, `
-		apiVersion: admissionregistration.k8s.io/v1
-		kind: MutatingWebhookConfiguration
-		metadata:
-		  name: mutating-webhook-configuration
-		webhooks:
-		- admissionReviewVersions:
-		  - v1
-		  clientConfig:
-		    url: ($mutateUrl)
-		    caBundle: ($caBundle)
-		  failurePolicy: Fail
-		  name: mpodset.kb.io
-		  rules:
-		  - apiGroups:
-		    - apps.example.com
-		    apiVersions:
-		    - v1
-		    operations:
-		    - CREATE
-		    - UPDATE
-		    resources:
-		    - podsets
-		  sideEffects: None
-		---
-		apiVersion: admissionregistration.k8s.io/v1
-		kind: ValidatingWebhookConfiguration
-		metadata:
-		  name: validating-webhook-configuration
-		webhooks:
-		- admissionReviewVersions:
-		  - v1
-		  clientConfig:
-		    url: ($validateUrl)
-		    caBundle: ($caBundle)
-		  failurePolicy: Fail
-		  name: vpodset.kb.io
-		  rules:
-		  - apiGroups:
-		    - apps.example.com
-		    apiVersions:
-		    - v1
-		    operations:
-		    - CREATE
-		    - UPDATE
-		    resources:
-		    - podsets
-		  sideEffects: None
-	`)
+	sc.CreateAndWait(ctx, filepath.Join("..", "..", "config", "webhook", "test.tpl.yaml"), bindings)
 
 	// Create controller manager
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{

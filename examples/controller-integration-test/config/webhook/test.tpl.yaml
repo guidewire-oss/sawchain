@@ -1,0 +1,48 @@
+# Chainsaw template for setting up webhooks in integration tests
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      url: ($mutateUrl)
+      caBundle: ($caBundle)
+    failurePolicy: Fail
+    name: mpodset.kb.io
+    rules:
+      - apiGroups:
+          - apps.example.com
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - podsets
+    sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      url: ($validateUrl)
+      caBundle: ($caBundle)
+    failurePolicy: Fail
+    name: vpodset.kb.io
+    rules:
+      - apiGroups:
+          - apps.example.com
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - podsets
+    sideEffects: None
