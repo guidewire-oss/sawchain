@@ -221,7 +221,7 @@ with optional [JMESPath](https://jmespath.site/) expressions for templating and/
 
 Template content requirements differ depending on the context.
 
-When creating, updating, and rendering resources, templates have to contain complete resource definitions.
+When creating and rendering resources, templates have to contain complete resource definitions.
 
 ```yaml
 # Complete resource definition
@@ -244,6 +244,23 @@ kind: ConfigMap
 metadata:
   name: test-cm
   namespace: ($namespace)
+```
+
+When updating resources, templates only have to contain identifying metadata and fields to be updated.
+Templates are used as JSON merge patches (RFC 7386), which means fields not specified in the template
+are preserved, and explicit null values will delete corresponding fields in the resource.
+
+```yaml
+# Update patch (modifying, removing, and adding fields)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: ($namespace)
+data:
+  foo: modified  # Modifies existing field
+  bar: null      # Removes existing field
+  baz: added     # Adds new field
 ```
 
 When checking and matching resources, templates only have to contain type metadata and expectations.
