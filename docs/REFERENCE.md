@@ -1316,13 +1316,13 @@ yaml := sc.RenderToString("path/to/template.yaml",
 ```
 
 <a name="Sawchain.Update"></a>
-### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L140>)
+### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L152>)
 
 ```go
 func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error
 ```
 
-Update updates resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Update operations fail.
+Update updates resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Get or Update operations fail.
 
 #### Arguments
 
@@ -1332,7 +1332,7 @@ The following arguments may be provided in any order after the context:
 
 - Objects \(\[\]client.Object\): Slice of typed or unstructured objects for reading/writing the states of multiple resources. If provided without a template, resource states will be read from the objects for update. If provided with a template, resource states will be read from the template and written to the objects.
 
-- Template \(string\): File path or content of a static manifest or Chainsaw template containing complete resource definitions to be read for update. If provided with an object, must contain exactly one resource definition matching the type of the object. If provided with a slice of objects, must contain resource definitions exactly matching the count, order, and types of the objects.
+- Template \(string\): File path or content of a static manifest or Chainsaw template containing resource definitions to be merged as patches for update. Template documents are used as JSON merge patches \(RFC 7386\) and only need to contain identifying metadata and fields to be updated. If provided with an object, must contain exactly one resource definition matching the type of the object. If provided with a slice of objects, must contain resource definitions exactly matching the count, order, and types of the objects.
 
 - Bindings \(map\[string\]any\): Bindings to be applied to the Chainsaw template \(if provided\) in addition to \(or overriding\) Sawchain's global bindings. If multiple maps are provided, they will be merged in natural order.
 
@@ -1345,6 +1345,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - When dealing with typed objects, the client scheme will be used for internal conversions.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When using a template, each document is used as a JSON merge patch \(RFC 7386\) to update the corresponding resource. This means fields not specified in the template are preserved, and explicit null values in the template will delete the corresponding fields in the resource.
 
 - Use UpdateAndWait instead of Update if you need to ensure updates are successful and the client cache is synced.
 
@@ -1382,6 +1384,21 @@ err := sc.Update(ctx, `
   `, map[string]any{"name": "test-cm", "namespace": "default"})
 ```
 
+Update a single resource with a Chainsaw template that removes a field \(using null\):
+
+```go
+err := sc.Update(ctx, `
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: test-cm
+    namespace: default
+  data:
+    key-to-remove: null
+    new-key: new-value
+`)
+```
+
 Update a single resource with a Chainsaw template and save the resource's state to an object:
 
 ```go
@@ -1414,9 +1431,7 @@ err := sc.Update(ctx, `
   metadata:
     name: (join('-', [$prefix, 'secret']))
     namespace: ($namespace)
-  type: Opaque
   stringData:
-    username: admin
     password: updated-secret
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -1440,15 +1455,13 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
   metadata:
     name: (join('-', [$prefix, 'secret']))
     namespace: ($namespace)
-  type: Opaque
   stringData:
-    username: admin
     password: updated-secret
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
 
 <a name="Sawchain.UpdateAndWait"></a>
-### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L329>)
+### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L366>)
 
 ```go
 func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{})
@@ -1464,7 +1477,7 @@ The following arguments may be provided in any order \(unless noted otherwise\) 
 
 - Objects \(\[\]client.Object\): Slice of typed or unstructured objects for reading/writing the states of multiple resources. If provided without a template, resource states will be read from the objects for update. If provided with a template, resource states will be read from the template and written to the objects.
 
-- Template \(string\): File path or content of a static manifest or Chainsaw template containing complete resource definitions to be read for update. If provided with an object, must contain exactly one resource definition matching the type of the object. If provided with a slice of objects, must contain resource definitions exactly matching the count, order, and types of the objects.
+- Template \(string\): File path or content of a static manifest or Chainsaw template containing resource definitions to be merged as patches for update. Template documents are used as JSON merge patches \(RFC 7386\) and only need to contain identifying metadata and fields to be updated. If provided with an object, must contain exactly one resource definition matching the type of the object. If provided with a slice of objects, must contain resource definitions exactly matching the count, order, and types of the objects.
 
 - Bindings \(map\[string\]any\): Bindings to be applied to the Chainsaw template \(if provided\) in addition to \(or overriding\) Sawchain's global bindings. If multiple maps are provided, they will be merged in natural order.
 
@@ -1481,6 +1494,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - When dealing with typed objects, the client scheme will be used for internal conversions.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When using a template, each document is used as a JSON merge patch \(RFC 7386\) to update the corresponding resource. This means fields not specified in the template are preserved, and explicit null values in the template will delete the corresponding fields in the resource.
 
 - Use Update instead of UpdateAndWait if you need to update resources without ensuring success.
 
@@ -1518,6 +1533,21 @@ sc.UpdateAndWait(ctx, `
   `, map[string]any{"name": "test-cm", "namespace": "default"})
 ```
 
+Update a single resource with a Chainsaw template that removes a field \(using null\):
+
+```go
+sc.UpdateAndWait(ctx, `
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: test-cm
+    namespace: default
+  data:
+    key-to-remove: null
+    new-key: new-value
+`)
+```
+
 Update a single resource with a Chainsaw template and save the resource's updated state to an object:
 
 ```go
@@ -1550,9 +1580,7 @@ sc.UpdateAndWait(ctx, `
   metadata:
     name: (join('-', [$prefix, 'secret']))
     namespace: ($namespace)
-  type: Opaque
   stringData:
-    username: admin
     password: updated-secret
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -1576,9 +1604,7 @@ sc.UpdateAndWait(ctx, []client.Object{configMap, secret}, `
   metadata:
     name: (join('-', [$prefix, 'secret']))
     namespace: ($namespace)
-  type: Opaque
   stringData:
-    username: admin
     password: updated-secret
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
