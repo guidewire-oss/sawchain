@@ -2,11 +2,8 @@ package sawchain
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/guidewire-oss/sawchain/internal/chainsaw"
 	"github.com/guidewire-oss/sawchain/internal/options"
@@ -160,11 +157,21 @@ func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
 			s.g.Expect(opts.Objects).To(gomega.HaveLen(len(unstructuredObjs)), errObjectsWrongLength)
 		}
 
-		// Patch resources
-		for _, unstructuredObj := range unstructuredObjs {
-			jsonPatch, err := json.Marshal(unstructuredObj.Object)
-			s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedMarshalJsonPatch)
-			if err := s.c.Patch(ctx, &unstructuredObj, client.RawPatch(types.MergePatchType, jsonPatch)); err != nil {
+		// Update resources
+		for i, patch := range unstructuredObjs {
+			// Get original object
+			obj := patch.DeepCopy()
+			if err := s.get(ctx, obj); err != nil {
+				return err
+			}
+
+			// Merge patch into original object
+			merged, err := util.MergePatch(obj.Object, patch.Object)
+			s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedMergePatch)
+
+			// Update and save to outer scope
+			unstructuredObjs[i].Object = merged
+			if err := s.c.Update(ctx, &unstructuredObjs[i]); err != nil {
 				return err
 			}
 		}
@@ -350,12 +357,19 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 			s.g.Expect(opts.Objects).To(gomega.HaveLen(len(unstructuredObjs)), errObjectsWrongLength)
 		}
 
-		// Patch resources
-		for _, unstructuredObj := range unstructuredObjs {
-			jsonPatch, err := json.Marshal(unstructuredObj.Object)
-			s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedMarshalJsonPatch)
-			s.g.Expect(s.c.Patch(ctx, &unstructuredObj, client.RawPatch(types.MergePatchType, jsonPatch))).
-				To(gomega.Succeed(), errFailedPatch)
+		// Update resources
+		for i, patch := range unstructuredObjs {
+			// Get original object
+			obj := patch.DeepCopy()
+			s.g.Expect(s.get(ctx, obj)).To(gomega.Succeed(), errFailedGetWithTemplate)
+
+			// Merge patch into original object
+			merged, err := util.MergePatch(obj.Object, patch.Object)
+			s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedMergePatch)
+
+			// Update and save to outer scope
+			unstructuredObjs[i].Object = merged
+			s.g.Expect(s.c.Update(ctx, &unstructuredObjs[i])).To(gomega.Succeed(), errFailedUpdateWithTemplate)
 		}
 
 		// Wait for cache to sync
@@ -384,7 +398,7 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 		}
 	} else if opts.Object != nil {
 		// Update resource
-		s.g.Expect(s.c.Update(ctx, opts.Object)).To(gomega.Succeed(), errFailedUpdate)
+		s.g.Expect(s.c.Update(ctx, opts.Object)).To(gomega.Succeed(), errFailedUpdateWithObject)
 
 		// Wait for cache to sync
 		updatedResourceVersion := opts.Object.GetResourceVersion()
@@ -393,7 +407,7 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 	} else {
 		// Update resources
 		for _, obj := range opts.Objects {
-			s.g.Expect(s.c.Update(ctx, obj)).To(gomega.Succeed(), errFailedUpdate)
+			s.g.Expect(s.c.Update(ctx, obj)).To(gomega.Succeed(), errFailedUpdateWithObject)
 		}
 
 		// Wait for cache to sync

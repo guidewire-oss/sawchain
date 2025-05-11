@@ -32,9 +32,9 @@ const (
 	errFailedDeleteWithTemplate = "failed to delete with template"
 	errFailedGetWithObject      = "failed to get with object"
 	errFailedGetWithTemplate    = "failed to get with template"
-	errFailedUpdate             = "failed to update with object"
-	errFailedPatch              = "failed to patch with template"
-	errFailedMarshalJsonPatch   = "failed to marshal JSON patch from template object"
+	errFailedUpdateWithObject   = "failed to update with object"
+	errFailedUpdateWithTemplate = "failed to update with template"
+	errFailedMergePatch         = "failed to merge patch from template"
 
 	errNilOpts             = "internal error: parsed options is nil"
 	errFailedMarshalObject = "internal error: failed to marshal object"

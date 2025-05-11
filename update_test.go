@@ -158,7 +158,11 @@ var _ = Describe("Update", func() {
 
 		Entry("should update ConfigMap with static template string", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -169,15 +173,25 @@ var _ = Describe("Update", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: updated-from-template
+				  key1: replaced
+				  key2: null
+				  key4: added
 				`,
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated-from-template"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and bindings", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -189,16 +203,26 @@ var _ = Describe("Update", func() {
 				  name: ($name)
 				  namespace: ($namespace)
 				data:
-				  foo: ($value)
+				  key1: ($value)
+				  key2: null
+				  key4: added
 				`,
-				map[string]any{"name": "test-cm", "value": "template-with-bindings"},
+				map[string]any{"name": "test-cm", "value": "replaced"},
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "template-with-bindings"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and multiple binding maps", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
@@ -210,17 +234,27 @@ var _ = Describe("Update", func() {
 				  name: ($name)
 				  namespace: ($namespace)
 				data:
-				  foo: ($value)
+				  key1: ($value)
+				  key2: null
+				  key4: added
 				`,
-				map[string]any{"name": "test-cm", "value": "original"},
-				map[string]any{"value": "override"},
+				map[string]any{"name": "test-cm", "value": "initial"},
+				map[string]any{"value": "replaced"},
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "override"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and save to typed object", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -232,15 +266,25 @@ var _ = Describe("Update", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: saved-to-typed-object
+				  key1: replaced
+				  key2: null
+				  key4: added
 				`,
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "saved-to-typed-object"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string with bindings and save to typed object", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -253,16 +297,26 @@ var _ = Describe("Update", func() {
 				  name: ($name)
 				  namespace: ($namespace)
 				data:
-				  foo: ($value)
+				  key1: ($value)
+				  key2: null
+				  key4: added
 				`,
-				map[string]any{"name": "test-cm", "value": "binding-saved-to-object"},
+				map[string]any{"name": "test-cm", "value": "replaced"},
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "binding-saved-to-object"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and save to unstructured object", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -274,10 +328,16 @@ var _ = Describe("Update", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: saved-to-unstructured
+				  key1: replaced
+				  key2: null
+				  key4: added
 				`,
 			},
-			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "saved-to-unstructured"}),
+			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		// Success cases - multiple resources
@@ -371,8 +431,16 @@ var _ = Describe("Update", func() {
 
 		Entry("should update multiple resources with static template string", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -383,7 +451,9 @@ var _ = Describe("Update", func() {
 				  name: test-cm1
 				  namespace: default
 				data:
-				  key1: updated-from-template1
+				  key1: replaced1
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -391,19 +461,37 @@ var _ = Describe("Update", func() {
 				  name: test-cm2
 				  namespace: default
 				data:
-				  key2: updated-from-template2
+				  keyA: replaced2
+				  keyB: null
+				  keyD: added2
 				`,
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated-from-template1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated-from-template2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and bindings", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -416,6 +504,8 @@ var _ = Describe("Update", func() {
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -423,24 +513,42 @@ var _ = Describe("Update", func() {
 				  name: (join('-', [$prefix, 'cm2']))
 				  namespace: ($namespace)
 				data:
-				  key2: ($value2)
+				  keyA: ($value2)
+				  keyB: null
+				  keyD: added2
 				`,
 				map[string]any{
 					"prefix": "test",
-					"value1": "multi-binding-value1",
-					"value2": "multi-binding-value2",
+					"value1": "replaced1",
+					"value2": "replaced2",
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "multi-binding-value1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "multi-binding-value2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and multiple binding maps", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "prefix": "global"},
@@ -453,6 +561,8 @@ var _ = Describe("Update", func() {
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -460,21 +570,39 @@ var _ = Describe("Update", func() {
 				  name: (join('-', [$prefix, 'cm2']))
 				  namespace: ($namespace)
 				data:
-				  key2: ($value2)
+				  keyA: ($value2)
+				  keyB: null
+				  keyD: added2
 				`,
-				map[string]any{"prefix": "test", "value1": "first-value"},
-				map[string]any{"value1": "override1", "value2": "override2"},
+				map[string]any{"prefix": "test", "value1": "initial1", "value2": "initial2"},
+				map[string]any{"value1": "replaced1", "value2": "replaced2"},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "override1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "override2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and save to typed objects", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -489,7 +617,9 @@ var _ = Describe("Update", func() {
 				  name: test-cm1
 				  namespace: default
 				data:
-				  key1: typed-multi-update1
+				  key1: replaced1
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -497,19 +627,37 @@ var _ = Describe("Update", func() {
 				  name: test-cm2
 				  namespace: default
 				data:
-				  key2: typed-multi-update2
+				  keyA: replaced2
+				  keyB: null
+				  keyD: added2
 				`,
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "typed-multi-update1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "typed-multi-update2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string with bindings and save to typed objects", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -526,6 +674,8 @@ var _ = Describe("Update", func() {
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -533,24 +683,42 @@ var _ = Describe("Update", func() {
 				  name: (join('-', [$prefix, 'cm2']))
 				  namespace: ($namespace)
 				data:
-				  key2: ($value2)
+				  keyA: ($value2)
+				  keyB: null
+				  keyD: added2
 				`,
 				map[string]any{
 					"prefix": "test",
-					"value1": "binding-multi-save1",
-					"value2": "binding-multi-save2",
+					"value1": "replaced1",
+					"value2": "replaced2",
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "binding-multi-save1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "binding-multi-save2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and save to unstructured objects", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -565,7 +733,9 @@ var _ = Describe("Update", func() {
 				  name: test-cm1
 				  namespace: default
 				data:
-				  key1: unstructured-multi-update1
+				  key1: replaced1
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -573,12 +743,22 @@ var _ = Describe("Update", func() {
 				  name: test-cm2
 				  namespace: default
 				data:
-				  key2: unstructured-multi-update2
+				  keyA: replaced2
+				  keyB: null
+				  keyD: added2
 				`,
 			},
 			expectedObjs: []client.Object{
-				testutil.NewUnstructuredConfigMap("test-cm1", "default", map[string]string{"key1": "unstructured-multi-update1"}),
-				testutil.NewUnstructuredConfigMap("test-cm2", "default", map[string]string{"key2": "unstructured-multi-update2"}),
+				testutil.NewUnstructuredConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewUnstructuredConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
@@ -615,13 +795,13 @@ var _ = Describe("Update", func() {
 			expectedReturnErrs: []string{"simulated update failure"},
 		}),
 
-		Entry("should return patch error for template", testCase{
+		Entry("should return update error for template", testCase{
 			originalObjs: []client.Object{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{
-				Client:          testutil.NewStandardFakeClient(),
-				patchFailFirstN: 1,
+				Client:           testutil.NewStandardFakeClient(),
+				updateFailFirstN: 1,
 			},
 			methodArgs: []interface{}{
 				`
@@ -631,10 +811,10 @@ var _ = Describe("Update", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: updated-from-template
+				  foo: updated
 				`,
 			},
-			expectedReturnErrs: []string{"simulated patch failure"},
+			expectedReturnErrs: []string{"simulated update failure"},
 		}),
 
 		// Failure cases
@@ -780,7 +960,7 @@ var _ = Describe("Update", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: updated-from-template
+				  foo: updated
 				`,
 				&corev1.Secret{},
 			},
@@ -936,7 +1116,11 @@ var _ = Describe("UpdateAndWait", func() {
 
 		Entry("should update ConfigMap with static template string", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -947,15 +1131,25 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: updated-from-template
+				  key1: replaced
+				  key2: null
+				  key4: added
 				`,
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated-from-template"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and bindings", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -967,16 +1161,26 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: ($name)
 				  namespace: ($namespace)
 				data:
-				  foo: ($value)
+				  key1: ($value)
+				  key2: null
+				  key4: added
 				`,
-				map[string]any{"name": "test-cm", "value": "template-with-bindings"},
+				map[string]any{"name": "test-cm", "value": "replaced"},
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "template-with-bindings"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and multiple binding maps", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
@@ -988,17 +1192,27 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: ($name)
 				  namespace: ($namespace)
 				data:
-				  foo: ($value)
+				  key1: ($value)
+				  key2: null
+				  key4: added
 				`,
-				map[string]any{"name": "test-cm", "value": "original"},
-				map[string]any{"value": "override"},
+				map[string]any{"name": "test-cm", "value": "initial"},
+				map[string]any{"value": "replaced"},
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "override"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and save to typed object", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1010,15 +1224,25 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: saved-to-typed-object
+				  key1: replaced
+				  key2: null
+				  key4: added
 				`,
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "saved-to-typed-object"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string with bindings and save to typed object", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -1031,16 +1255,26 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: ($name)
 				  namespace: ($namespace)
 				data:
-				  foo: ($value)
+				  key1: ($value)
+				  key2: null
+				  key4: added
 				`,
-				map[string]any{"name": "test-cm", "value": "binding-saved-to-object"},
+				map[string]any{"name": "test-cm", "value": "replaced"},
 			},
-			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"foo": "binding-saved-to-object"}),
+			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should update ConfigMap with template string and save to unstructured object", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1052,10 +1286,16 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: saved-to-unstructured
+				  key1: replaced
+				  key2: null
+				  key4: added
 				`,
 			},
-			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "saved-to-unstructured"}),
+			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced",
+				"key3": "preserved",
+				"key4": "added",
+			}),
 		}),
 
 		Entry("should respect custom timeout and interval (single object)", testCase{
@@ -1176,8 +1416,16 @@ var _ = Describe("UpdateAndWait", func() {
 
 		Entry("should update multiple resources with static template string", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1188,7 +1436,9 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm1
 				  namespace: default
 				data:
-				  key1: updated-from-template1
+				  key1: replaced1
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -1196,19 +1446,37 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm2
 				  namespace: default
 				data:
-				  key2: updated-from-template2
+				  keyA: replaced2
+				  keyB: null
+				  keyD: added2
 				`,
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated-from-template1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated-from-template2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and bindings", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -1221,6 +1489,8 @@ var _ = Describe("UpdateAndWait", func() {
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -1228,24 +1498,42 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: (join('-', [$prefix, 'cm2']))
 				  namespace: ($namespace)
 				data:
-				  key2: ($value2)
+				  keyA: ($value2)
+				  keyB: null
+				  keyD: added2
 				`,
 				map[string]any{
 					"prefix": "test",
-					"value1": "multi-binding-value1",
-					"value2": "multi-binding-value2",
+					"value1": "replaced1",
+					"value2": "replaced2",
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "multi-binding-value1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "multi-binding-value2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and multiple binding maps", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "prefix": "global"},
@@ -1258,6 +1546,8 @@ var _ = Describe("UpdateAndWait", func() {
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -1265,21 +1555,39 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: (join('-', [$prefix, 'cm2']))
 				  namespace: ($namespace)
 				data:
-				  key2: ($value2)
+				  keyA: ($value2)
+				  keyB: null
+				  keyD: added2
 				`,
-				map[string]any{"prefix": "test", "value1": "first-value"},
-				map[string]any{"value1": "override1", "value2": "override2"},
+				map[string]any{"prefix": "test", "value1": "initial1", "value2": "initial2"},
+				map[string]any{"value1": "replaced1", "value2": "replaced2"},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "override1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "override2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and save to typed objects", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1294,7 +1602,9 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm1
 				  namespace: default
 				data:
-				  key1: typed-multi-update1
+				  key1: replaced1
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -1302,19 +1612,37 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm2
 				  namespace: default
 				data:
-				  key2: typed-multi-update2
+				  keyA: replaced2
+				  keyB: null
+				  keyD: added2
 				`,
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "typed-multi-update1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "typed-multi-update2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string with bindings and save to typed objects", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
@@ -1331,6 +1659,8 @@ var _ = Describe("UpdateAndWait", func() {
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -1338,7 +1668,9 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: (join('-', [$prefix, 'cm2']))
 				  namespace: ($namespace)
 				data:
-				  key2: ($value2)
+				  keyA: ($value2)
+				  keyB: null
+				  keyD: added2
 				`,
 				map[string]any{
 					"prefix": "test",
@@ -1347,15 +1679,31 @@ var _ = Describe("UpdateAndWait", func() {
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "binding-multi-save1"}),
-				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "binding-multi-save2"}),
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{
+					"key1": "binding-multi-save1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{
+					"keyA": "binding-multi-save2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
 		Entry("should update multiple resources with template string and save to unstructured objects", testCase{
 			originalObjs: []client.Object{
-				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
-				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1370,7 +1718,9 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm1
 				  namespace: default
 				data:
-				  key1: unstructured-multi-update1
+				  key1: replaced1
+				  key2: null
+				  key4: added1
 				---
 				apiVersion: v1
 				kind: ConfigMap
@@ -1378,12 +1728,22 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm2
 				  namespace: default
 				data:
-				  key2: unstructured-multi-update2
+				  keyA: replaced2
+				  keyB: null
+				  keyD: added2
 				`,
 			},
 			expectedObjs: []client.Object{
-				testutil.NewUnstructuredConfigMap("test-cm1", "default", map[string]string{"key1": "unstructured-multi-update1"}),
-				testutil.NewUnstructuredConfigMap("test-cm2", "default", map[string]string{"key2": "unstructured-multi-update2"}),
+				testutil.NewUnstructuredConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key3": "preserved1",
+					"key4": "added1",
+				}),
+				testutil.NewUnstructuredConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replaced2",
+					"keyC": "preserved2",
+					"keyD": "added2",
+				}),
 			},
 		}),
 
@@ -1644,7 +2004,7 @@ var _ = Describe("UpdateAndWait", func() {
 				  name: test-cm
 				  namespace: default
 				data:
-				  foo: updated-from-template
+				  foo: updated
 				`,
 				&corev1.Secret{},
 			},

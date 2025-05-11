@@ -1,6 +1,8 @@
 package util
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -8,6 +10,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/evanphx/json-patch/v5"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -259,7 +262,7 @@ func CopyUnstructuredToObject(
 ) error {
 	// Check for nil destination
 	if IsNil(dst) {
-		return fmt.Errorf("destination object is nil")
+		return errors.New("destination object is nil")
 	}
 
 	// Copy directly if destination is already unstructured
@@ -289,6 +292,27 @@ func CopyUnstructuredToObject(
 	deepCopyMethod.Call(args)
 
 	return nil
+}
+
+// MergePatch merges the patch map into the original map using JSON merge patch (RFC 7386).
+func MergePatch(original, patch map[string]interface{}) (map[string]interface{}, error) {
+	originalJson, err := json.Marshal(original)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal original for merge: %w", err)
+	}
+	patchJson, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch for merge: %w", err)
+	}
+	mergedJson, err := jsonpatch.MergePatch(originalJson, patchJson)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge patch into original: %w", err)
+	}
+	var mergedMap map[string]interface{}
+	if err := json.Unmarshal(mergedJson, &mergedMap); err != nil {
+		return nil, fmt.Errorf("failed to marshal result after merge: %w", err)
+	}
+	return mergedMap, nil
 }
 
 // GetResourceID returns a formatted string with Kind, Namespace, and Name.

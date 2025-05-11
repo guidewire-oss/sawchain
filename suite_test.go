@@ -100,9 +100,6 @@ type MockClient struct {
 
 	updateFailFirstN int
 	updateCallCount  int
-
-	patchFailFirstN int
-	patchCallCount  int
 }
 
 func (m *MockClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
@@ -135,12 +132,4 @@ func (m *MockClient) Update(ctx context.Context, obj client.Object, opts ...clie
 		return fmt.Errorf("simulated update failure")
 	}
 	return m.Client.Update(ctx, obj, opts...)
-}
-
-func (m *MockClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	m.patchCallCount++
-	if m.patchFailFirstN < 0 || m.patchCallCount <= m.patchFailFirstN {
-		return fmt.Errorf("simulated patch failure")
-	}
-	return m.Client.Patch(ctx, obj, patch, opts...)
 }

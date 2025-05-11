@@ -1182,6 +1182,96 @@ var _ = Describe("Util", func() {
 		})
 	})
 
+	Describe("MergePatch", func() {
+		type testCase struct {
+			original     map[string]interface{}
+			patch        map[string]interface{}
+			expectedMap  map[string]interface{}
+			expectedErrs []string
+		}
+
+		DescribeTable("applying JSON merge patches",
+			func(tc testCase) {
+				actual, err := util.MergePatch(tc.original, tc.patch)
+				if len(tc.expectedErrs) > 0 {
+					Expect(err).To(HaveOccurred())
+					for _, expectedErr := range tc.expectedErrs {
+						Expect(err.Error()).To(ContainSubstring(expectedErr))
+					}
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(actual).To(Equal(tc.expectedMap))
+				}
+			},
+			Entry("adds new fields", testCase{
+				original: map[string]interface{}{
+					"key1": "value1",
+					"key2": "value2",
+				},
+				patch: map[string]interface{}{
+					"key3": "value3",
+					"key4": true,
+				},
+				expectedMap: map[string]interface{}{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "value3",
+					"key4": true,
+				},
+			}),
+			Entry("replaces existing fields", testCase{
+				original: map[string]interface{}{
+					"key1": "original",
+					"key2": "value2",
+					"key3": "value3",
+				},
+				patch: map[string]interface{}{
+					"key1": "replaced",
+					"key3": "updated",
+				},
+				expectedMap: map[string]interface{}{
+					"key1": "replaced",
+					"key2": "value2",
+					"key3": "updated",
+				},
+			}),
+			Entry("removes existing fields", testCase{
+				original: map[string]interface{}{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "value3",
+				},
+				patch: map[string]interface{}{
+					"key2": nil,
+				},
+				expectedMap: map[string]interface{}{
+					"key1": "value1",
+					"key3": "value3",
+				},
+			}),
+			Entry("removes entire map", testCase{
+				original:    map[string]interface{}{"key1": "value1"},
+				patch:       nil,
+				expectedMap: nil,
+			}),
+			Entry("fails with nil original map", testCase{
+				original:     nil,
+				patch:        map[string]interface{}{"key1": "value1"},
+				expectedErrs: []string{"failed to merge patch into original"},
+			}),
+			Entry("fails with invalid patch map", testCase{
+				original:     map[string]interface{}{"key1": "value1"},
+				patch:        map[string]interface{}{"key2": make(chan int)}, // Channels can't be marshaled to JSON
+				expectedErrs: []string{"failed to marshal patch for merge"},
+			}),
+			Entry("fails with invalid original map", testCase{
+				original:     map[string]interface{}{"key1": make(chan int)}, // Channels can't be marshaled to JSON
+				patch:        map[string]interface{}{"key2": "value2"},
+				expectedErrs: []string{"failed to marshal original for merge"},
+			}),
+		)
+	})
+
 	Describe("GetResourceID", func() {
 		type testCase struct {
 			object     client.Object
