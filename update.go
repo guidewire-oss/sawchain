@@ -11,7 +11,7 @@ import (
 )
 
 // Update updates resources with objects, a manifest, or a Chainsaw template, and returns an error
-// if any client Get or Update operations fail.
+// if any client Update operations fail.
 //
 // # Arguments
 //

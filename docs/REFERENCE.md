@@ -1322,7 +1322,7 @@ yaml := sc.RenderToString("path/to/template.yaml",
 func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error
 ```
 
-Update updates resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Get or Update operations fail.
+Update updates resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Update operations fail.
 
 #### Arguments
 
