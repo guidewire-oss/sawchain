@@ -8,15 +8,19 @@ Go library for K8s YAML-driven testing—powered by [Chainsaw](https://github.co
 
 ![Sawchain](./assets/banner.png)
 
-## [Documentation](./docs/)
+## Documentation
 
 * **[Overview](./docs/OVERVIEW.md)**
 * **[Reference](./docs/REFERENCE.md)**
 
-## [Examples](./examples/)
+## Examples
 
 * **[controller-integration-test](./examples/controller-integration-test/)**
 * **[helm-install-test](./examples/helm-install-test/)**
 * **[helm-template-test](./examples/helm-template-test/)**
 * **[crossplane-render-test](./examples/crossplane-render-test/)**
 * **[vela-dry-run-test](./examples/vela-dry-run-test/)**
+
+## Contributions
+
+Please read the [contributing guide](./CONTRIBUTING.md) for details on how to contribute.
