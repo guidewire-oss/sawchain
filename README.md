@@ -10,8 +10,9 @@ Go library for K8s YAML-driven testing—powered by [Chainsaw](https://github.co
 
 ## Documentation
 
-* **[Overview](./docs/OVERVIEW.md)**
-* **[Reference](./docs/REFERENCE.md)**
+* **[Design Overview](./docs/design-overview.md)**
+* **[Usage Notes](./docs/usage-notes.md)**
+* **[API Reference](./docs/api-reference.md)**
 
 ## Examples
 

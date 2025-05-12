@@ -51,7 +51,7 @@ Following [Conventional Commits](https://www.conventionalcommits.org/) is recomm
 - Reference any related issues in your PR description.
 - Include relevant tests and/or documentation updates.
 - Ensure your PR is scoped to a single fix or feature.
-- When updating public function documentation, regenerate [`REFERENCE.md`](./docs/REFERENCE.md) using `make docs`.
+- When updating public function documentation, regenerate [`api-reference.md`](./docs/api-reference.md) using `make docs`.
 
 ## Code of Conduct
 

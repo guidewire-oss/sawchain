@@ -15,4 +15,4 @@ debug:
 docs:
 	gomarkdoc ./ \
 	| awk 'BEGIN { RS=""; ORS="\n\n" } { gsub(/```\n/, "```go\n"); print }' \
-	> docs/REFERENCE.md
+	> docs/api-reference.md
