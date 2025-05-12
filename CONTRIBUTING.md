@@ -59,4 +59,4 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the Apache 2.0 License, as described in [`LICENSE.md`](./LICENSE.md).
+By contributing, you agree that your contributions will be licensed under the Apache 2.0 License, as described in [`LICENSE`](./LICENSE).
