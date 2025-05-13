@@ -1,5 +1,8 @@
 # Chainsaw Cheatsheet
 
+A practical reference for Chainsaw resource templates and assertions (compatible with Sawchain),
+highlighting the most frequently used patterns
+
 ## References
 
 * [Intro to Chainsaw templating](https://kyverno.github.io/chainsaw/latest/quick-start/resource-templating/)

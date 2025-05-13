@@ -1,7 +1,6 @@
 # TODO
 
 * finish Chainsaw cheatsheet
-  * add intro statement
   * test examples
   * test `(any expression): any value`
 * create adopters issue

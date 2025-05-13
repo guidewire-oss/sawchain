@@ -29,9 +29,8 @@ If not possible (i.e. if internal type conversions fail), unstructured objects w
 ### Definition
 
 To Sawchain, a "template" is a static YAML K8s manifest or a
-[Chainsaw resource template](https://kyverno.github.io/chainsaw/latest/quick-start/resource-templating/)
-with optional [JMESPath](https://jmespath.site/) expressions for templating and/or assertions
-(see the [Chainsaw cheatsheet](./chainsaw-cheatsheet.md) for more details).
+[Chainsaw resource template](./chainsaw-cheatsheet.md)
+with optional [JMESPath](https://jmespath.site/) expressions for templating and/or assertions.
 
 Template content requirements differ depending on the context.
 
