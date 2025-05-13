@@ -500,7 +500,7 @@ var _ = Describe("Update", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
@@ -510,7 +510,7 @@ var _ = Describe("Update", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				data:
 				  keyA: ($value2)
@@ -557,7 +557,7 @@ var _ = Describe("Update", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
@@ -567,7 +567,7 @@ var _ = Describe("Update", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				data:
 				  keyA: ($value2)
@@ -670,7 +670,7 @@ var _ = Describe("Update", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
@@ -680,7 +680,7 @@ var _ = Describe("Update", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				data:
 				  keyA: ($value2)
@@ -1485,7 +1485,7 @@ var _ = Describe("UpdateAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
@@ -1495,7 +1495,7 @@ var _ = Describe("UpdateAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				data:
 				  keyA: ($value2)
@@ -1542,7 +1542,7 @@ var _ = Describe("UpdateAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
@@ -1552,7 +1552,7 @@ var _ = Describe("UpdateAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				data:
 				  keyA: ($value2)
@@ -1655,7 +1655,7 @@ var _ = Describe("UpdateAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				data:
 				  key1: ($value1)
@@ -1665,7 +1665,7 @@ var _ = Describe("UpdateAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				data:
 				  keyA: ($value2)

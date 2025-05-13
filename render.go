@@ -147,7 +147,7 @@ func (s *Sawchain) RenderSingle(args ...interface{}) client.Object {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -155,7 +155,7 @@ func (s *Sawchain) RenderSingle(args ...interface{}) client.Object {
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:
@@ -171,7 +171,7 @@ func (s *Sawchain) RenderSingle(args ...interface{}) client.Object {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -179,7 +179,7 @@ func (s *Sawchain) RenderSingle(args ...interface{}) client.Object {
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:
@@ -251,7 +251,7 @@ func (s *Sawchain) RenderMultiple(args ...interface{}) []client.Object {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -259,7 +259,7 @@ func (s *Sawchain) RenderMultiple(args ...interface{}) []client.Object {
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:
@@ -324,7 +324,7 @@ func (s *Sawchain) RenderToString(template string, bindings ...map[string]any) s
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -332,7 +332,7 @@ func (s *Sawchain) RenderToString(template string, bindings ...map[string]any) s
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:

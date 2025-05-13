@@ -114,7 +114,7 @@ import (
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: updated-value
@@ -122,7 +122,7 @@ import (
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  stringData:
 //	    password: updated-secret
@@ -136,7 +136,7 @@ import (
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: updated-value
@@ -144,7 +144,7 @@ import (
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  stringData:
 //	    password: updated-secret
@@ -328,7 +328,7 @@ func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: updated-value
@@ -336,7 +336,7 @@ func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  stringData:
 //	    password: updated-secret
@@ -350,7 +350,7 @@ func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: updated-value
@@ -358,7 +358,7 @@ func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  stringData:
 //	    password: updated-secret

@@ -12,7 +12,7 @@ metadata:
   namespace: default
 spec:
   ports:
-    - name: (join('-', ['port', to_string($port)])) # Templated for reuse between test cases
+    - name: (concat('port-', to_string($port))) # Templated for reuse between test cases
       port: ($port) # Templated for reuse between test cases
       targetPort: ($port) # Templated for reuse between test cases
   selector:

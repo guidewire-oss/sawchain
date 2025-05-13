@@ -73,13 +73,13 @@ import (
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  ---
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
 func (s *Sawchain) Delete(ctx context.Context, args ...interface{}) error {
@@ -193,13 +193,13 @@ func (s *Sawchain) Delete(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  ---
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
 func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{}) {

@@ -281,7 +281,7 @@ err := sc.Create(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -289,7 +289,7 @@ err := sc.Create(ctx, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -307,7 +307,7 @@ err := sc.Create(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -315,7 +315,7 @@ err := sc.Create(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -417,7 +417,7 @@ sc.CreateAndWait(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -425,7 +425,7 @@ sc.CreateAndWait(ctx, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -443,7 +443,7 @@ sc.CreateAndWait(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -451,7 +451,7 @@ sc.CreateAndWait(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -530,13 +530,13 @@ err := sc.Delete(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   ---
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -615,13 +615,13 @@ sc.DeleteAndWait(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   ---
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -680,13 +680,13 @@ fetchedObjs := sc.FetchMultiple(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   ---
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -700,13 +700,13 @@ fetchedObjs := sc.FetchMultiple(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   ---
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -894,13 +894,13 @@ err := sc.Get(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   ---
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -914,13 +914,13 @@ err := sc.Get(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   ---
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   `, map[string]any{"prefix": "test", "namespace": "default"})
 ```
@@ -1083,7 +1083,7 @@ objs := sc.RenderMultiple(`
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -1091,7 +1091,7 @@ objs := sc.RenderMultiple(`
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -1109,7 +1109,7 @@ sc.RenderMultiple([]client.Object{configMap, secret}, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -1117,7 +1117,7 @@ sc.RenderMultiple([]client.Object{configMap, secret}, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -1237,7 +1237,7 @@ sc.RenderToFile("output.yaml", `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -1245,7 +1245,7 @@ sc.RenderToFile("output.yaml", `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -1291,7 +1291,7 @@ yaml := sc.RenderToString(`
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: value
@@ -1299,7 +1299,7 @@ yaml := sc.RenderToString(`
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   type: Opaque
   stringData:
@@ -1421,7 +1421,7 @@ err := sc.Update(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: updated-value
@@ -1429,7 +1429,7 @@ err := sc.Update(ctx, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   stringData:
     password: updated-secret
@@ -1445,7 +1445,7 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: updated-value
@@ -1453,7 +1453,7 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   stringData:
     password: updated-secret
@@ -1570,7 +1570,7 @@ sc.UpdateAndWait(ctx, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: updated-value
@@ -1578,7 +1578,7 @@ sc.UpdateAndWait(ctx, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   stringData:
     password: updated-secret
@@ -1594,7 +1594,7 @@ sc.UpdateAndWait(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: (join('-', [$prefix, 'cm']))
+    name: (concat($prefix, '-cm'))
     namespace: ($namespace)
   data:
     key: updated-value
@@ -1602,7 +1602,7 @@ sc.UpdateAndWait(ctx, []client.Object{configMap, secret}, `
   apiVersion: v1
   kind: Secret
   metadata:
-    name: (join('-', [$prefix, 'secret']))
+    name: (concat($prefix, '-secret'))
     namespace: ($namespace)
   stringData:
     password: updated-secret

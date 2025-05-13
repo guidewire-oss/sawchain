@@ -167,13 +167,13 @@ func (s *Sawchain) FetchSingle(ctx context.Context, args ...interface{}) client.
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  ---
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
 //
@@ -185,13 +185,13 @@ func (s *Sawchain) FetchSingle(ctx context.Context, args ...interface{}) client.
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  ---
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
 func (s *Sawchain) FetchMultiple(ctx context.Context, args ...interface{}) []client.Object {

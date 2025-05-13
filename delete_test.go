@@ -264,13 +264,13 @@ var _ = Describe("Delete", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				---
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				`,
 				map[string]any{"prefix": "test"},
@@ -289,13 +289,13 @@ var _ = Describe("Delete", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				---
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				`,
 				map[string]any{"prefix": "first"},
@@ -741,13 +741,13 @@ var _ = Describe("DeleteAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				---
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				`,
 				map[string]any{"prefix": "test"},
@@ -767,13 +767,13 @@ var _ = Describe("DeleteAndWait", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm1']))
+				  name: (concat($prefix, '-cm1'))
 				  namespace: ($namespace)
 				---
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: (join('-', [$prefix, 'cm2']))
+				  name: (concat($prefix, '-cm2'))
 				  namespace: ($namespace)
 				`,
 				map[string]any{"prefix": "first"},

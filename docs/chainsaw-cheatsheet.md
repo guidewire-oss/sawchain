@@ -24,11 +24,27 @@ spec:
   map: ($mapValue)
 ```
 
-More complex templating can be done using [built-in functions](https://kyverno.github.io/chainsaw/latest/reference/jp/functions/) such as `concat`, `join`, `lookup`, and more.
+More advanced templating can be done using
+[built-in functions](https://kyverno.github.io/chainsaw/latest/reference/jp/functions/)
+such as `concat`, `join`, `lookup`, and more.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example
+  namespace: default
+data:
+  key1: (concat($stringValue, '-suffix'))
+  key2: (join('-', ['prefix', $stringValue, 'suffix']))
+  key3: (lookup($mapValue, 'key'))
+```
 
 ## Assertions
 
-### Less Than, Greater Than
+### Simple Equality
+
+Use plain YAML to make assertions of simple equality.
 
 ```yaml
 apiVersion: apps/v1
@@ -37,10 +53,27 @@ metadata:
   name: example
   namespace: default
 spec:
+  replicas: 3
+```
+
+### Beyond Simple Equality
+
+Use the `(boolean expression): true|false` syntax to make assertions beyond simple equality.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example
+  namespace: default
+spec:
+  # assert replicas is between 1 and 4 (noninclusive)
   (replicas > `1` && replicas < `4`): true
 ```
 
 ### Filtering
+
+Use the `(array[?condition])` syntax to make assertions on a filtered set of array elements.
 
 ```yaml
 apiVersion: example.com/v1
@@ -58,6 +91,8 @@ status:
 
 ### Iterating
 
+Use the `~.(array)` syntax to repeat assertions for each element in an array.
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -74,4 +109,18 @@ spec:
 
 ### Functions
 
-More advanced assertions can be done using [built-in functions](https://kyverno.github.io/chainsaw/latest/reference/jp/functions/) such as `length`, `contains`, `starts_with`, and more.
+More advanced assertions can be done using
+[built-in functions](https://kyverno.github.io/chainsaw/latest/reference/jp/functions/)
+such as `length`, `contains`, `starts_with`, and more.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example
+  namespace: default
+data:
+  (length(key1) < `100`): true
+  (contains(key2, $expectedSubstring)): true
+  (starts_with(key3, 'bad-prefix')): false
+```

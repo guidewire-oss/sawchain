@@ -95,7 +95,7 @@ import (
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -103,7 +103,7 @@ import (
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:
@@ -119,7 +119,7 @@ import (
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -127,7 +127,7 @@ import (
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:
@@ -282,7 +282,7 @@ func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -290,7 +290,7 @@ func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:
@@ -306,7 +306,7 @@ func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: ConfigMap
 //	  metadata:
-//	    name: (join('-', [$prefix, 'cm']))
+//	    name: (concat($prefix, '-cm'))
 //	    namespace: ($namespace)
 //	  data:
 //	    key: value
@@ -314,7 +314,7 @@ func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error {
 //	  apiVersion: v1
 //	  kind: Secret
 //	  metadata:
-//	    name: (join('-', [$prefix, 'secret']))
+//	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  type: Opaque
 //	  stringData:
