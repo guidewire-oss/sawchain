@@ -102,7 +102,7 @@ import (
 //	      bar: baz
 //	  `, map[string]any{"namespace": "default"})
 //
-// For more Chainsaw examples, go to https://kyverno.github.io/chainsaw/.
+// For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 func (s *Sawchain) Check(ctx context.Context, args ...interface{}) error {
 	s.t.Helper()
 

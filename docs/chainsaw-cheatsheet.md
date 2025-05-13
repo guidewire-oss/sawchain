@@ -125,7 +125,7 @@ metadata:
   name: example
   namespace: default
 data:
-  (length(key1) < `100`): true
+  (length(key1) <= `100`): true
   (contains(key2, $expectedSubstring)): true
   (starts_with(key3, 'bad-prefix')): false
 ```

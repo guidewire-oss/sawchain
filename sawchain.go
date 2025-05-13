@@ -43,7 +43,10 @@ const (
 
 // Sawchain provides utilities for K8s YAML-driven testing—powered by Chainsaw. It includes helpers to
 // reliably create/update/delete test resources, Gomega-friendly APIs to simplify assertions, and more.
+//
 // Use New to create a Sawchain instance.
+//
+// Go to https://github.com/guidewire-oss/sawchain/tree/main/docs for documentation beyond the reference.
 type Sawchain struct {
 	t    testing.TB
 	g    gomega.Gomega

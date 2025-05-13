@@ -61,7 +61,7 @@ import (
 //	    (replicas > `1` && replicas < `4`): true
 //	`))
 //
-// For more Chainsaw examples, go to https://kyverno.github.io/chainsaw/.
+// For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.GomegaMatcher {
 	s.t.Helper()
 
