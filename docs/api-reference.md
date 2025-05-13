@@ -38,7 +38,7 @@ Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. 
 
 Use New to create a Sawchain instance.
 
-Go to https://github.com/guidewire-oss/sawchain/tree/main/docs for documentation beyond the reference.
+More documentation is available at https://github.com/guidewire-oss/sawchain/tree/main/docs.
 
 ```go
 type Sawchain struct {

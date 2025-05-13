@@ -46,7 +46,7 @@ const (
 //
 // Use New to create a Sawchain instance.
 //
-// Go to https://github.com/guidewire-oss/sawchain/tree/main/docs for documentation beyond the reference.
+// More documentation is available at https://github.com/guidewire-oss/sawchain/tree/main/docs.
 type Sawchain struct {
 	t    testing.TB
 	g    gomega.Gomega
