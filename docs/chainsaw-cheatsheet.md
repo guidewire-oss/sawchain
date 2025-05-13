@@ -44,16 +44,21 @@ data:
 
 ### Simple Equality
 
-Use plain YAML to make assertions of simple equality.
+Use plain YAML and templating to make assertions of simple equality.
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
   name: example
   namespace: default
 spec:
-  replicas: 3
+  selector:
+    app: example
+  ports:
+  - name: (concat('port-', to_string($port)))
+    port: ($port)
+    targetPort: ($port)
 ```
 
 ### Beyond Simple Equality
