@@ -19,28 +19,28 @@ apiVersion: example.com/v1
 kind: Example
 metadata:
   name: example
-  namespace: default
 spec:
   string: ($stringValue)
   number: ($numberValue)
   array: ($arrayValue)
   map: ($mapValue)
+  indexed: ($arrayValue[0])
+  extracted: ($mapValue.key)
 ```
 
 More advanced templating can be done using
 [built-in functions](https://kyverno.github.io/chainsaw/latest/reference/jp/functions/)
-such as `concat`, `join`, `lookup`, and more.
+such as `concat`, `join`, `base64_encode`, and more.
 
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: example
-  namespace: default
 data:
-  key1: (concat($stringValue, '-suffix'))
-  key2: (join('-', ['prefix', $stringValue, 'suffix']))
-  key3: (lookup($mapValue, 'key'))
+  concatenated: (concat($stringValue, '-suffix'))
+  joined: (join('-', ['prefix', $stringValue, 'suffix']))
+  encoded: (base64_encode($stringValue))
 ```
 
 ## Assertions
@@ -54,7 +54,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: example
-  namespace: default
 spec:
   selector:
     app: example
@@ -73,29 +72,46 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: example
-  namespace: default
 spec:
-  # assert replicas is between 1 and 4 (noninclusive)
+  # Assert replicas is between 1 and 4 (noninclusive)
   (replicas > `1` && replicas < `4`): true
 ```
 
 ### Filtering
 
-Use the `(array[?condition])` syntax to make assertions on a filtered set of array elements.
+Use the `(array[?condition])` syntax to make assertions on filtered array elements.
 
 ```yaml
 apiVersion: example.com/v1
 kind: Example
 metadata:
   name: example
-  namespace: default
 status:
-  # filter conditions array to keep elements where `type == 'Ready'`
+  # Filter conditions array to keep elements where type is 'Ready'
   # and assert there's a single element matching the filter
-  # and that this element status is `True`
+  # and that this element's status is 'True'
   (conditions[?type == 'Ready']):
   - status: 'True'
 ```
+
+Filtering can also be used to match multiple elements at once.
+
+```yaml
+apiVersion: example.com/v1
+kind: Example
+metadata:
+  name: example
+status:
+  # Check multiple conditions with a single filter
+  (conditions[?type == 'Ready' || type == 'Synced']):
+  - type: 'Ready'
+    status: 'True'
+  - type: 'Synced'
+    status: 'False'
+```
+
+**Note:** Array comparisons cannot be partial. When using filtering expressions, the assertion value
+must be an array with the same number of elements as the filtered result. TODO: does order matter?
 
 ### Iterating
 
@@ -106,12 +122,26 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: example
-  namespace: default
 spec:
   template:
     spec:
-      # the `~` modifier tells Chainsaw to iterate over the array elements
+      # The `~.` modifier tells Chainsaw to iterate over the array
       ~.(containers):
+        securityContext: {}
+```
+
+Iterating can be combined with filtering to repeat assertions for each element in a filtered set.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example
+spec:
+  template:
+    spec:
+      # Only check securityContext for 'app' and 'sidecar'
+      ~.(containers[?name == 'app' || name == 'sidecar']):
         securityContext: {}
 ```
 
@@ -126,8 +156,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: example
-  namespace: default
 data:
+  (length(key1)): 100
   (length(key1) <= `100`): true
   (contains(key2, $expectedSubstring)): true
   (starts_with(key3, 'bad-prefix')): false

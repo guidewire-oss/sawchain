@@ -127,7 +127,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			Entry("should render a single Secret with bindings", testCase{
 				templateContent: `
@@ -163,7 +162,6 @@ stringData:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Multi-resource tests
 			Entry("should render multiple resources with bindings", testCase{
@@ -221,22 +219,23 @@ stringData:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Complex binding tests
 			Entry("should render with complex binding types", testCase{
 				templateContent: `
-apiVersion: v1
-kind: ConfigMap
+apiVersion: example.com/v1
+kind: Example
 metadata:
   name: complex-bindings
   namespace: default
-data:
-  intValue: "($intValue)"
-  boolValue: "($boolValue)"
-  floatValue: "($floatValue)"
-  mapValue: "($mapValue)"
-  sliceValue: "($sliceValue)"
+spec:
+  intValue: ($intValue)
+  boolValue: ($boolValue)
+  floatValue: ($floatValue)
+  mapValue: ($mapValue)
+  sliceValue: ($sliceValue)
+  mapNestedValue: ($mapValue.key)
+  sliceElementValue: ($sliceValue[0])
 `,
 				bindings: map[string]any{
 					"intValue":   42,
@@ -248,23 +247,58 @@ data:
 				expectedObjs: []unstructured.Unstructured{
 					{
 						Object: map[string]interface{}{
-							"apiVersion": "v1",
-							"kind":       "ConfigMap",
+							"apiVersion": "example.com/v1",
+							"kind":       "Example",
 							"metadata": map[string]interface{}{
 								"name":      "complex-bindings",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
-								"intValue":   42,
-								"boolValue":  true,
-								"floatValue": 3.14,
-								"mapValue":   map[string]string{"key": "value"},
-								"sliceValue": []string{"item1", "item2"},
+							"spec": map[string]interface{}{
+								"intValue":          42,
+								"boolValue":         true,
+								"floatValue":        3.14,
+								"mapValue":          map[string]string{"key": "value"},
+								"sliceValue":        []string{"item1", "item2"},
+								"mapNestedValue":    "value",
+								"sliceElementValue": "item1",
 							},
 						},
 					},
 				},
-				expectedErrs: nil,
+			}),
+			Entry("should render with JMESPath functions", testCase{
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: functions
+  namespace: default
+data:
+  concatenated: (concat($stringValue, '-suffix'))
+  joined: (join('-', ['prefix', $stringValue, 'suffix']))
+  encoded: (base64_encode($stringValue))
+`,
+				bindings: map[string]any{
+					"stringValue": "my-awesome-string",
+					"mapValue":    map[string]string{"key": "value"},
+				},
+				expectedObjs: []unstructured.Unstructured{
+					{
+						Object: map[string]interface{}{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]interface{}{
+								"name":      "functions",
+								"namespace": "default",
+							},
+							"data": map[string]interface{}{
+								"concatenated": "my-awesome-string-suffix",
+								"joined":       "prefix-my-awesome-string-suffix",
+								"encoded":      "bXktYXdlc29tZS1zdHJpbmc=",
+							},
+						},
+					},
+				},
 			}),
 			// Edge cases
 			Entry("should handle template with nil bindings", testCase{
@@ -295,7 +329,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			Entry("should handle empty template", testCase{
 				templateContent: ``,
@@ -399,7 +432,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			Entry("should render a single Secret with bindings", testCase{
 				templateContent: `
@@ -433,22 +465,23 @@ stringData:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Complex binding tests
 			Entry("should render with complex binding types", testCase{
 				templateContent: `
-apiVersion: v1
-kind: ConfigMap
+apiVersion: example.com/v1
+kind: Example
 metadata:
   name: complex-bindings
   namespace: default
-data:
-  intValue: "($intValue)"
-  boolValue: "($boolValue)"
-  floatValue: "($floatValue)"
-  mapValue: "($mapValue)"
-  sliceValue: "($sliceValue)"
+spec:
+  intValue: ($intValue)
+  boolValue: ($boolValue)
+  floatValue: ($floatValue)
+  mapValue: ($mapValue)
+  sliceValue: ($sliceValue)
+  mapNestedValue: ($mapValue.key)
+  sliceElementValue: ($sliceValue[0])
 `,
 				bindings: map[string]any{
 					"intValue":   42,
@@ -459,22 +492,55 @@ data:
 				},
 				expectedObj: unstructured.Unstructured{
 					Object: map[string]interface{}{
-						"apiVersion": "v1",
-						"kind":       "ConfigMap",
+						"apiVersion": "example.com/v1",
+						"kind":       "Example",
 						"metadata": map[string]interface{}{
 							"name":      "complex-bindings",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
-							"intValue":   42,
-							"boolValue":  true,
-							"floatValue": 3.14,
-							"mapValue":   map[string]string{"key": "value"},
-							"sliceValue": []string{"item1", "item2"},
+						"spec": map[string]interface{}{
+							"intValue":          42,
+							"boolValue":         true,
+							"floatValue":        3.14,
+							"mapValue":          map[string]string{"key": "value"},
+							"sliceValue":        []string{"item1", "item2"},
+							"mapNestedValue":    "value",
+							"sliceElementValue": "item1",
 						},
 					},
 				},
-				expectedErrs: nil,
+			}),
+			Entry("should render with JMESPath functions", testCase{
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: functions
+  namespace: default
+data:
+  concatenated: (concat($stringValue, '-suffix'))
+  joined: (join('-', ['prefix', $stringValue, 'suffix']))
+  encoded: (base64_encode($stringValue))
+`,
+				bindings: map[string]any{
+					"stringValue": "my-awesome-string",
+					"mapValue":    map[string]string{"key": "value"},
+				},
+				expectedObj: unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]interface{}{
+							"name":      "functions",
+							"namespace": "default",
+						},
+						"data": map[string]interface{}{
+							"concatenated": "my-awesome-string-suffix",
+							"joined":       "prefix-my-awesome-string-suffix",
+							"encoded":      "bXktYXdlc29tZS1zdHJpbmc=",
+						},
+					},
+				},
 			}),
 			// Edge cases
 			Entry("should handle template with nil bindings", testCase{
@@ -503,7 +569,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Error cases
 			Entry("should fail on empty template", testCase{
@@ -646,7 +711,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Partial match tests
 			Entry("should match when expected is a subset of candidate", testCase{
@@ -703,7 +767,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Multiple candidates tests
 			Entry("should match first resource that matches", testCase{
@@ -774,7 +837,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Binding tests
 			Entry("should match with binding substitution", testCase{
@@ -823,7 +885,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Complex binding tests
 			Entry("should match with complex binding types", testCase{
@@ -884,7 +945,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// No match tests
 			Entry("should not match when values differ", testCase{
@@ -1170,7 +1230,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			Entry("should find match with partial expectation", testCase{
 				resourcesYaml: `
@@ -1212,7 +1271,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			Entry("should find match with binding substitution", testCase{
 				resourcesYaml: `
@@ -1250,7 +1308,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Multiple resources tests
 			Entry("should find match among multiple resources", testCase{
@@ -1301,7 +1358,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			// Error cases
 			Entry("should fail when resource not found", testCase{
@@ -1373,40 +1429,270 @@ data:
 				expectedErrs:  []string{"variable not defined: $missing_binding"},
 			}),
 			// Advanced check tests
-			Entry("should match when string length is in range", testCase{
+			Entry("should match with JMESPath boolean expression", testCase{
+				resourcesYaml: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-replicas
+  namespace: default
+spec:
+  replicas: 3
+`,
+				templateContent: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-replicas
+  namespace: default
+spec:
+  (replicas > ` + "`1`" + ` && replicas < ` + "`4`" + `): true
+`,
+				bindings: map[string]any{},
+				expectedMatch: unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "apps/v1",
+						"kind":       "Deployment",
+						"metadata": map[string]interface{}{
+							"name":      "test-check-replicas",
+							"namespace": "default",
+						},
+						"spec": map[string]interface{}{
+							"replicas": 3,
+						},
+					},
+				},
+			}),
+			Entry("should match with JMESPath filtering", testCase{
+				resourcesYaml: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-filtering
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: app
+        image: my-app-image:latest
+        env:
+        - name: APP_ENV
+          value: "production"
+      - name: sidecar
+        image: my-sidecar-image:latest
+        env:
+        - name: SIDECAR_MODE
+          value: "enabled"
+`,
+				templateContent: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-filtering
+  namespace: default
+spec:
+  template:
+    spec:
+      (containers[?name == 'sidecar']):
+      - env:
+        - name: SIDECAR_MODE
+          value: "enabled"
+`,
+				bindings: map[string]any{},
+				expectedMatch: unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "apps/v1",
+						"kind":       "Deployment",
+						"metadata": map[string]interface{}{
+							"name":      "test-check-filtering",
+							"namespace": "default",
+						},
+						"spec": map[string]interface{}{
+							"replicas": 3,
+							"selector": map[string]interface{}{
+								"matchLabels": map[string]interface{}{
+									"app": "example",
+								},
+							},
+							"template": map[string]interface{}{
+								"metadata": map[string]interface{}{
+									"labels": map[string]interface{}{
+										"app": "example",
+									},
+								},
+								"spec": map[string]interface{}{
+									"containers": []interface{}{
+										map[string]interface{}{
+											"name":  "app",
+											"image": "my-app-image:latest",
+											"env": []interface{}{
+												map[string]interface{}{
+													"name":  "APP_ENV",
+													"value": "production",
+												},
+											},
+										},
+										map[string]interface{}{
+											"name":  "sidecar",
+											"image": "my-sidecar-image:latest",
+											"env": []interface{}{
+												map[string]interface{}{
+													"name":  "SIDECAR_MODE",
+													"value": "enabled",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+			// TODO: test filtering with multiple matches
+			Entry("should match with JMESPath iterating", testCase{
+				resourcesYaml: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-iterating
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: app
+        image: my-app-image:latest
+        env:
+        - name: APP_ENV
+          value: "production"
+      - name: sidecar
+        image: my-sidecar-image:latest
+        env:
+        - name: SIDECAR_MODE
+          value: "enabled"
+`,
+				templateContent: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-iterating
+  namespace: default
+spec:
+  template:
+    spec:
+      ~.(containers):
+        (split(image, ':')[-1]): latest
+`,
+				bindings: map[string]any{},
+				expectedMatch: unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "apps/v1",
+						"kind":       "Deployment",
+						"metadata": map[string]interface{}{
+							"name":      "test-check-iterating",
+							"namespace": "default",
+						},
+						"spec": map[string]interface{}{
+							"replicas": 3,
+							"selector": map[string]interface{}{
+								"matchLabels": map[string]interface{}{
+									"app": "example",
+								},
+							},
+							"template": map[string]interface{}{
+								"metadata": map[string]interface{}{
+									"labels": map[string]interface{}{
+										"app": "example",
+									},
+								},
+								"spec": map[string]interface{}{
+									"containers": []interface{}{
+										map[string]interface{}{
+											"name":  "app",
+											"image": "my-app-image:latest",
+											"env": []interface{}{
+												map[string]interface{}{
+													"name":  "APP_ENV",
+													"value": "production",
+												},
+											},
+										},
+										map[string]interface{}{
+											"name":  "sidecar",
+											"image": "my-sidecar-image:latest",
+											"env": []interface{}{
+												map[string]interface{}{
+													"name":  "SIDECAR_MODE",
+													"value": "enabled",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+			// TODO: test filtering and iterating combined
+			Entry("should match with JMESPath functions", testCase{
 				resourcesYaml: `
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-check-length
+  name: test-check-functions
   namespace: default
 data:
-  value: "hello"
+  key1: "my awesome string"
+  key2: "my SUPER awesome string"
+  key3: "doesn't start with bad prefix"
 `,
 				templateContent: `
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-check-length
+  name: test-check-functions
   namespace: default
 data:
-  (length(value) > ` + "`1`" + ` && length(value) < ` + "`10`" + `): true
+  (length(key1)): 17
+  (length(key1) <= ` + "`100`" + `): true
+  (contains(key2, $expectedSubstring)): true
+  (starts_with(key3, 'bad prefix')): false
 `,
-				bindings: map[string]any{},
+				bindings: map[string]any{
+					"expectedSubstring": "SUPER",
+				},
 				expectedMatch: unstructured.Unstructured{
 					Object: map[string]interface{}{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
 						"metadata": map[string]interface{}{
-							"name":      "test-check-length",
+							"name":      "test-check-functions",
 							"namespace": "default",
 						},
 						"data": map[string]interface{}{
-							"value": "hello",
+							"key1": "my awesome string",
+							"key2": "my SUPER awesome string",
+							"key3": "doesn't start with bad prefix",
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			Entry("should fail when string length is outside range", testCase{
 				resourcesYaml: `
@@ -1472,7 +1758,6 @@ data:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 			Entry("should match Secret based on labels across namespaces", testCase{
 				resourcesYaml: `
@@ -1529,7 +1814,6 @@ metadata:
 						},
 					},
 				},
-				expectedErrs: nil,
 			}),
 		)
 	})
