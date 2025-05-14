@@ -110,8 +110,9 @@ status:
     status: 'False'
 ```
 
-**Note:** Array comparisons cannot be partial. When using filtering expressions, the assertion value
-must be an array with the same number of elements as the filtered result. TODO: does order matter?
+**Note:** When comparing arrays, the length and order of elements must match exactly.
+In filtering expressions, the assertion value array must have identical length and element
+order as the filtered result. However, within individual elements, partial field matching is valid.
 
 ### Iterating
 

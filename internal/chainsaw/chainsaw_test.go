@@ -1109,6 +1109,98 @@ data:
 			expectedMatch   unstructured.Unstructured
 			expectedErrs    []string
 		}
+		var deploymentYaml = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-deployment
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: app
+        image: my-app-image:latest
+        env:
+        - name: APP_ENV
+          value: "production"
+      - name: logger
+        image: my-logger-image:latest
+        env:
+        - name: LOG_LEVEL
+          value: "info"
+      - name: sidecar
+        image: my-sidecar-image:latest
+        env:
+        - name: SIDECAR_MODE
+          value: "enabled"
+`
+		var deploymentObj = unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps/v1",
+				"kind":       "Deployment",
+				"metadata": map[string]interface{}{
+					"name":      "test-check-deployment",
+					"namespace": "default",
+				},
+				"spec": map[string]interface{}{
+					"replicas": 3,
+					"selector": map[string]interface{}{
+						"matchLabels": map[string]interface{}{
+							"app": "example",
+						},
+					},
+					"template": map[string]interface{}{
+						"metadata": map[string]interface{}{
+							"labels": map[string]interface{}{
+								"app": "example",
+							},
+						},
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name":  "app",
+									"image": "my-app-image:latest",
+									"env": []interface{}{
+										map[string]interface{}{
+											"name":  "APP_ENV",
+											"value": "production",
+										},
+									},
+								},
+								map[string]interface{}{
+									"name":  "logger",
+									"image": "my-logger-image:latest",
+									"env": []interface{}{
+										map[string]interface{}{
+											"name":  "LOG_LEVEL",
+											"value": "info",
+										},
+									},
+								},
+								map[string]interface{}{
+									"name":  "sidecar",
+									"image": "my-sidecar-image:latest",
+									"env": []interface{}{
+										map[string]interface{}{
+											"name":  "SIDECAR_MODE",
+											"value": "enabled",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
 
 		DescribeTableSubtree("checking resources in the cluster",
 			func(tc testCase) {
@@ -1430,73 +1522,26 @@ data:
 			}),
 			// Advanced check tests
 			Entry("should match with JMESPath boolean expression", testCase{
-				resourcesYaml: `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: test-check-replicas
-  namespace: default
-spec:
-  replicas: 3
-`,
+				resourcesYaml: deploymentYaml,
 				templateContent: `
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-check-replicas
+  name: test-check-deployment
   namespace: default
 spec:
   (replicas > ` + "`1`" + ` && replicas < ` + "`4`" + `): true
 `,
-				bindings: map[string]any{},
-				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"apiVersion": "apps/v1",
-						"kind":       "Deployment",
-						"metadata": map[string]interface{}{
-							"name":      "test-check-replicas",
-							"namespace": "default",
-						},
-						"spec": map[string]interface{}{
-							"replicas": 3,
-						},
-					},
-				},
+				bindings:      map[string]any{},
+				expectedMatch: deploymentObj,
 			}),
-			Entry("should match with JMESPath filtering", testCase{
-				resourcesYaml: `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: test-check-filtering
-  namespace: default
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: example
-  template:
-    metadata:
-      labels:
-        app: example
-    spec:
-      containers:
-      - name: app
-        image: my-app-image:latest
-        env:
-        - name: APP_ENV
-          value: "production"
-      - name: sidecar
-        image: my-sidecar-image:latest
-        env:
-        - name: SIDECAR_MODE
-          value: "enabled"
-`,
+			Entry("should match with JMESPath filtering (single match)", testCase{
+				resourcesYaml: deploymentYaml,
 				templateContent: `
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-check-filtering
+  name: test-check-deployment
   namespace: default
 spec:
   template:
@@ -1506,92 +1551,34 @@ spec:
         - name: SIDECAR_MODE
           value: "enabled"
 `,
-				bindings: map[string]any{},
-				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"apiVersion": "apps/v1",
-						"kind":       "Deployment",
-						"metadata": map[string]interface{}{
-							"name":      "test-check-filtering",
-							"namespace": "default",
-						},
-						"spec": map[string]interface{}{
-							"replicas": 3,
-							"selector": map[string]interface{}{
-								"matchLabels": map[string]interface{}{
-									"app": "example",
-								},
-							},
-							"template": map[string]interface{}{
-								"metadata": map[string]interface{}{
-									"labels": map[string]interface{}{
-										"app": "example",
-									},
-								},
-								"spec": map[string]interface{}{
-									"containers": []interface{}{
-										map[string]interface{}{
-											"name":  "app",
-											"image": "my-app-image:latest",
-											"env": []interface{}{
-												map[string]interface{}{
-													"name":  "APP_ENV",
-													"value": "production",
-												},
-											},
-										},
-										map[string]interface{}{
-											"name":  "sidecar",
-											"image": "my-sidecar-image:latest",
-											"env": []interface{}{
-												map[string]interface{}{
-													"name":  "SIDECAR_MODE",
-													"value": "enabled",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				bindings:      map[string]any{},
+				expectedMatch: deploymentObj,
 			}),
-			// TODO: test filtering with multiple matches
-			Entry("should match with JMESPath iterating", testCase{
-				resourcesYaml: `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: test-check-iterating
-  namespace: default
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: example
-  template:
-    metadata:
-      labels:
-        app: example
-    spec:
-      containers:
-      - name: app
-        image: my-app-image:latest
-        env:
-        - name: APP_ENV
-          value: "production"
-      - name: sidecar
-        image: my-sidecar-image:latest
-        env:
-        - name: SIDECAR_MODE
-          value: "enabled"
-`,
+			Entry("should match with JMESPath filtering (multiple matches)", testCase{
+				resourcesYaml: deploymentYaml,
 				templateContent: `
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-check-iterating
+  name: test-check-deployment
+  namespace: default
+spec:
+  template:
+    spec:
+      (containers[?name == 'app' || name == 'sidecar']):
+      - image: my-app-image:latest
+      - image: my-sidecar-image:latest
+`,
+				bindings:      map[string]any{},
+				expectedMatch: deploymentObj,
+			}),
+			Entry("should match with JMESPath iterating", testCase{
+				resourcesYaml: deploymentYaml,
+				templateContent: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-deployment
   namespace: default
 spec:
   template:
@@ -1599,58 +1586,26 @@ spec:
       ~.(containers):
         (split(image, ':')[-1]): latest
 `,
-				bindings: map[string]any{},
-				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"apiVersion": "apps/v1",
-						"kind":       "Deployment",
-						"metadata": map[string]interface{}{
-							"name":      "test-check-iterating",
-							"namespace": "default",
-						},
-						"spec": map[string]interface{}{
-							"replicas": 3,
-							"selector": map[string]interface{}{
-								"matchLabels": map[string]interface{}{
-									"app": "example",
-								},
-							},
-							"template": map[string]interface{}{
-								"metadata": map[string]interface{}{
-									"labels": map[string]interface{}{
-										"app": "example",
-									},
-								},
-								"spec": map[string]interface{}{
-									"containers": []interface{}{
-										map[string]interface{}{
-											"name":  "app",
-											"image": "my-app-image:latest",
-											"env": []interface{}{
-												map[string]interface{}{
-													"name":  "APP_ENV",
-													"value": "production",
-												},
-											},
-										},
-										map[string]interface{}{
-											"name":  "sidecar",
-											"image": "my-sidecar-image:latest",
-											"env": []interface{}{
-												map[string]interface{}{
-													"name":  "SIDECAR_MODE",
-													"value": "enabled",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				bindings:      map[string]any{},
+				expectedMatch: deploymentObj,
 			}),
-			// TODO: test filtering and iterating combined
+			Entry("should match with JMESPath filtering and iterating combined", testCase{
+				resourcesYaml: deploymentYaml,
+				templateContent: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-check-deployment
+  namespace: default
+spec:
+  template:
+    spec:
+      ~.(containers[?name == 'app' || name == 'sidecar']):
+        (split(image, ':')[-1]): latest
+`,
+				bindings:      map[string]any{},
+				expectedMatch: deploymentObj,
+			}),
 			Entry("should match with JMESPath functions", testCase{
 				resourcesYaml: `
 apiVersion: v1
