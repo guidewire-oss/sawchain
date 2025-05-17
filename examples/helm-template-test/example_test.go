@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/guidewire-oss/sawchain"
 	. "github.com/onsi/ginkgo/v2"
@@ -11,6 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+var (
+	chartPath = filepath.Join("charts", "nginx")
+)
+
+// TODO: finish this
 var _ = Describe("nginx chart", func() {
 	var sc *sawchain.Sawchain
 
@@ -20,7 +26,44 @@ var _ = Describe("nginx chart", func() {
 		Expect(sc).NotTo(BeNil())
 	})
 
-	// TODO
+	Context("with defaults", func() {
+		It("renders successfully", func() {
+			// Run helm template
+			output, err := runHelmTemplate("defaults", chartPath, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).NotTo(BeEmpty())
+		})
+	})
+
+	Context("with overrides", func() {
+		It("renders successfully", func() {
+			// Run helm template
+			valuesPath := filepath.Join("yaml", "overrides", "values.yaml")
+			output, err := runHelmTemplate("overrides", chartPath, valuesPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).NotTo(BeEmpty())
+		})
+	})
+
+	Context("with autoscaling", func() {
+		It("renders successfully", func() {
+			// Run helm template
+			valuesPath := filepath.Join("yaml", "autoscaling", "values.yaml")
+			output, err := runHelmTemplate("autoscaling", chartPath, valuesPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).NotTo(BeEmpty())
+		})
+	})
+
+	Context("with ingress", func() {
+		It("renders successfully", func() {
+			// Run helm template
+			valuesPath := filepath.Join("yaml", "ingress", "values.yaml")
+			output, err := runHelmTemplate("ingress", chartPath, valuesPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).NotTo(BeEmpty())
+		})
+	})
 })
 
 // HELPERS
