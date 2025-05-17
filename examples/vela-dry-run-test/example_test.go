@@ -33,7 +33,8 @@ var _ = Describe("webservice component", func() {
 	// Example using static YAML files for input and expectations
 	It("renders Deployment", func() {
 		// Run vela dry-run
-		output, err := runVelaDryRun("yaml/webservice/application.yaml", "cue/")
+		appPath := filepath.Join("yaml", "webservice", "application.yaml")
+		output, err := runVelaDryRun(appPath, "cue")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).NotTo(BeEmpty())
 
@@ -43,7 +44,8 @@ var _ = Describe("webservice component", func() {
 
 		// Check Deployment
 		deployment = findObjectByType[*appsv1.Deployment](objs)
-		Expect(deployment).To(sc.MatchYAML("yaml/webservice/deployment.yaml"))
+		Expect(deployment).To(sc.MatchYAML(
+			filepath.Join("yaml", "webservice", "deployment.yaml")))
 	})
 
 	// Example using Chainsaw templates inline and from a file
@@ -53,11 +55,12 @@ var _ = Describe("webservice component", func() {
 			bindings := map[string]any{"annotations": annotations}
 
 			// Render input template
-			applicationPath := filepath.Join(GinkgoT().TempDir(), "application.yaml")
-			sc.RenderToFile(applicationPath, "yaml/annotations/application.tpl.yaml", bindings)
+			appTplPath := filepath.Join("yaml", "annotations", "application.tpl.yaml")
+			appPath := filepath.Join(GinkgoT().TempDir(), "application.yaml")
+			sc.RenderToFile(appPath, appTplPath, bindings)
 
 			// Run vela dry-run
-			output, err := runVelaDryRun(applicationPath, "cue/")
+			output, err := runVelaDryRun(appPath, "cue")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).NotTo(BeEmpty())
 
@@ -89,11 +92,12 @@ var _ = Describe("webservice component", func() {
 			bindings := map[string]any{"port": port}
 
 			// Render input template
-			applicationPath := filepath.Join(GinkgoT().TempDir(), "application.yaml")
-			sc.RenderToFile(applicationPath, "yaml/gateway/application.tpl.yaml", bindings)
+			appTplPath := filepath.Join("yaml", "gateway", "application.tpl.yaml")
+			appPath := filepath.Join(GinkgoT().TempDir(), "application.yaml")
+			sc.RenderToFile(appPath, appTplPath, bindings)
 
 			// Run vela dry-run
-			output, err := runVelaDryRun(applicationPath, "cue/")
+			output, err := runVelaDryRun(appPath, "cue")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).NotTo(BeEmpty())
 
@@ -103,11 +107,13 @@ var _ = Describe("webservice component", func() {
 
 			// Check Service
 			service = findObjectByType[*corev1.Service](objs)
-			Expect(service).To(sc.MatchYAML("yaml/gateway/service.tpl.yaml", bindings))
+			Expect(service).To(sc.MatchYAML(
+				filepath.Join("yaml", "gateway", "service.tpl.yaml"), bindings))
 
 			// Check Ingress
 			ingress = findObjectByType[*v1beta1.Ingress](objs)
-			Expect(ingress).To(sc.MatchYAML("yaml/gateway/ingress.tpl.yaml", bindings))
+			Expect(ingress).To(sc.MatchYAML(
+				filepath.Join("yaml", "gateway", "ingress.tpl.yaml"), bindings))
 		},
 		Entry("renders Service and Ingress with port 80", 80),
 		Entry("renders Service and Ingress with port 443", 443),

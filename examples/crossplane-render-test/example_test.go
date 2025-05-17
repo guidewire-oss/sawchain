@@ -12,9 +12,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const (
-	compositionPath = "yaml/composition.yaml"
-	functionsPath   = "yaml/functions.yaml"
+var (
+	compositionPath = filepath.Join("yaml", "composition.yaml")
+	functionsPath   = filepath.Join("yaml", "functions.yaml")
 )
 
 var _ = Describe("fromYaml composition", func() {
@@ -28,8 +28,9 @@ var _ = Describe("fromYaml composition", func() {
 	DescribeTable("parsing dummy status from yamlBlob",
 		func(yamlBlob, expectedDummyStatus string) {
 			// Render input template
+			xrTplPath := filepath.Join("yaml", "xr.tpl.yaml")
 			xrPath := filepath.Join(GinkgoT().TempDir(), "xr.yaml")
-			sc.RenderToFile(xrPath, "yaml/xr.tpl.yaml", map[string]any{"yamlBlob": yamlBlob})
+			sc.RenderToFile(xrPath, xrTplPath, map[string]any{"yamlBlob": yamlBlob})
 
 			// Run crossplane render
 			output, err := runCrossplaneRender(xrPath, compositionPath, functionsPath)
