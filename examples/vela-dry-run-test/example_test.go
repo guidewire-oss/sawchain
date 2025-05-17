@@ -117,9 +117,9 @@ var _ = Describe("webservice component", func() {
 // HELPERS
 
 // runVelaDryRun runs `vela dry-run --offline` with given application and definition paths.
+// It returns the rendered YAML output or an error if the command fails.
 func runVelaDryRun(applicationPath, definitionPath string) (string, error) {
 	var stdout, stderr bytes.Buffer
-
 	cmd := exec.Command("vela", "dry-run", "--offline", "-f", applicationPath, "-d", definitionPath)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

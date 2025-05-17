@@ -70,7 +70,8 @@ key3: bar
 // HELPERS
 
 // runCrossplaneRender runs `crossplane render` with given XR, composition, functions,
-// and any number of --extra-resources files.
+// and any number of --extra-resources files. It returns the rendered YAML output
+// or an error if the command fails.
 func runCrossplaneRender(xrPath, compositionPath, functionsPath string, extraResources ...string) (string, error) {
 	args := []string{
 		"render",
