@@ -19,6 +19,7 @@ apiVersion: example.com/v1
 kind: Example
 metadata:
   name: example
+  namespace: default
 spec:
   string: ($stringValue)
   number: ($numberValue)
@@ -33,11 +34,12 @@ More advanced templating can be done using
 such as `concat`, `join`, `base64_encode`, and more.
 
 ```yaml
-apiVersion: v1
-kind: ConfigMap
+apiVersion: example.com/v1
+kind: Example
 metadata:
   name: example
-data:
+  namespace: default
+spec:
   concatenated: (concat($stringValue, '-suffix'))
   joined: (join('-', ['prefix', $stringValue, 'suffix']))
   encoded: (base64_encode($stringValue))
@@ -54,6 +56,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: example
+  namespace: default
 spec:
   selector:
     app: example
@@ -72,9 +75,44 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: example
+  namespace: default
 spec:
   # Assert replicas is between 1 and 4 (noninclusive)
   (replicas > `1` && replicas < `4`): true
+```
+
+### Matching Without Identity
+
+Omit `metadata.name` to match any resource in the namespace satisfying the expectations.
+
+```yaml
+apiVersion: example.com/v1
+kind: Example
+metadata:
+  namespace: default
+spec:
+  foo: bar
+```
+
+Omit `metadata.name` and `metadata.namespace` to match any resource in the cluster satisfying the expectations.
+
+```yaml
+apiVersion: example.com/v1
+kind: Example
+spec:
+  foo: bar
+```
+
+Label selectors can also be used to match resources when identity is unimportant/unknown.
+
+```yaml
+apiVersion: example.com/v1
+kind: Example
+metadata:
+  labels:
+    foo: bar
+spec:
+  bar: baz
 ```
 
 ### Filtering
@@ -86,6 +124,7 @@ apiVersion: example.com/v1
 kind: Example
 metadata:
   name: example
+  namespace: default
 status:
   # Filter conditions array to keep elements where type is 'Ready'
   # and assert there's a single element matching the filter
@@ -101,6 +140,7 @@ apiVersion: example.com/v1
 kind: Example
 metadata:
   name: example
+  namespace: default
 status:
   # Check multiple conditions with a single filter
   (conditions[?type == 'Ready' || type == 'Synced']):
@@ -123,6 +163,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: example
+  namespace: default
 spec:
   template:
     spec:
@@ -138,6 +179,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: example
+  namespace: default
 spec:
   template:
     spec:
@@ -153,11 +195,12 @@ More advanced assertions can be done using
 such as `length`, `contains`, `starts_with`, and more.
 
 ```yaml
-apiVersion: v1
-kind: ConfigMap
+apiVersion: example.com/v1
+kind: Example
 metadata:
   name: example
-data:
+  namespace: default
+spec:
   (length(key1)): 100
   (length(key1) <= `100`): true
   (contains(key2, $expectedSubstring)): true
