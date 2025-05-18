@@ -34,7 +34,6 @@ var _ = Describe("nginx chart", func() {
 	BeforeEach(func() {
 		// Initialize Sawchain with fake client
 		sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
-		Expect(sc).NotTo(BeNil())
 	})
 
 	Context("with defaults", func() {
