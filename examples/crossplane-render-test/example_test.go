@@ -25,6 +25,7 @@ var _ = Describe("fromYaml composition", func() {
 		sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
 	})
 
+	// Example using Chainsaw templates for input and expectations
 	DescribeTable("parsing dummy status from yamlBlob",
 		func(yamlBlob, expectedDummyStatus string) {
 			// Render input template

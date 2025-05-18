@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+// Example using static YAML files for input and expectations
 var _ = Describe("nginx chart", func() {
 	var (
 		chartPath = filepath.Join("charts", "nginx")
