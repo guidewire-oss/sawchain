@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/instance: ingress
+spec:
+  rules:
+    - host: "chart-example.local"
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ingress-nginx
+                port:
+                  number: 80

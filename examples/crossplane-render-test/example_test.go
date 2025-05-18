@@ -12,13 +12,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-var (
-	compositionPath = filepath.Join("yaml", "composition.yaml")
-	functionsPath   = filepath.Join("yaml", "functions.yaml")
-)
-
 var _ = Describe("fromYaml composition", func() {
-	var sc *sawchain.Sawchain
+	var (
+		compositionPath = filepath.Join("yaml", "composition.yaml")
+		functionsPath   = filepath.Join("yaml", "functions.yaml")
+
+		sc *sawchain.Sawchain
+	)
 
 	BeforeEach(func() {
 		// Initialize Sawchain with fake client

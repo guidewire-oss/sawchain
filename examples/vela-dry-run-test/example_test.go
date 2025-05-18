@@ -18,11 +18,11 @@ import (
 
 var _ = Describe("webservice component", func() {
 	var (
-		sc *sawchain.Sawchain
-
 		deployment *appsv1.Deployment
 		service    *corev1.Service
 		ingress    *v1beta1.Ingress
+
+		sc *sawchain.Sawchain
 	)
 
 	BeforeEach(func() {
