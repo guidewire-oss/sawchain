@@ -22,6 +22,7 @@ var _ = Describe("PodSet Webhooks", func() {
 		      image: test/app:v1
 	`
 
+	// Example using Chainsaw templates and saving to objects
 	Context("mutating PodSets", func() {
 		var podSet = &PodSet{}
 
@@ -53,6 +54,7 @@ var _ = Describe("PodSet Webhooks", func() {
 		})
 	})
 
+	// Example using Chainsaw templates without saving to objects
 	DescribeTable("validating PodSets",
 		func(invalidPodSetYaml, expectedErr string) {
 			// Test validation on create

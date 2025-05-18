@@ -63,8 +63,8 @@ var _ = Describe("nginx chart", func() {
 		})
 	})
 
-	Context("with deployment overrides", func() {
-		It("renders modified deployment", func() {
+	Context("with overrides", func() {
+		It("renders updated Deployment", func() {
 			// Run helm template
 			valuesPath := filepath.Join("yaml", "overrides", "values.yaml")
 			output, err := runHelmTemplate("overrides", chartPath, valuesPath)
@@ -81,8 +81,8 @@ var _ = Describe("nginx chart", func() {
 		})
 	})
 
-	Context("with ingress enabled", func() {
-		It("renders ingress resources", func() {
+	Context("with 'ingress' enabled", func() {
+		It("renders Ingress", func() {
 			// Run helm template
 			valuesPath := filepath.Join("yaml", "ingress", "values.yaml")
 			output, err := runHelmTemplate("ingress", chartPath, valuesPath)
@@ -99,8 +99,8 @@ var _ = Describe("nginx chart", func() {
 		})
 	})
 
-	Context("with autoscaling enabled", func() {
-		It("renders autoscaling resources", func() {
+	Context("with 'autoscaling' enabled", func() {
+		It("renders HPA", func() {
 			// Run helm template
 			valuesPath := filepath.Join("yaml", "autoscaling", "values.yaml")
 			output, err := runHelmTemplate("autoscaling", chartPath, valuesPath)

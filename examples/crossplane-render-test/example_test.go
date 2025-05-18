@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+// Example using Chainsaw templates for input and expectations
 var _ = Describe("fromYaml composition", func() {
 	var (
 		compositionPath = filepath.Join("yaml", "composition.yaml")
@@ -25,7 +26,6 @@ var _ = Describe("fromYaml composition", func() {
 		sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
 	})
 
-	// Example using Chainsaw templates for input and expectations
 	DescribeTable("parsing dummy status from yamlBlob",
 		func(yamlBlob, expectedDummyStatus string) {
 			// Render input template

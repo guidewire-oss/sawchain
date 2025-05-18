@@ -2,20 +2,21 @@ package example
 
 import (
 	"testing"
+	"time"
 
-	"github.com/guidewire-oss/sawchain"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-var (
-	k8sClient client.Client
-	sc        *sawchain.Sawchain
-)
+var k8sClient client.Client
 
 func TestHelmInstall(t *testing.T) {
+	SetDefaultEventuallyTimeout(5 * time.Second)
+	SetDefaultEventuallyPollingInterval(1 * time.Second)
+	SetDefaultConsistentlyDuration(5 * time.Second)
+	SetDefaultConsistentlyPollingInterval(1 * time.Second)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "helm install suite")
 }
@@ -26,7 +27,4 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	k8sClient, err = client.New(cfg, client.Options{})
 	Expect(err).NotTo(HaveOccurred())
-
-	// Initialize Sawchain
-	sc = sawchain.New(GinkgoTB(), k8sClient)
 })

@@ -9,6 +9,7 @@ import (
 	v1 "example/api/v1"
 )
 
+// Example using a combination of Chainsaw templates and objects
 var _ = Describe("PodSet Controller", Ordered, func() {
 	var (
 		sc     *sawchain.Sawchain
