@@ -18,7 +18,7 @@ APIs to simplify assertions, and more.
 ### Versatile
 
 * Allows working with YAML, or structs, or both
-* Provides high-level and low-level utilities for every scenario
+* Provides high-level and low-level utilities for a wide range of scenarios
 * Perfect for unit, integration, and end-to-end tests
 
 ### Compatible
@@ -109,7 +109,7 @@ err = sc.Create(ctx, obj, template)   // Create resource with single-document te
 err = sc.Create(ctx, objs)            // Create resources with objs
 err = sc.Create(ctx, objs, template)  // Create resources with multi-document template, save state to objs
 
-// Test validating webhook
+// Test webhook
 Expect(sc.Create(ctx, template)).NotTo(Succeed())
 
 // Create resources, assert success, and wait for client cache to sync
@@ -131,7 +131,7 @@ err = sc.Update(ctx, obj, template)   // Update resource with single-document te
 err = sc.Update(ctx, objs)            // Update resources with objs
 err = sc.Update(ctx, objs, template)  // Update resources with multi-document template, save state to objs
 
-// Test validating webhook
+// Test webhook
 Expect(sc.Update(ctx, template)).NotTo(Succeed())
 
 // Update resources, assert success, and wait for client cache to sync
@@ -151,7 +151,7 @@ err = sc.Delete(ctx, obj)             // Delete resource with obj
 err = sc.Delete(ctx, objs)            // Delete resources with objs
 err = sc.Delete(ctx, template)        // Delete resource(s) with template
 
-// Test validating webhook
+// Test webhook
 Expect(sc.Delete(ctx, template)).NotTo(Succeed())
 
 // Delete resources, assert success, and wait for client cache to sync
