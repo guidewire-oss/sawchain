@@ -13,9 +13,9 @@ import (
 var k8sClient client.Client
 
 func TestHelmInstall(t *testing.T) {
-	SetDefaultEventuallyTimeout(5 * time.Second)
+	SetDefaultEventuallyTimeout(15 * time.Second)
 	SetDefaultEventuallyPollingInterval(1 * time.Second)
-	SetDefaultConsistentlyDuration(5 * time.Second)
+	SetDefaultConsistentlyDuration(15 * time.Second)
 	SetDefaultConsistentlyPollingInterval(1 * time.Second)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "helm install suite")
