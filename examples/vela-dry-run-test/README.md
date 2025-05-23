@@ -8,6 +8,6 @@ Ensure you have the [KubeVela CLI](https://kubevela.io/docs/installation/kuberne
 
 ## References
 
-* KubeVela [webservice](https://kubevela.io/docs/end-user/components/references/#webservice) component
-* KubeVela [annotations](https://kubevela.io/docs/end-user/traits/references/#annotations) trait
-* KubeVela [gateway](https://kubevela.io/docs/end-user/traits/references/#gateway) trait
+* [KubeVela webservice component](https://kubevela.io/docs/end-user/components/references/#webservice)
+* [KubeVela annotations trait](https://kubevela.io/docs/end-user/traits/references/#annotations)
+* [KubeVela gateway trait](https://kubevela.io/docs/end-user/traits/references/#gateway)

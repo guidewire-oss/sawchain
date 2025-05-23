@@ -1,0 +1,18 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: website
+  namespace: default
+spec:
+  components:
+    - name: frontend
+      type: webservice
+      properties:
+        image: oamdev/testapp:v1
+        port: 8080
+      traits:
+        - type: gateway
+          properties:
+            domain: localhost
+            http:
+              "/": 8080

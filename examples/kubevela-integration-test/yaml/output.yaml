@@ -1,0 +1,85 @@
+# Example output YAML from vela dry-run command
+---
+# Application(website) -- Component(frontend)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app.oam.dev/appRevision: ""
+    app.oam.dev/component: frontend
+    app.oam.dev/name: website
+    app.oam.dev/namespace: default
+    app.oam.dev/resourceType: WORKLOAD
+    workload.oam.dev/type: webservice
+  name: frontend
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app.oam.dev/component: frontend
+  template:
+    metadata:
+      labels:
+        app.oam.dev/component: frontend
+        app.oam.dev/name: website
+    spec:
+      containers:
+        - image: oamdev/testapp:v1
+          name: frontend
+          ports:
+            - containerPort: 8080
+---
+## From the trait gateway
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  labels:
+    app.oam.dev/appRevision: ""
+    app.oam.dev/component: frontend
+    app.oam.dev/name: website
+    app.oam.dev/namespace: default
+    app.oam.dev/resourceType: TRAIT
+    trait.oam.dev/resource: ingress
+    trait.oam.dev/type: gateway
+  name: frontend
+  namespace: default
+spec:
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - backend:
+              service:
+                name: frontend
+                port:
+                  number: 8080
+            path: /
+            pathType: ImplementationSpecific
+---
+## From the trait gateway
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.oam.dev/appRevision: ""
+    app.oam.dev/component: frontend
+    app.oam.dev/name: website
+    app.oam.dev/namespace: default
+    app.oam.dev/resourceType: TRAIT
+    trait.oam.dev/resource: service
+    trait.oam.dev/type: gateway
+  name: frontend
+  namespace: default
+spec:
+  ports:
+    - name: port-8080
+      port: 8080
+      targetPort: 8080
+  selector:
+    app.oam.dev/component: frontend
+---
