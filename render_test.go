@@ -289,14 +289,14 @@ var _ = Describe("RenderSingle", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: ($missing_variable)
+				  name: ($missing_binding)
 				  namespace: default
 				`,
 				map[string]any{},
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
-				"variable not defined: $missing_variable",
+				"variable not defined: $missing_binding",
 			},
 		}),
 
@@ -725,7 +725,7 @@ var _ = Describe("RenderMultiple", func() {
 				apiVersion: v1
 				kind: ConfigMap
 				metadata:
-				  name: ($missing_variable)
+				  name: ($missing_binding)
 				  namespace: default
 				---
 				apiVersion: v1
@@ -738,7 +738,7 @@ var _ = Describe("RenderMultiple", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
-				"variable not defined: $missing_variable",
+				"variable not defined: $missing_binding",
 			},
 		}),
 
@@ -852,5 +852,414 @@ var _ = Describe("RenderMultiple", func() {
 	)
 })
 
-// TODO: test RenderToString
+var _ = Describe("RenderToString", func() {
+	type testCase struct {
+		globalBindings      map[string]any
+		template            string
+		bindings            []map[string]any
+		expectedYaml        string
+		expectedFailureLogs []string
+	}
+	DescribeTable("rendering templates to YAML strings",
+		func(tc testCase) {
+			// Initialize Sawchain
+			t := &MockT{TB: GinkgoTB()}
+			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.globalBindings)
+
+			// Test RenderToString
+			var returnedYaml string
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				returnedYaml = sc.RenderToString(tc.template, tc.bindings...)
+			}()
+			<-done
+
+			// Verify failure
+			if len(tc.expectedFailureLogs) > 0 {
+				Expect(t.Failed()).To(BeTrue(), "expected failure")
+				for _, expectedLog := range tc.expectedFailureLogs {
+					Expect(t.ErrorLogs).To(ContainElement(ContainSubstring(expectedLog)))
+				}
+			} else {
+				Expect(t.Failed()).To(BeFalse(), "expected no failure")
+			}
+
+			// Verify returned YAML
+			Expect(returnedYaml).To(MatchYAML(tc.expectedYaml), "incorrect returned YAML")
+		},
+
+		// Success cases - single resource
+		Entry("should render single ConfigMap template with bindings", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: ($namespace)
+				data:
+				  key: value
+				`,
+			bindings: []map[string]any{
+				{"name": "test-cm", "namespace": "default"},
+			},
+			expectedYaml: `apiVersion: v1
+data:
+  key: value
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+`,
+		}),
+
+		Entry("should render single ConfigMap template with global bindings", testCase{
+			globalBindings: map[string]any{"namespace": "test-ns"},
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: ($namespace)
+				data:
+				  key: value
+				`,
+			bindings: []map[string]any{
+				{"name": "test-cm"},
+			},
+			expectedYaml: `apiVersion: v1
+data:
+  key: value
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: test-ns
+`,
+		}),
+
+		Entry("should render single ConfigMap template with multiple binding maps", testCase{
+			globalBindings: map[string]any{"namespace": "test-ns"},
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: ($namespace)
+				data:
+				  key: ($value)
+				`,
+			bindings: []map[string]any{
+				{"name": "test-cm", "value": "first"},
+				{"value": "override"},
+			},
+			expectedYaml: `apiVersion: v1
+data:
+  key: override
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: test-ns
+`,
+		}),
+
+		Entry("should render single ConfigMap template without bindings", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				data:
+				  key: value
+				`,
+			expectedYaml: `apiVersion: v1
+data:
+  key: value
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+`,
+		}),
+
+		Entry("should render single custom resource template", testCase{
+			template: `
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr
+				  namespace: default
+				data: test-data
+				status:
+				  conditions: []
+				`,
+			expectedYaml: `apiVersion: example.com/v1
+data: test-data
+kind: TestResource
+metadata:
+  name: test-cr
+  namespace: default
+status:
+  conditions: []
+`,
+		}),
+
+		// Success cases - multiple resources
+		Entry("should render multiple ConfigMaps template with bindings", testCase{
+			globalBindings: map[string]any{"namespace": "default"},
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm1'))
+				  namespace: ($namespace)
+				data:
+				  key1: ($value1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm2'))
+				  namespace: ($namespace)
+				data:
+				  key2: ($value2)
+				`,
+			bindings: []map[string]any{
+				{"prefix": "test", "value1": "val1", "value2": "val2"},
+			},
+			expectedYaml: `apiVersion: v1
+data:
+  key1: val1
+kind: ConfigMap
+metadata:
+  name: test-cm1
+  namespace: default
+---
+apiVersion: v1
+data:
+  key2: val2
+kind: ConfigMap
+metadata:
+  name: test-cm2
+  namespace: default
+`,
+		}),
+
+		Entry("should render multiple ConfigMaps template with multiple binding maps", testCase{
+			globalBindings: map[string]any{"namespace": "test-ns"},
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm1'))
+				  namespace: ($namespace)
+				data:
+				  key1: ($value1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm2'))
+				  namespace: ($namespace)
+				data:
+				  key2: ($value2)
+				`,
+			bindings: []map[string]any{
+				{"prefix": "local", "value1": "first-value"},
+				{"value1": "override1", "value2": "override2"},
+			},
+			expectedYaml: `apiVersion: v1
+data:
+  key1: override1
+kind: ConfigMap
+metadata:
+  name: local-cm1
+  namespace: test-ns
+---
+apiVersion: v1
+data:
+  key2: override2
+kind: ConfigMap
+metadata:
+  name: local-cm2
+  namespace: test-ns
+`,
+		}),
+
+		Entry("should render multiple ConfigMaps template without bindings", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data:
+				  key1: value1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data:
+				  key2: value2
+				`,
+			expectedYaml: `apiVersion: v1
+data:
+  key1: value1
+kind: ConfigMap
+metadata:
+  name: test-cm1
+  namespace: default
+---
+apiVersion: v1
+data:
+  key2: value2
+kind: ConfigMap
+metadata:
+  name: test-cm2
+  namespace: default
+`,
+		}),
+
+		Entry("should render mixed resource types template", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm'))
+				  namespace: ($namespace)
+				data:
+				  key: ($value)
+				---
+				apiVersion: v1
+				kind: Secret
+				metadata:
+				  name: (concat($prefix, '-secret'))
+				  namespace: ($namespace)
+				type: Opaque
+				stringData:
+				  username: ($username)
+				  password: ($password)
+				`,
+			bindings: []map[string]any{
+				{"prefix": "test", "namespace": "default", "value": "value", "username": "admin", "password": "secret"},
+			},
+			expectedYaml: `apiVersion: v1
+data:
+  key: value
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-secret
+  namespace: default
+stringData:
+  password: secret
+  username: admin
+type: Opaque
+`,
+		}),
+
+		Entry("should render multiple custom resources template", testCase{
+			template: `
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr1
+				  namespace: default
+				data: test-data1
+				status:
+				  conditions: []
+				---
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr2
+				  namespace: default
+				data: test-data2
+				status:
+				  conditions: []
+				`,
+			expectedYaml: `apiVersion: example.com/v1
+data: test-data1
+kind: TestResource
+metadata:
+  name: test-cr1
+  namespace: default
+status:
+  conditions: []
+---
+apiVersion: example.com/v1
+data: test-data2
+kind: TestResource
+metadata:
+  name: test-cr2
+  namespace: default
+status:
+  conditions: []
+`,
+		}),
+
+		Entry("should handle empty template", testCase{
+			template:     "",
+			expectedYaml: "",
+		}),
+
+		// Error cases
+		Entry("should fail with invalid YAML syntax", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				 badindent: fail
+				`,
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"failed to sanitize template content",
+				"yaml: line 4: did not find expected key",
+			},
+		}),
+
+		Entry("should fail with missing binding variable", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($missing_binding)
+				  namespace: default
+				`,
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"variable not defined: $missing_binding",
+			},
+		}),
+
+		Entry("should fail with missing binding variable in multiple resources", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($missing_binding)
+				  namespace: default
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				`,
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"variable not defined: $missing_binding",
+			},
+		}),
+	)
+})
+
 // TODO: test RenderToFile
