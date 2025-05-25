@@ -361,6 +361,496 @@ var _ = Describe("RenderSingle", func() {
 	)
 })
 
-// TODO: test RenderMultiple
+var _ = Describe("RenderMultiple", func() {
+	type testCase struct {
+		globalBindings      map[string]any
+		methodArgs          []interface{}
+		expectedObjs        []client.Object
+		expectedFailureLogs []string
+	}
+	DescribeTable("rendering multiple objects",
+		func(tc testCase) {
+			// Initialize Sawchain
+			t := &MockT{TB: GinkgoTB()}
+			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.globalBindings)
+
+			// Test RenderMultiple
+			var returnedObjs []client.Object
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				returnedObjs = sc.RenderMultiple(tc.methodArgs...)
+			}()
+			<-done
+
+			// Verify failure
+			if len(tc.expectedFailureLogs) > 0 {
+				Expect(t.Failed()).To(BeTrue(), "expected failure")
+				for _, expectedLog := range tc.expectedFailureLogs {
+					Expect(t.ErrorLogs).To(ContainElement(ContainSubstring(expectedLog)))
+				}
+			} else {
+				Expect(t.Failed()).To(BeFalse(), "expected no failure")
+			}
+
+			if tc.expectedObjs != nil {
+				// Verify returned objects
+				Expect(returnedObjs).To(Equal(tc.expectedObjs), "incorrect returned objects")
+
+				// Verify provided objects
+				for _, arg := range tc.methodArgs {
+					if providedObjs, ok := util.AsSliceOfObjects(arg); ok {
+						Expect(providedObjs).To(Equal(tc.expectedObjs), "incorrect provided objects")
+						break
+					}
+				}
+			}
+		},
+		// Success cases - return mode
+		Entry("should render multiple ConfigMaps with template and bindings (return mode)", testCase{
+			globalBindings: map[string]any{"namespace": "default"},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm1'))
+				  namespace: ($namespace)
+				data:
+				  key1: ($value1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm2'))
+				  namespace: ($namespace)
+				data:
+				  key2: ($value2)
+				`,
+				map[string]any{"prefix": "test", "value1": "val1", "value2": "val2"},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "val1"}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "val2"}),
+			},
+		}),
+
+		Entry("should render multiple ConfigMaps with template and multiple binding maps (return mode)", testCase{
+			globalBindings: map[string]any{"namespace": "test-ns"},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm1'))
+				  namespace: ($namespace)
+				data:
+				  key1: ($value1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm2'))
+				  namespace: ($namespace)
+				data:
+				  key2: ($value2)
+				`,
+				map[string]any{"prefix": "local", "value1": "first-value"},
+				map[string]any{"value1": "override1", "value2": "override2"},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("local-cm1", "test-ns", map[string]string{"key1": "override1"}),
+				testutil.NewConfigMap("local-cm2", "test-ns", map[string]string{"key2": "override2"}),
+			},
+		}),
+
+		Entry("should return typed ConfigMaps when scheme supports them", testCase{
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data:
+				  key1: value1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data:
+				  key2: value2
+				`,
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "value1"}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
+			},
+		}),
+
+		Entry("should return unstructured objects when scheme doesn't support types", testCase{
+			methodArgs: []interface{}{
+				`
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr1
+				  namespace: default
+				data: test-data1
+				status:
+				  conditions: []
+				---
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr2
+				  namespace: default
+				data: test-data2
+				status:
+				  conditions: []
+				`,
+			},
+			expectedObjs: []client.Object{
+				testutil.NewUnstructuredTestResource("test-cr1", "default", "test-data1"),
+				testutil.NewUnstructuredTestResource("test-cr2", "default", "test-data2"),
+			},
+		}),
+
+		Entry("should render single resource as multiple", testCase{
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				data:
+				  key: value
+				`,
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm", "default", map[string]string{"key": "value"}),
+			},
+		}),
+
+		// Success cases - populate mode
+		Entry("should populate typed ConfigMaps slice", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data:
+				  key1: value1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data:
+				  key2: value2
+				`,
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "value1"}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
+			},
+		}),
+
+		Entry("should populate unstructured objects slice", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{
+					&unstructured.Unstructured{},
+					&unstructured.Unstructured{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data:
+				  key1: value1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data:
+				  key2: value2
+				`,
+			},
+			expectedObjs: []client.Object{
+				testutil.NewUnstructuredConfigMap("test-cm1", "default", map[string]string{"key1": "value1"}),
+				testutil.NewUnstructuredConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
+			},
+		}),
+
+		Entry("should populate with template and bindings", testCase{
+			globalBindings: map[string]any{"namespace": "test-ns"},
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm1'))
+				  namespace: ($namespace)
+				data:
+				  key1: ($value1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: (concat($prefix, '-cm2'))
+				  namespace: ($namespace)
+				data:
+				  key2: ($value2)
+				`,
+				map[string]any{"prefix": "test", "value1": "val1", "value2": "val2"},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "test-ns", map[string]string{"key1": "val1"}),
+				testutil.NewConfigMap("test-cm2", "test-ns", map[string]string{"key2": "val2"}),
+			},
+		}),
+
+		// Error cases
+		Entry("should fail with no arguments", testCase{
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"required argument(s) not provided: Template (string)",
+			},
+		}),
+
+		Entry("should fail with no template", testCase{
+			methodArgs: []interface{}{
+				map[string]any{"key": "value"},
+			},
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"required argument(s) not provided: Template (string)",
+			},
+		}),
+
+		Entry("should fail with multiple template arguments", testCase{
+			methodArgs: []interface{}{
+				"template1",
+				"template2",
+			},
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"multiple template arguments provided",
+			},
+		}),
+
+		Entry("should fail with multiple objects slice arguments", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{&corev1.ConfigMap{}},
+				[]client.Object{&corev1.ConfigMap{}},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				`,
+			},
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"multiple []client.Object arguments provided",
+			},
+		}),
+
+		Entry("should fail with invalid argument type", testCase{
+			methodArgs: []interface{}{
+				123,
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				`,
+			},
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"unexpected argument type: int",
+			},
+		}),
+
+		Entry("should fail with invalid YAML syntax", testCase{
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				 badindent: fail
+				`,
+			},
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"failed to sanitize template content",
+				"yaml: line 4: did not find expected key",
+			},
+		}),
+
+		Entry("should fail with empty template", testCase{
+			methodArgs: []interface{}{
+				"",
+			},
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"required argument(s) not provided: Template (string)",
+			},
+		}),
+
+		Entry("should fail with missing binding variable", testCase{
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($missing_variable)
+				  namespace: default
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				`,
+				map[string]any{},
+			},
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"variable not defined: $missing_variable",
+			},
+		}),
+
+		Entry("should fail with objects slice length mismatch (too few)", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data:
+				  key1: value1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data:
+				  key2: value2
+				`,
+			},
+			expectedFailureLogs: []string{
+				"objects slice length must match template resource count",
+			},
+		}),
+
+		Entry("should fail with objects slice length mismatch (too many)", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data:
+				  key1: value1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data:
+				  key2: value2
+				`,
+			},
+			expectedFailureLogs: []string{
+				"objects slice length must match template resource count",
+			},
+		}),
+
+		Entry("should fail with type mismatch in objects slice", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.Secret{}, // Wrong type
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data:
+				  key1: value1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data:
+				  key2: value2
+				`,
+			},
+			expectedFailureLogs: []string{
+				"failed to save state to object",
+				"destination object type *v1.Secret doesn't match source type",
+			},
+		}),
+
+		Entry("should fail with unknown GVK in template with typed objects", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: unknown.group/v1
+				kind: UnknownKind
+				metadata:
+				  name: test-unknown
+				  namespace: default
+				`,
+			},
+			expectedFailureLogs: []string{
+				"failed to save state to object",
+				"failed to convert source to typed object",
+				"no kind \"UnknownKind\" is registered for version \"unknown.group/v1\" in scheme",
+			},
+		}),
+	)
+})
+
 // TODO: test RenderToString
 // TODO: test RenderToFile
