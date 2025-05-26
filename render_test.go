@@ -1,6 +1,8 @@
 package sawchain_test
 
 import (
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -852,7 +854,7 @@ var _ = Describe("RenderMultiple", func() {
 	)
 })
 
-var _ = Describe("RenderToString", func() {
+var _ = Describe("RenderToString and RenderToFile", func() {
 	type testCase struct {
 		globalBindings      map[string]any
 		template            string
@@ -860,33 +862,76 @@ var _ = Describe("RenderToString", func() {
 		expectedYaml        string
 		expectedFailureLogs []string
 	}
-	DescribeTable("rendering templates to YAML strings",
+	DescribeTableSubtree("rendering templates to strings and files",
 		func(tc testCase) {
-			// Initialize Sawchain
-			t := &MockT{TB: GinkgoTB()}
-			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.globalBindings)
+			var (
+				t  *MockT
+				sc *sawchain.Sawchain
 
-			// Test RenderToString
-			var returnedYaml string
-			done := make(chan struct{})
-			go func() {
-				defer close(done)
-				returnedYaml = sc.RenderToString(tc.template, tc.bindings...)
-			}()
-			<-done
+				outputPath string
+			)
 
-			// Verify failure
-			if len(tc.expectedFailureLogs) > 0 {
-				Expect(t.Failed()).To(BeTrue(), "expected failure")
-				for _, expectedLog := range tc.expectedFailureLogs {
-					Expect(t.ErrorLogs).To(ContainElement(ContainSubstring(expectedLog)))
+			BeforeEach(func() {
+				// Initialize Sawchain
+				t = &MockT{TB: GinkgoTB()}
+				sc = sawchain.New(t, testutil.NewStandardFakeClient(), tc.globalBindings)
+
+				// Define output file path
+				outputPath = filepath.Join(GinkgoT().TempDir(), "output.yaml")
+			})
+
+			It("renders to a string", func() {
+				// Test RenderToString
+				var rendered string
+				done := make(chan struct{})
+				go func() {
+					defer close(done)
+					rendered = sc.RenderToString(tc.template, tc.bindings...)
+				}()
+				<-done
+
+				// Verify failure
+				if len(tc.expectedFailureLogs) > 0 {
+					Expect(t.Failed()).To(BeTrue(), "expected failure")
+					for _, expectedLog := range tc.expectedFailureLogs {
+						Expect(t.ErrorLogs).To(ContainElement(ContainSubstring(expectedLog)))
+					}
+				} else {
+					Expect(t.Failed()).To(BeFalse(), "expected no failure")
 				}
-			} else {
-				Expect(t.Failed()).To(BeFalse(), "expected no failure")
-			}
 
-			// Verify returned YAML
-			Expect(returnedYaml).To(MatchYAML(tc.expectedYaml), "incorrect returned YAML")
+				// Verify rendered YAML
+				Expect(rendered).To(MatchYAML(tc.expectedYaml), "incorrect rendered YAML")
+			})
+
+			It("renders to a file", func() {
+				// Test RenderToFile
+				done := make(chan struct{})
+				go func() {
+					defer close(done)
+					sc.RenderToFile(outputPath, tc.template, tc.bindings...)
+				}()
+				<-done
+
+				// Verify failure
+				if len(tc.expectedFailureLogs) > 0 {
+					Expect(t.Failed()).To(BeTrue(), "expected failure")
+					for _, expectedLog := range tc.expectedFailureLogs {
+						Expect(t.ErrorLogs).To(ContainElement(ContainSubstring(expectedLog)))
+					}
+				} else {
+					Expect(t.Failed()).To(BeFalse(), "expected no failure")
+				}
+
+				// Verify rendered YAML
+				rendered, err := util.ReadFileContent(outputPath)
+				if len(tc.expectedFailureLogs) > 0 {
+					Expect(err).To(HaveOccurred(), "expected file not to be created")
+				} else {
+					Expect(err).NotTo(HaveOccurred(), "failed to read YAML file")
+					Expect(rendered).To(MatchYAML(tc.expectedYaml), "incorrect rendered YAML")
+				}
+			})
 		},
 
 		// Success cases - single resource
@@ -1261,5 +1306,3 @@ status:
 		}),
 	)
 })
-
-// TODO: test RenderToFile
