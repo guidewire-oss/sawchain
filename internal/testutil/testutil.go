@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,6 +36,36 @@ func (t *TestResource) DeepCopyObject() runtime.Object {
 	data, _ := json.Marshal(t)
 	json.Unmarshal(data, copy)
 	return copy
+}
+
+// GetUnstructuredNestedStringMap retrieves a nested string map from an unstructured object
+func GetUnstructuredNestedStringMap(obj client.Object, fields ...string) (map[string]string, bool, error) {
+	u, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return nil, false, fmt.Errorf("object is not unstructured")
+	}
+
+	value, found, err := unstructured.NestedStringMap(u.Object, fields...)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return value, found, nil
+}
+
+// GetUnstructuredNestedString retrieves a nested string from an unstructured object
+func GetUnstructuredNestedString(obj client.Object, fields ...string) (string, bool, error) {
+	u, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return "", false, fmt.Errorf("object is not unstructured")
+	}
+
+	value, found, err := unstructured.NestedString(u.Object, fields...)
+	if err != nil {
+		return "", false, err
+	}
+
+	return value, found, nil
 }
 
 // CreateTempDir creates a temporary directory and returns its path.
