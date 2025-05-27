@@ -20,12 +20,7 @@ const (
 	fastInterval = 5 * time.Millisecond
 )
 
-var (
-	ctx = context.Background()
-
-	standardClient         = testutil.NewStandardFakeClient()
-	clientWithTestResource = testutil.NewStandardFakeClientWithTestResource()
-)
+var ctx = context.Background()
 
 func TestSawchain(t *testing.T) {
 	RegisterFailHandler(Fail)

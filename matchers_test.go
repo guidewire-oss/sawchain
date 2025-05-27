@@ -24,7 +24,7 @@ var _ = Describe("MatchYAML", func() {
 		func(tc testCase) {
 			// Initialize Sawchain
 			t := &MockT{TB: GinkgoTB()}
-			sc := sawchain.New(t, standardClient, tc.globalBindings)
+			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.globalBindings)
 
 			// Test MatchYAML
 			done := make(chan struct{})
@@ -326,6 +326,11 @@ var _ = Describe("HaveStatusCondition", func() {
 		expectedStatus      string
 		expectedFailureLogs []string
 	}
+
+	var (
+		standardClient         = testutil.NewStandardFakeClient()
+		clientWithTestResource = testutil.NewStandardFakeClientWithTestResource()
+	)
 
 	DescribeTable("checking object status conditions",
 		func(tc testCase) {
