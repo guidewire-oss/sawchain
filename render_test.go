@@ -21,6 +21,7 @@ var _ = Describe("RenderSingle", func() {
 		expectedObj         client.Object
 		expectedFailureLogs []string
 	}
+
 	DescribeTable("rendering single objects",
 		func(tc testCase) {
 			// Initialize Sawchain
@@ -370,6 +371,7 @@ var _ = Describe("RenderMultiple", func() {
 		expectedObjs        []client.Object
 		expectedFailureLogs []string
 	}
+
 	DescribeTable("rendering multiple objects",
 		func(tc testCase) {
 			// Initialize Sawchain
@@ -408,6 +410,7 @@ var _ = Describe("RenderMultiple", func() {
 				}
 			}
 		},
+
 		// Success cases - return mode
 		Entry("should render multiple ConfigMaps with template and bindings (return mode)", testCase{
 			globalBindings: map[string]any{"namespace": "default"},
