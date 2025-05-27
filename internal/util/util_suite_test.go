@@ -10,7 +10,6 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
-// Variables must be assigned inline to beat static Entry parsing!
 var (
 	tempDir        = testutil.CreateTempDir("util-test-")
 	emptyScheme    = testutil.NewEmptyScheme()
