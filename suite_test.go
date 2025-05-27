@@ -20,8 +20,12 @@ const (
 	fastInterval = 5 * time.Millisecond
 )
 
-// Variables must be assigned inline to beat static Entry parsing!
-var ctx = context.Background()
+var (
+	ctx = context.Background()
+
+	standardClient         = testutil.NewStandardFakeClient()
+	clientWithTestResource = testutil.NewStandardFakeClientWithTestResource()
+)
 
 func TestSawchain(t *testing.T) {
 	RegisterFailHandler(Fail)
