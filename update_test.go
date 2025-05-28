@@ -837,6 +837,17 @@ var _ = Describe("Update", func() {
 			},
 		}),
 
+		Entry("should fail with non-existent template file", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				"non-existent.yaml",
+			},
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"if using a file, ensure the file exists and the path is correct",
+			},
+		}),
+
 		Entry("should fail with invalid template", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -845,6 +856,7 @@ var _ = Describe("Update", func() {
 			expectedFailureLogs: []string{
 				"invalid arguments",
 				"failed to sanitize template content",
+				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
 			},
 		}),
@@ -862,6 +874,7 @@ var _ = Describe("Update", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"variable not defined: $missing",
 			},
 		}),
 
@@ -1809,6 +1822,17 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 		}),
 
+		Entry("should fail with non-existent template file", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				"non-existent.yaml",
+			},
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"if using a file, ensure the file exists and the path is correct",
+			},
+		}),
+
 		Entry("should fail with invalid template", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1817,6 +1841,7 @@ var _ = Describe("UpdateAndWait", func() {
 			expectedFailureLogs: []string{
 				"invalid arguments",
 				"failed to sanitize template content",
+				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
 			},
 		}),
@@ -1834,6 +1859,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"variable not defined: $missing",
 			},
 		}),
 

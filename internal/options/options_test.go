@@ -35,10 +35,13 @@ var _ = Describe("Options", func() {
 
 	Describe("ProcessTemplate", func() {
 		DescribeTable("processing templates",
-			func(template string, expectedContent string, expectedErr error) {
+			func(template string, expectedContent string, expectedErrs []string) {
 				content, err := options.ProcessTemplate(template)
-				if expectedErr != nil {
-					Expect(err).To(MatchError(expectedErr))
+				if len(expectedErrs) > 0 {
+					Expect(err).To(HaveOccurred())
+					for _, expectedErr := range expectedErrs {
+						Expect(err.Error()).To(ContainSubstring(expectedErr))
+					}
 					Expect(content).To(BeEmpty())
 				} else {
 					Expect(err).NotTo(HaveOccurred())
@@ -64,6 +67,39 @@ var _ = Describe("Options", func() {
 				"non-existent.yaml",
 				"non-existent.yaml",
 				nil,
+			),
+			Entry("with invalid YAML",
+				"invalid: yaml: [",
+				"",
+				[]string{
+					"failed to sanitize template content",
+					"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
+					"yaml: mapping values are not allowed in this context",
+				},
+			),
+			Entry("with inconsistent leading whitespace",
+				`
+				firstLine: startsWithTabs
+        secondLine: startsWithSpaces
+				`,
+				"",
+				[]string{
+					"failed to sanitize template content",
+					"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
+					"yaml: found character that cannot start any token",
+				},
+			),
+			Entry("with tab-indented YAML",
+				`
+				foo:
+					bar: baz
+				`,
+				"",
+				[]string{
+					"failed to sanitize template content",
+					"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
+					"yaml: line 2: found character that cannot start any token",
+				},
 			),
 		)
 	})

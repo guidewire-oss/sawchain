@@ -259,6 +259,17 @@ var _ = Describe("MatchYAML", func() {
 			},
 		}),
 
+		Entry("error on non-existent template file", testCase{
+			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+				"key1": "value1",
+			}),
+			template: "non-existent.yaml",
+			expectedFailureLogs: []string{
+				"failed to parse template",
+				"if using a file, ensure the file exists and the path is correct",
+			},
+		}),
+
 		Entry("error on invalid template", testCase{
 			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
 				"key1": "value1",
@@ -267,6 +278,7 @@ var _ = Describe("MatchYAML", func() {
 			expectedFailureLogs: []string{
 				"invalid arguments",
 				"failed to sanitize template content",
+				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
 			},
 		}),

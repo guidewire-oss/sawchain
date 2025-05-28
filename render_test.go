@@ -259,6 +259,16 @@ var _ = Describe("RenderSingle", func() {
 			},
 		}),
 
+		Entry("should fail with non-existent template file", testCase{
+			methodArgs: []interface{}{
+				"non-existent.yaml",
+			},
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"if using a file, ensure the file exists and the path is correct",
+			},
+		}),
+
 		Entry("should fail with invalid YAML syntax", testCase{
 			methodArgs: []interface{}{
 				`
@@ -272,6 +282,7 @@ var _ = Describe("RenderSingle", func() {
 			expectedFailureLogs: []string{
 				"invalid arguments",
 				"failed to sanitize template content",
+				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
 			},
 		}),
@@ -697,6 +708,16 @@ var _ = Describe("RenderMultiple", func() {
 			},
 		}),
 
+		Entry("should fail with non-existent template file", testCase{
+			methodArgs: []interface{}{
+				"non-existent.yaml",
+			},
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"if using a file, ensure the file exists and the path is correct",
+			},
+		}),
+
 		Entry("should fail with invalid YAML syntax", testCase{
 			methodArgs: []interface{}{
 				`
@@ -710,6 +731,7 @@ var _ = Describe("RenderMultiple", func() {
 			expectedFailureLogs: []string{
 				"invalid arguments",
 				"failed to sanitize template content",
+				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
 			},
 		}),
@@ -1259,6 +1281,14 @@ status:
 		}),
 
 		// Error cases
+		Entry("should fail with non-existent template file", testCase{
+			template: "non-existent.yaml",
+			expectedFailureLogs: []string{
+				"invalid template/bindings",
+				"if using a file, ensure the file exists and the path is correct",
+			},
+		}),
+
 		Entry("should fail with invalid YAML syntax", testCase{
 			template: `
 				apiVersion: v1
@@ -1270,6 +1300,7 @@ status:
 			expectedFailureLogs: []string{
 				"invalid arguments",
 				"failed to sanitize template content",
+				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
 			},
 		}),

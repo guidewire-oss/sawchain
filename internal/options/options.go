@@ -35,7 +35,7 @@ func ProcessTemplate(template string) (string, error) {
 		var err error
 		content, err = util.ReadFileContent(template)
 		if err != nil {
-			return "", fmt.Errorf("failed to read template file: %v", err)
+			return "", fmt.Errorf("failed to read template file: %w", err)
 		}
 	} else {
 		content = template
@@ -43,7 +43,9 @@ func ProcessTemplate(template string) (string, error) {
 	// Sanitize content
 	sanitized, err := util.PruneYAML(util.DeindentYAML(content))
 	if err != nil {
-		return "", fmt.Errorf("failed to sanitize template content: %v", err)
+		msg := "failed to sanitize template content"
+		tip := "ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)"
+		return "", fmt.Errorf("%s; %s: %w", msg, tip, err)
 	}
 	return sanitized, nil
 }

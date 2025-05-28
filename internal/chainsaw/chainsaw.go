@@ -39,7 +39,9 @@ func BindingsFromMap(m map[string]any) Bindings {
 func parseTemplate(templateContent string) ([]unstructured.Unstructured, error) {
 	objs, err := resource.Parse([]byte(templateContent), true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse template: %w", err)
+		msg := "failed to parse template"
+		tip := "if using a file, ensure the file exists and the path is correct"
+		return nil, fmt.Errorf("%s; %s: %w", msg, tip, err)
 	}
 	return objs, nil
 }

@@ -352,7 +352,8 @@ data:
 				bindings:     map[string]any{},
 				expectedObjs: nil,
 				expectedErrs: []string{
-					"failed to parse template:",
+					"failed to parse template",
+					"if using a file, ensure the file exists and the path is correct",
 					"did not find expected key",
 				},
 			}),
@@ -616,7 +617,8 @@ data:
 				bindings:    map[string]any{},
 				expectedObj: unstructured.Unstructured{},
 				expectedErrs: []string{
-					"failed to parse template:",
+					"failed to parse template",
+					"if using a file, ensure the file exists and the path is correct",
 					"did not find expected key",
 				},
 			}),
