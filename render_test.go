@@ -293,7 +293,7 @@ var _ = Describe("RenderSingle", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid arguments",
-				"required argument(s) not provided: Template (string)",
+				"template is empty after sanitization",
 			},
 		}),
 
@@ -742,7 +742,7 @@ var _ = Describe("RenderMultiple", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid arguments",
-				"required argument(s) not provided: Template (string)",
+				"template is empty after sanitization",
 			},
 		}),
 
@@ -1275,11 +1275,6 @@ status:
 `,
 		}),
 
-		Entry("should handle empty template", testCase{
-			template:     "",
-			expectedYaml: "",
-		}),
-
 		// Error cases
 		Entry("should fail with non-existent template file", testCase{
 			template: "non-existent.yaml",
@@ -1302,6 +1297,14 @@ status:
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
+			},
+		}),
+
+		Entry("should fail with empty template", testCase{
+			template: "",
+			expectedFailureLogs: []string{
+				"invalid arguments",
+				"template is empty after sanitization",
 			},
 		}),
 

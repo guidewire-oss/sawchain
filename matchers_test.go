@@ -309,7 +309,8 @@ var _ = Describe("MatchYAML", func() {
 				---
 			`,
 			expectedFailureLogs: []string{
-				"expected template to contain a single resource; found 0",
+				"invalid arguments",
+				"template is empty after sanitization",
 			},
 		}),
 
