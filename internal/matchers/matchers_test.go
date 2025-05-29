@@ -225,6 +225,15 @@ kind: ConfigMap
 				expectedInternalErr: "chainsawMatcher expects a client.Object but got string",
 			}),
 
+			Entry("error on non-existent template file", testCase{
+				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+					"key1": "value1",
+				}),
+				templateContent:     "non-existent.yaml",
+				bindings:            map[string]any{},
+				expectedInternalErr: "if using a file, ensure the file exists and the path is correct",
+			}),
+
 			Entry("error on invalid template", testCase{
 				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
 					"key1": "value1",

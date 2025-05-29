@@ -87,6 +87,7 @@ var _ = Describe("nginx chart", Ordered, func() {
 				`)).Should(Succeed())
 
 			// Check status condition
+			// Note: This can also be done in YAML using JMESPath syntax
 			Expect(deployment).To(sc.HaveStatusCondition("Available", "True"))
 		})
 
@@ -143,6 +144,7 @@ var _ = Describe("nginx chart", Ordered, func() {
 				`)).Should(Succeed())
 
 			// Check status condition
+			// Note: This can also be done in YAML using JMESPath syntax
 			Expect(deployment).To(sc.HaveStatusCondition("Available", "True"))
 		})
 	})
