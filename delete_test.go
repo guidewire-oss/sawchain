@@ -439,6 +439,7 @@ var _ = Describe("Delete", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing",
 			},
 		}),
@@ -917,6 +918,7 @@ var _ = Describe("DeleteAndWait", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing",
 			},
 			expectedDuration: fastTimeout,

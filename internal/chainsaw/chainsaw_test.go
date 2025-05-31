@@ -9,7 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
 var _ = Describe("Chainsaw", func() {
@@ -17,7 +18,7 @@ var _ = Describe("Chainsaw", func() {
 		DescribeTable("converting maps to bindings",
 			func(bindingsMap map[string]any) {
 				// Test BindingsFromMap
-				bindings := BindingsFromMap(bindingsMap)
+				bindings := chainsaw.BindingsFromMap(bindingsMap)
 				// Check bindings
 				if len(bindingsMap) == 0 {
 					Expect(bindings).To(Equal(apis.NewBindings()))
@@ -79,9 +80,9 @@ var _ = Describe("Chainsaw", func() {
 		DescribeTable("rendering templates into unstructured objects",
 			func(tc testCase) {
 				// Create bindings from map
-				bindings := BindingsFromMap(tc.bindings)
+				bindings := chainsaw.BindingsFromMap(tc.bindings)
 				// Test RenderTemplate
-				objs, err := RenderTemplate(context.Background(), tc.templateContent, bindings)
+				objs, err := chainsaw.RenderTemplate(context.Background(), tc.templateContent, bindings)
 				// Check error
 				if len(tc.expectedErrs) > 0 {
 					Expect(err).To(HaveOccurred())
@@ -369,7 +370,10 @@ data:
 `,
 				bindings:     map[string]any{},
 				expectedObjs: nil,
-				expectedErrs: []string{"variable not defined: $missing_binding"},
+				expectedErrs: []string{
+					"failed to render template",
+					"variable not defined: $missing_binding",
+				},
 			}),
 		)
 	})
@@ -385,9 +389,9 @@ data:
 		DescribeTable("rendering single-resource templates into unstructured objects",
 			func(tc testCase) {
 				// Create bindings from map
-				bindings := BindingsFromMap(tc.bindings)
+				bindings := chainsaw.BindingsFromMap(tc.bindings)
 				// Test RenderTemplateSingle
-				obj, err := RenderTemplateSingle(context.Background(), tc.templateContent, bindings)
+				obj, err := chainsaw.RenderTemplateSingle(context.Background(), tc.templateContent, bindings)
 				// Check error
 				if len(tc.expectedErrs) > 0 {
 					Expect(err).To(HaveOccurred())
@@ -576,7 +580,9 @@ data:
 				templateContent: ``,
 				bindings:        map[string]any{},
 				expectedObj:     unstructured.Unstructured{},
-				expectedErrs:    []string{"expected template to contain a single resource; found 0"},
+				expectedErrs: []string{
+					"expected template to contain a single resource; found 0",
+				},
 			}),
 			Entry("should fail on multiple resources", testCase{
 				templateContent: `
@@ -632,9 +638,12 @@ metadata:
 data:
   key1: value1
 `,
-				bindings:     map[string]any{},
-				expectedObj:  unstructured.Unstructured{},
-				expectedErrs: []string{"variable not defined: $missing_binding"},
+				bindings:    map[string]any{},
+				expectedObj: unstructured.Unstructured{},
+				expectedErrs: []string{
+					"failed to render template",
+					"variable not defined: $missing_binding",
+				},
 			}),
 		)
 	})
@@ -651,9 +660,9 @@ data:
 		DescribeTable("matching resources against expectations",
 			func(tc testCase) {
 				// Create bindings from map
-				bindings := BindingsFromMap(tc.bindings)
+				bindings := chainsaw.BindingsFromMap(tc.bindings)
 				// Test Match
-				match, err := Match(context.Background(), tc.candidates, tc.expected, bindings)
+				match, err := chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings)
 				// Check error
 				if len(tc.expectedErrs) > 0 {
 					Expect(err).To(HaveOccurred())
@@ -1153,14 +1162,16 @@ spec:
 					"namespace": "default",
 				},
 				"spec": map[string]interface{}{
-					"replicas": 3,
+					"replicas": int64(3),
 					"selector": map[string]interface{}{
 						"matchLabels": map[string]interface{}{
 							"app": "example",
 						},
 					},
+					"strategy": map[string]interface{}{},
 					"template": map[string]interface{}{
 						"metadata": map[string]interface{}{
+							"creationTimestamp": nil,
 							"labels": map[string]interface{}{
 								"app": "example",
 							},
@@ -1176,6 +1187,7 @@ spec:
 											"value": "production",
 										},
 									},
+									"resources": map[string]interface{}{},
 								},
 								map[string]interface{}{
 									"name":  "logger",
@@ -1186,6 +1198,7 @@ spec:
 											"value": "info",
 										},
 									},
+									"resources": map[string]interface{}{},
 								},
 								map[string]interface{}{
 									"name":  "sidecar",
@@ -1196,6 +1209,7 @@ spec:
 											"value": "enabled",
 										},
 									},
+									"resources": map[string]interface{}{},
 								},
 							},
 						},
@@ -1204,15 +1218,17 @@ spec:
 			},
 		}
 
-		DescribeTableSubtree("checking resources in the cluster",
+		DescribeTableSubtree("checking the cluster for matching resources",
 			func(tc testCase) {
-				var createdResources []unstructured.Unstructured
-				var bindings apis.Bindings
+				var (
+					createdResources []unstructured.Unstructured
+					bindings         apis.Bindings
+				)
 
 				BeforeEach(func() {
 					// Create resources if provided
 					if tc.resourcesYaml != "" {
-						resources, err := RenderTemplate(ctx, tc.resourcesYaml, nil)
+						resources, err := chainsaw.RenderTemplate(ctx, tc.resourcesYaml, nil)
 						Expect(err).NotTo(HaveOccurred(), "Failed to parse test resources")
 
 						createdResources = make([]unstructured.Unstructured, 0, len(resources))
@@ -1232,7 +1248,7 @@ spec:
 					}
 
 					// Create bindings
-					bindings = BindingsFromMap(tc.bindings)
+					bindings = chainsaw.BindingsFromMap(tc.bindings)
 				})
 
 				AfterEach(func() {
@@ -1253,7 +1269,7 @@ spec:
 
 				It("should check resources correctly", func() {
 					// Test Check
-					match, err := Check(k8sClient, ctx, tc.templateContent, bindings)
+					match, err := chainsaw.Check(k8sClient, ctx, tc.templateContent, bindings)
 
 					// Check error
 					if len(tc.expectedErrs) > 0 {
@@ -1266,24 +1282,12 @@ spec:
 					}
 
 					// Check match
-					// Exact equality isn't always possible due to generated fields
 					if len(tc.expectedErrs) > 0 {
 						Expect(match).To(Equal(tc.expectedMatch))
 					} else {
-						// Check GVK
-						Expect(match.GetAPIVersion()).To(Equal(tc.expectedMatch.GetAPIVersion()))
-						Expect(match.GetKind()).To(Equal(tc.expectedMatch.GetKind()))
-
-						// Check name and namespace
-						Expect(match.GetName()).To(Equal(tc.expectedMatch.GetName()))
-						Expect(match.GetNamespace()).To(Equal(tc.expectedMatch.GetNamespace()))
-
-						// Check ConfigMap data if applicable
-						if match.GetKind() == "ConfigMap" {
-							matchData, _, _ := unstructured.NestedMap(match.Object, "data")
-							expectedData, _, _ := unstructured.NestedMap(tc.expectedMatch.Object, "data")
-							Expect(matchData).To(Equal(expectedData))
-						}
+						matchIntent, err := testutil.UnstructuredIntent(k8sClient, &match)
+						Expect(err).NotTo(HaveOccurred(), "Failed to copy intent from match object")
+						Expect(matchIntent).To(Equal(tc.expectedMatch))
 					}
 				})
 			},
@@ -1332,9 +1336,6 @@ kind: ConfigMap
 metadata:
   name: test-check-partial
   namespace: default
-  labels:
-    app: test
-    environment: dev
 data:
   key1: value1
   key2: value2
@@ -1520,7 +1521,36 @@ data:
 `,
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
-				expectedErrs:  []string{"variable not defined: $missing_binding"},
+				expectedErrs: []string{
+					"failed to render template",
+					"variable not defined: $missing_binding",
+				},
+			}),
+			Entry("should fail on missing apiVersion", testCase{
+				resourcesYaml: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-check-missing-apiversion
+  namespace: default
+data:
+  key1: value1
+`,
+				templateContent: `
+kind: ConfigMap
+metadata:
+  name: test-check-missing-apiversion
+  namespace: default
+data:
+  key1: value1
+`,
+				bindings:      map[string]any{},
+				expectedMatch: unstructured.Unstructured{},
+				expectedErrs: []string{
+					"failed to list candidates",
+					"ensure template contains required fields",
+					"Object 'apiVersion' is missing",
+				},
 			}),
 			// Advanced check tests
 			Entry("should match with JMESPath boolean expression", testCase{
