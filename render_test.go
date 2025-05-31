@@ -53,7 +53,7 @@ var _ = Describe("RenderSingle", func() {
 
 				// Verify provided object
 				for _, arg := range tc.methodArgs {
-					if providedObj, ok := util.AsObject(arg); ok {
+					if providedObj, ok := arg.(client.Object); ok {
 						Expect(providedObj).To(Equal(tc.expectedObj), "incorrect provided object")
 						break
 					}
@@ -414,7 +414,7 @@ var _ = Describe("RenderMultiple", func() {
 
 				// Verify provided objects
 				for _, arg := range tc.methodArgs {
-					if providedObjs, ok := util.AsSliceOfObjects(arg); ok {
+					if providedObjs, ok := arg.([]client.Object); ok {
 						Expect(providedObjs).To(Equal(tc.expectedObjs), "incorrect provided objects")
 						break
 					}
@@ -887,6 +887,7 @@ var _ = Describe("RenderToString and RenderToFile", func() {
 		expectedYaml        string
 		expectedFailureLogs []string
 	}
+
 	DescribeTableSubtree("rendering templates to strings and files",
 		func(tc testCase) {
 			var (

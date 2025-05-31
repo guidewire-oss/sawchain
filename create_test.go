@@ -11,7 +11,6 @@ import (
 
 	"github.com/guidewire-oss/sawchain"
 	"github.com/guidewire-oss/sawchain/internal/testutil"
-	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
 var _ = Describe("Create", func() {
@@ -68,7 +67,7 @@ var _ = Describe("Create", func() {
 
 				// Verify resource state
 				for _, arg := range tc.methodArgs {
-					if obj, ok := util.AsObject(arg); ok {
+					if obj, ok := arg.(client.Object); ok {
 						Expect(intent(tc.client, obj)).To(Equal(intent(tc.client, tc.expectedObj)), "resource state not saved to provided object")
 						break
 					}
@@ -725,7 +724,7 @@ var _ = Describe("CreateAndWait", func() {
 
 				// Verify resource state
 				for _, arg := range tc.methodArgs {
-					if obj, ok := util.AsObject(arg); ok {
+					if obj, ok := arg.(client.Object); ok {
 						Expect(intent(tc.client, obj)).To(Equal(intent(tc.client, tc.expectedObj)), "resource state not saved to provided object")
 						break
 					}
