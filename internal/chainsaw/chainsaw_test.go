@@ -370,7 +370,10 @@ data:
 `,
 				bindings:     map[string]any{},
 				expectedObjs: nil,
-				expectedErrs: []string{"variable not defined: $missing_binding"},
+				expectedErrs: []string{
+					"failed to render template",
+					"variable not defined: $missing_binding",
+				},
 			}),
 		)
 	})
@@ -577,7 +580,9 @@ data:
 				templateContent: ``,
 				bindings:        map[string]any{},
 				expectedObj:     unstructured.Unstructured{},
-				expectedErrs:    []string{"expected template to contain a single resource; found 0"},
+				expectedErrs: []string{
+					"expected template to contain a single resource; found 0",
+				},
 			}),
 			Entry("should fail on multiple resources", testCase{
 				templateContent: `
@@ -633,9 +638,12 @@ metadata:
 data:
   key1: value1
 `,
-				bindings:     map[string]any{},
-				expectedObj:  unstructured.Unstructured{},
-				expectedErrs: []string{"variable not defined: $missing_binding"},
+				bindings:    map[string]any{},
+				expectedObj: unstructured.Unstructured{},
+				expectedErrs: []string{
+					"failed to render template",
+					"variable not defined: $missing_binding",
+				},
 			}),
 		)
 	})
@@ -1513,7 +1521,36 @@ data:
 `,
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
-				expectedErrs:  []string{"variable not defined: $missing_binding"},
+				expectedErrs: []string{
+					"failed to render template",
+					"variable not defined: $missing_binding",
+				},
+			}),
+			Entry("should fail on missing apiVersion", testCase{
+				resourcesYaml: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-check-missing-apiversion
+  namespace: default
+data:
+  key1: value1
+`,
+				templateContent: `
+kind: ConfigMap
+metadata:
+  name: test-check-missing-apiversion
+  namespace: default
+data:
+  key1: value1
+`,
+				bindings:      map[string]any{},
+				expectedMatch: unstructured.Unstructured{},
+				expectedErrs: []string{
+					"failed to list candidates",
+					"ensure template contains required fields",
+					"Object 'apiVersion' is missing",
+				},
 			}),
 			// Advanced check tests
 			Entry("should match with JMESPath boolean expression", testCase{

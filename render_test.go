@@ -310,6 +310,7 @@ var _ = Describe("RenderSingle", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
 		}),
@@ -765,6 +766,7 @@ var _ = Describe("RenderMultiple", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
 		}),
@@ -1319,6 +1321,7 @@ status:
 				`,
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
 		}),
@@ -1339,6 +1342,7 @@ status:
 				`,
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
 		}),

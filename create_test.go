@@ -583,6 +583,7 @@ var _ = Describe("Create", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing",
 			},
 		}),
@@ -1284,6 +1285,7 @@ var _ = Describe("CreateAndWait", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing",
 			},
 			expectedDuration: fastTimeout,

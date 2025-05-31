@@ -873,6 +873,7 @@ var _ = Describe("Update", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing",
 			},
 		}),
@@ -1858,6 +1859,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			expectedFailureLogs: []string{
 				"invalid template/bindings",
+				"failed to render template",
 				"variable not defined: $missing",
 			},
 		}),

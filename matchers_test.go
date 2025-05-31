@@ -325,6 +325,7 @@ var _ = Describe("MatchYAML", func() {
 				  name: ($missing)
 			`,
 			expectedFailureLogs: []string{
+				"failed to render template",
 				"variable not defined: $missing",
 			},
 		}),
