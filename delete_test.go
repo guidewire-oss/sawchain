@@ -386,7 +386,7 @@ var _ = Describe("Delete", func() {
 		Entry("should fail with no arguments", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 		}),
@@ -397,7 +397,7 @@ var _ = Describe("Delete", func() {
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"unexpected argument type: []string",
 			},
 		}),
@@ -408,7 +408,7 @@ var _ = Describe("Delete", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -419,7 +419,7 @@ var _ = Describe("Delete", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
@@ -438,7 +438,7 @@ var _ = Describe("Delete", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -453,7 +453,7 @@ var _ = Describe("Delete", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"client.Object and []client.Object arguments both provided",
 			},
 		}),
@@ -862,7 +862,7 @@ var _ = Describe("DeleteAndWait", func() {
 		Entry("should fail with no arguments", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 			expectedDuration: fastTimeout,
@@ -874,7 +874,7 @@ var _ = Describe("DeleteAndWait", func() {
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"unexpected argument type: []string",
 			},
 			expectedDuration: fastTimeout,
@@ -886,7 +886,7 @@ var _ = Describe("DeleteAndWait", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -897,7 +897,7 @@ var _ = Describe("DeleteAndWait", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
@@ -917,7 +917,7 @@ var _ = Describe("DeleteAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -936,7 +936,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] failed to delete with object",
+				sawchainPrefix, "failed to delete with object",
 				"simulated delete failure",
 			},
 			expectedDuration: fastTimeout,
@@ -954,7 +954,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] client cache not synced within timeout",
+				sawchainPrefix, "client cache not synced within timeout",
 				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,
@@ -976,7 +976,7 @@ var _ = Describe("DeleteAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] failed to delete with object",
+				sawchainPrefix, "failed to delete with object",
 				"simulated delete failure",
 			},
 			expectedDuration: fastTimeout,
@@ -998,7 +998,7 @@ var _ = Describe("DeleteAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] client cache not synced within timeout",
+				sawchainPrefix, "client cache not synced within timeout",
 				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,

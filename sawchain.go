@@ -158,7 +158,7 @@ func (s *Sawchain) checkNotFoundF(ctx context.Context, obj client.Object) func()
 func (s *Sawchain) convertReturnObject(unstructuredObj unstructured.Unstructured) client.Object {
 	// Convert to typed
 	if obj, err := util.TypedFromUnstructured(s.c, unstructuredObj); err != nil {
-		// Log error and return unstructured object
+		// Log warning and return unstructured object
 		s.t.Logf("%s: %v", infoFailedConvert, err)
 		return &unstructuredObj
 	} else {

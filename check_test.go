@@ -816,7 +816,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				map[string]any{"key": "value"},
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string)",
 			},
 		}),
@@ -827,7 +827,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				"",
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"template is empty after sanitization",
 			},
 		}),
@@ -844,7 +844,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
@@ -934,7 +934,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] single object insufficient for multi-resource template",
+				sawchainPrefix, "single object insufficient for multi-resource template",
 			},
 		}),
 
@@ -959,7 +959,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] objects slice length must match template resource count",
+				sawchainPrefix, "objects slice length must match template resource count",
 			},
 		}),
 
@@ -987,7 +987,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] failed to save state to object",
+				sawchainPrefix, "failed to save state to object",
 				"destination object type *v1.ConfigMap doesn't match source type *v1.Secret",
 			},
 		}),
@@ -1011,7 +1011,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[Sawchain] objects slice length must match template resource count",
+				sawchainPrefix, "objects slice length must match template resource count",
 			},
 		}),
 	)
