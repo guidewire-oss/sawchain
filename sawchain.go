@@ -16,30 +16,30 @@ import (
 )
 
 const (
-	errInvalidArgs        = "invalid arguments"
-	errInvalidTemplate    = "invalid template/bindings"
-	errObjectInsufficient = "single object insufficient for multi-resource template"
-	errObjectsWrongLength = "objects slice length must match template resource count"
+	errInvalidArgs        = "[Sawchain] invalid arguments"
+	errInvalidTemplate    = "[Sawchain] invalid template/bindings"
+	errObjectInsufficient = "[Sawchain] single object insufficient for multi-resource template"
+	errObjectsWrongLength = "[Sawchain] objects slice length must match template resource count"
 
-	errCacheNotSynced = "client cache not synced within timeout"
-	errFailedSave     = "failed to save state to object"
-	errFailedWrite    = "failed to write file"
+	errCacheNotSynced = "[Sawchain] client cache not synced within timeout"
+	errFailedSave     = "[Sawchain] failed to save state to object"
+	errFailedWrite    = "[Sawchain] failed to write file"
 
-	errFailedCreateWithObject   = "failed to create with object"
-	errFailedCreateWithTemplate = "failed to create with template"
-	errFailedDeleteWithObject   = "failed to delete with object"
-	errFailedDeleteWithTemplate = "failed to delete with template"
-	errFailedGetWithObject      = "failed to get with object"
-	errFailedGetWithTemplate    = "failed to get with template"
-	errFailedUpdateWithObject   = "failed to update with object"
-	errFailedUpdateWithTemplate = "failed to update with template"
-	errFailedMergePatch         = "failed to merge patch from template"
+	errFailedCreateWithObject   = "[Sawchain] failed to create with object"
+	errFailedCreateWithTemplate = "[Sawchain] failed to create with template"
+	errFailedDeleteWithObject   = "[Sawchain] failed to delete with object"
+	errFailedDeleteWithTemplate = "[Sawchain] failed to delete with template"
+	errFailedGetWithObject      = "[Sawchain] failed to get with object"
+	errFailedGetWithTemplate    = "[Sawchain] failed to get with template"
+	errFailedUpdateWithObject   = "[Sawchain] failed to update with object"
+	errFailedUpdateWithTemplate = "[Sawchain] failed to update with template"
+	errFailedMergePatch         = "[Sawchain] failed to merge patch from template"
 
-	errNilOpts             = "internal error: parsed options is nil"
-	errFailedMarshalObject = "internal error: failed to marshal object"
-	errCreatedMatcherIsNil = "internal error: created matcher is nil"
+	errNilOpts             = "[Sawchain] internal error: parsed options is nil"
+	errFailedMarshalObject = "[Sawchain] internal error: failed to marshal object"
+	errCreatedMatcherIsNil = "[Sawchain] internal error: created matcher is nil"
 
-	infoFailedConvert = "failed to convert return object to typed; returning unstructured instead"
+	infoFailedConvert = "[Sawchain] failed to convert return object to typed; returning unstructured instead"
 )
 
 // Sawchain provides utilities for K8s YAML-driven testing—powered by Chainsaw. It includes helpers to

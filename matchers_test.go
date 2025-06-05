@@ -276,7 +276,7 @@ var _ = Describe("MatchYAML", func() {
 			}),
 			template: `invalid: yaml: content`,
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				"[Sawchain] invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
@@ -309,7 +309,7 @@ var _ = Describe("MatchYAML", func() {
 				---
 			`,
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				"[Sawchain] invalid arguments",
 				"template is empty after sanitization",
 			},
 		}),
