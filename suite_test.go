@@ -18,6 +18,8 @@ import (
 const (
 	fastTimeout  = 100 * time.Millisecond
 	fastInterval = 5 * time.Millisecond
+
+	sawchainPrefix = "[Sawchain]"
 )
 
 var ctx = context.Background()

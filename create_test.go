@@ -530,7 +530,7 @@ var _ = Describe("Create", func() {
 		Entry("should fail with no arguments", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 		}),
@@ -541,7 +541,7 @@ var _ = Describe("Create", func() {
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"unexpected argument type: []string",
 			},
 		}),
@@ -552,7 +552,7 @@ var _ = Describe("Create", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -563,7 +563,7 @@ var _ = Describe("Create", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
@@ -582,7 +582,7 @@ var _ = Describe("Create", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -613,7 +613,7 @@ var _ = Describe("Create", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"objects slice length must match template resource count",
+				sawchainPrefix, "objects slice length must match template resource count",
 			},
 		}),
 
@@ -626,7 +626,7 @@ var _ = Describe("Create", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"client.Object and []client.Object arguments both provided",
 			},
 		}),
@@ -654,7 +654,7 @@ var _ = Describe("Create", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"key": "value"}),
 			},
 			expectedFailureLogs: []string{
-				"single object insufficient for multi-resource template",
+				sawchainPrefix, "single object insufficient for multi-resource template",
 			},
 		}),
 
@@ -673,7 +673,7 @@ var _ = Describe("Create", func() {
 				&corev1.Secret{},
 			},
 			expectedFailureLogs: []string{
-				"failed to save state to object",
+				sawchainPrefix, "failed to save state to object",
 				"destination object type *v1.Secret doesn't match source type *v1.ConfigMap",
 			},
 		}),
@@ -1229,7 +1229,7 @@ var _ = Describe("CreateAndWait", func() {
 		Entry("should fail with no arguments", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 			expectedDuration: fastTimeout,
@@ -1241,7 +1241,7 @@ var _ = Describe("CreateAndWait", func() {
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"unexpected argument type: []string",
 			},
 			expectedDuration: fastTimeout,
@@ -1253,7 +1253,7 @@ var _ = Describe("CreateAndWait", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -1264,7 +1264,7 @@ var _ = Describe("CreateAndWait", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
@@ -1284,7 +1284,7 @@ var _ = Describe("CreateAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -1300,7 +1300,8 @@ var _ = Describe("CreateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"key": "value"}),
 			},
 			expectedFailureLogs: []string{
-				"failed to create with object",
+				sawchainPrefix, "failed to create with object",
+				"simulated create failure",
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -1314,7 +1315,8 @@ var _ = Describe("CreateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"key": "value"}),
 			},
 			expectedFailureLogs: []string{
-				"client cache not synced within timeout",
+				sawchainPrefix, "client cache not synced within timeout",
+				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -1331,7 +1333,8 @@ var _ = Describe("CreateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"failed to create with object",
+				sawchainPrefix, "failed to create with object",
+				"simulated create failure",
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -1348,7 +1351,8 @@ var _ = Describe("CreateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"client cache not synced within timeout",
+				sawchainPrefix, "client cache not synced within timeout",
+				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -1378,7 +1382,7 @@ var _ = Describe("CreateAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"objects slice length must match template resource count",
+				sawchainPrefix, "objects slice length must match template resource count",
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -1392,7 +1396,7 @@ var _ = Describe("CreateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"client.Object and []client.Object arguments both provided",
 			},
 			expectedDuration: fastTimeout,
@@ -1421,7 +1425,7 @@ var _ = Describe("CreateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"key": "value"}),
 			},
 			expectedFailureLogs: []string{
-				"single object insufficient for multi-resource template",
+				sawchainPrefix, "single object insufficient for multi-resource template",
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -1441,7 +1445,7 @@ var _ = Describe("CreateAndWait", func() {
 				&corev1.Secret{},
 			},
 			expectedFailureLogs: []string{
-				"failed to save state to object",
+				sawchainPrefix, "failed to save state to object",
 				"destination object type *v1.Secret doesn't match source type *v1.ConfigMap",
 			},
 			expectedDuration: fastTimeout,

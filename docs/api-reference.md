@@ -32,7 +32,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...interface\{\}\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L50-L55>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L51-L56>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -47,7 +47,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L89>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L90>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...interface{}) *Sawchain

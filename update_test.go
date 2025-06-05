@@ -820,7 +820,7 @@ var _ = Describe("Update", func() {
 		Entry("should fail with no arguments", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 		}),
@@ -831,7 +831,7 @@ var _ = Describe("Update", func() {
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"unexpected argument type: []string",
 			},
 		}),
@@ -842,7 +842,7 @@ var _ = Describe("Update", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -853,7 +853,7 @@ var _ = Describe("Update", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
@@ -872,7 +872,7 @@ var _ = Describe("Update", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -907,7 +907,7 @@ var _ = Describe("Update", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"objects slice length must match template resource count",
+				sawchainPrefix, "objects slice length must match template resource count",
 			},
 		}),
 
@@ -924,7 +924,7 @@ var _ = Describe("Update", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"client.Object and []client.Object arguments both provided",
 			},
 		}),
@@ -956,7 +956,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedFailureLogs: []string{
-				"single object insufficient for multi-resource template",
+				sawchainPrefix, "single object insufficient for multi-resource template",
 			},
 		}),
 
@@ -978,7 +978,7 @@ var _ = Describe("Update", func() {
 				&corev1.Secret{},
 			},
 			expectedFailureLogs: []string{
-				"failed to save state to object",
+				sawchainPrefix, "failed to save state to object",
 				"destination object type *v1.Secret doesn't match source type *v1.ConfigMap",
 			},
 		}),
@@ -1806,7 +1806,7 @@ var _ = Describe("UpdateAndWait", func() {
 		Entry("should fail with no arguments", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 		}),
@@ -1817,7 +1817,7 @@ var _ = Describe("UpdateAndWait", func() {
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"unexpected argument type: []string",
 			},
 		}),
@@ -1828,7 +1828,7 @@ var _ = Describe("UpdateAndWait", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -1839,7 +1839,7 @@ var _ = Describe("UpdateAndWait", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
@@ -1858,7 +1858,7 @@ var _ = Describe("UpdateAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"invalid template/bindings",
+				sawchainPrefix, "invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -1876,6 +1876,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedFailureLogs: []string{
+				sawchainPrefix, "failed to update with object",
 				"simulated update failure",
 			},
 		}),
@@ -1892,6 +1893,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedFailureLogs: []string{
+				sawchainPrefix, "client cache not synced within timeout",
 				"simulated get failure",
 			},
 		}),
@@ -1912,6 +1914,7 @@ var _ = Describe("UpdateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
+				sawchainPrefix, "failed to update with object",
 				"simulated update failure",
 			},
 		}),
@@ -1932,6 +1935,7 @@ var _ = Describe("UpdateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
+				sawchainPrefix, "client cache not synced within timeout",
 				"simulated get failure",
 			},
 		}),
@@ -1965,7 +1969,7 @@ var _ = Describe("UpdateAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"objects slice length must match template resource count",
+				sawchainPrefix, "objects slice length must match template resource count",
 			},
 		}),
 
@@ -1982,7 +1986,7 @@ var _ = Describe("UpdateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"client.Object and []client.Object arguments both provided",
 			},
 		}),
@@ -2014,7 +2018,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedFailureLogs: []string{
-				"single object insufficient for multi-resource template",
+				sawchainPrefix, "single object insufficient for multi-resource template",
 			},
 		}),
 
@@ -2036,7 +2040,7 @@ var _ = Describe("UpdateAndWait", func() {
 				&corev1.Secret{},
 			},
 			expectedFailureLogs: []string{
-				"failed to save state to object",
+				sawchainPrefix, "failed to save state to object",
 				"destination object type *v1.Secret doesn't match source type *v1.ConfigMap",
 			},
 		}),
