@@ -23,7 +23,6 @@ const (
 
 	errCacheNotSynced = "client cache not synced within timeout"
 	errFailedSave     = "failed to save state to object"
-	errFailedConvert  = "failed to convert return object to typed"
 	errFailedWrite    = "failed to write file"
 
 	errFailedCreateWithObject   = "failed to create with object"
@@ -39,6 +38,8 @@ const (
 	errNilOpts             = "internal error: parsed options is nil"
 	errFailedMarshalObject = "internal error: failed to marshal object"
 	errCreatedMatcherIsNil = "internal error: created matcher is nil"
+
+	infoFailedConvert = "failed to convert return object to typed; returning unstructured instead"
 )
 
 // Sawchain provides utilities for K8s YAML-driven testing—powered by Chainsaw. It includes helpers to
@@ -157,8 +158,8 @@ func (s *Sawchain) checkNotFoundF(ctx context.Context, obj client.Object) func()
 func (s *Sawchain) convertReturnObject(unstructuredObj unstructured.Unstructured) client.Object {
 	// Convert to typed
 	if obj, err := util.TypedFromUnstructured(s.c, unstructuredObj); err != nil {
-		// Log warning and return unstructured object
-		s.t.Logf("%s: %v", errFailedConvert, err)
+		// Log error and return unstructured object
+		s.t.Logf("%s: %v", infoFailedConvert, err)
 		return &unstructuredObj
 	} else {
 		// Return typed object
