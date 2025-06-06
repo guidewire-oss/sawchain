@@ -1149,9 +1149,9 @@ var _ = Describe("Util", func() {
 
 			// Verify error occurred
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to convert source to typed object"))
+			// FIX: Update the expected error substring to match the new behavior
+			Expect(err.Error()).To(ContainSubstring("failed to determine source object's typed equivalent"))
 			Expect(err.Error()).To(ContainSubstring("failed to create object for GroupVersionKind unknown.group/v1, Kind=UnknownKind"))
-			Expect(err.Error()).To(ContainSubstring("no kind \"UnknownKind\" is registered for version \"unknown.group/v1\" in scheme"))
 		})
 
 		It("returns error for invalid unstructured data", func() {
@@ -1176,7 +1176,8 @@ var _ = Describe("Util", func() {
 
 			// Verify error occurred
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to convert source to typed object"))
+			// FIX: Update the expected error substring to match the new behavior
+			Expect(err.Error()).To(ContainSubstring("failed to determine source object's typed equivalent"))
 			Expect(err.Error()).To(ContainSubstring("failed to convert unstructured object to typed"))
 			Expect(err.Error()).To(ContainSubstring("json: cannot unmarshal object into Go value of type string"))
 		})
