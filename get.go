@@ -143,8 +143,16 @@ func (s *Sawchain) Get(ctx context.Context, args ...interface{}) error {
 		}
 
 		// Get resources
-		for _, unstructuredObj := range unstructuredObjs {
-			if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObj), &unstructuredObj); err != nil {
+		// FIX: Iterate by index to modify the slice elements in place.
+		// The previous `for _, unstructuredObj := range ...` syntax created a copy
+		// of the slice element in the `unstructuredObj` variable for each iteration.
+		// The s.c.Get call was populating this temporary copy, leaving the original
+		// `unstructuredObjs` slice unchanged and containing incomplete data.
+		// By using an index, we get a direct reference to the slice element
+		// (`&unstructuredObjs[i]`), ensuring it gets populated correctly.
+		for i := range unstructuredObjs {
+			// Pass a pointer to the slice element to populate it fully.
+			if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObjs[i]), &unstructuredObjs[i]); err != nil {
 				return err
 			}
 		}
@@ -206,8 +214,10 @@ func (s *Sawchain) GetFunc(ctx context.Context, args ...interface{}) func() erro
 
 		return func() error {
 			// Get resources
-			for _, unstructuredObj := range unstructuredObjs {
-				if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObj), &unstructuredObj); err != nil {
+			//FIX: Iterate by index to modify the slice in place.
+			for i := range unstructuredObjs {
+				// Pass a pointer to the slice element to populate it fully.
+				if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObjs[i]), &unstructuredObjs[i]); err != nil {
 					return err
 				}
 			}
