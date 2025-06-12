@@ -207,9 +207,8 @@ func (s *Sawchain) GetFunc(ctx context.Context, args ...interface{}) func() erro
 
 		return func() error {
 			// Get resources
-			//FIX: Iterate by index to modify the slice in place.
 			for i := range unstructuredObjs {
-				// Pass a pointer to the slice element to populate it fully.
+				// Pass pointer to slice element to save to outer scope
 				if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObjs[i]), &unstructuredObjs[i]); err != nil {
 					return err
 				}
