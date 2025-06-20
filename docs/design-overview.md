@@ -24,7 +24,7 @@ APIs to simplify assertions, and more.
 ### Compatible
 
 * Offers [Gomega](https://github.com/onsi/gomega)-friendly APIs for comprehensive assertions
-* Plugs into any framework implementing [testing.TB](https://pkg.go.dev/testing#TB), including [Gingko](https://github.com/onsi/ginkgo)
+* Plugs into any framework implementing [testing.TB](https://pkg.go.dev/testing#TB), including [Ginkgo](https://github.com/onsi/ginkgo)
 * Works with [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime)'s generic
   [Client](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Client) and
   [Object](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object) interfaces
