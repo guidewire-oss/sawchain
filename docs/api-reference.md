@@ -930,7 +930,7 @@ err := sc.Get(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.GetFunc"></a>
-### func \(\*Sawchain\) [GetFunc](<https://github.com/guidewire-oss/sawchain/blob/main/get.go#L184>)
+### func \(\*Sawchain\) [GetFunc](<https://github.com/guidewire-oss/sawchain/blob/main/get.go#L185>)
 
 ```go
 func (s *Sawchain) GetFunc(ctx context.Context, args ...interface{}) func() error
