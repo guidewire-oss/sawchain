@@ -39,7 +39,9 @@ func BindingsFromMap(m map[string]any) Bindings {
 func parseTemplate(templateContent string) ([]unstructured.Unstructured, error) {
 	objs, err := resource.Parse([]byte(templateContent), true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse template: %w", err)
+		msg := "failed to parse template"
+		tip := "if using a file, ensure the file exists and the path is correct"
+		return nil, fmt.Errorf("%s; %s: %w", msg, tip, err)
 	}
 	return objs, nil
 }
@@ -60,7 +62,7 @@ func RenderTemplate(
 		template := v1alpha1.NewProjection(obj.UnstructuredContent())
 		obj, err := templating.TemplateAndMerge(ctx, compilers, obj, bindings, template)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to render template: %w", err)
 		}
 		rendered = append(rendered, obj)
 	}
@@ -174,7 +176,9 @@ func Check(
 		if apierrors.IsNotFound(err) {
 			return unstructured.Unstructured{}, errors.New("actual resource not found")
 		}
-		return unstructured.Unstructured{}, err
+		msg := "failed to list candidates"
+		tip := "ensure template contains required fields"
+		return unstructured.Unstructured{}, fmt.Errorf("%s; %s: %w", msg, tip, err)
 	}
 	if len(candidates) == 0 {
 		return unstructured.Unstructured{}, errors.New("no actual resource found")

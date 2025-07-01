@@ -10,7 +10,6 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
-// Variables must be assigned inline to beat static Entry parsing!
 var (
 	ctx       = context.Background()
 	k8sClient = testutil.NewStandardFakeClient()

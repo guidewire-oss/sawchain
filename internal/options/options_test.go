@@ -35,10 +35,13 @@ var _ = Describe("Options", func() {
 
 	Describe("ProcessTemplate", func() {
 		DescribeTable("processing templates",
-			func(template string, expectedContent string, expectedErr error) {
+			func(template string, expectedContent string, expectedErrs []string) {
 				content, err := options.ProcessTemplate(template)
-				if expectedErr != nil {
-					Expect(err).To(MatchError(expectedErr))
+				if len(expectedErrs) > 0 {
+					Expect(err).To(HaveOccurred())
+					for _, expectedErr := range expectedErrs {
+						Expect(err.Error()).To(ContainSubstring(expectedErr))
+					}
 					Expect(content).To(BeEmpty())
 				} else {
 					Expect(err).NotTo(HaveOccurred())
@@ -55,15 +58,50 @@ var _ = Describe("Options", func() {
 				sanitizedTemplateContent,
 				nil,
 			),
-			Entry("with empty string",
-				"",
-				"",
-				nil,
-			),
 			Entry("with non-existent file",
 				"non-existent.yaml",
 				"non-existent.yaml",
 				nil,
+			),
+			Entry("with empty string",
+				"",
+				"",
+				[]string{
+					"template is empty after sanitization",
+				},
+			),
+			Entry("with invalid YAML",
+				"invalid: yaml: [",
+				"",
+				[]string{
+					"failed to sanitize template content",
+					"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
+					"yaml: mapping values are not allowed in this context",
+				},
+			),
+			Entry("with inconsistent leading whitespace",
+				`
+				firstLine: startsWithTabs
+        secondLine: startsWithSpaces
+				`,
+				"",
+				[]string{
+					"failed to sanitize template content",
+					"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
+					"yaml: found character that cannot start any token",
+				},
+			),
+			Entry("with tab-indented YAML",
+				`
+				foo:
+					bar: baz
+				`,
+				"",
+				[]string{
+					"failed to sanitize template content",
+					"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
+					"yaml: line 2: found character that cannot start any token",
+				},
 			),
 		)
 	})
@@ -217,6 +255,26 @@ var _ = Describe("Options", func() {
 				args:             []interface{}{123},
 				expectedOpts:     nil,
 				expectedErr:      errors.New("unexpected argument type: int"),
+			}),
+			Entry("error with zero duration", testCase{
+				defaults:         nil,
+				includeDurations: true,
+				includeObject:    false,
+				includeObjects:   false,
+				includeTemplate:  false,
+				args:             []interface{}{0 * time.Second},
+				expectedOpts:     nil,
+				expectedErr:      errors.New("provided duration is zero"),
+			}),
+			Entry("error with negative duration", testCase{
+				defaults:         nil,
+				includeDurations: true,
+				includeObject:    false,
+				includeObjects:   false,
+				includeTemplate:  false,
+				args:             []interface{}{-1 * time.Second},
+				expectedOpts:     nil,
+				expectedErr:      errors.New("provided duration is negative"),
 			}),
 			Entry("error with too many duration arguments", testCase{
 				defaults:         nil,

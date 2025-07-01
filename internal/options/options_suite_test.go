@@ -64,7 +64,6 @@ spec:
     - port: 80
       targetPort: 8080`
 
-// Variables must be assigned inline to beat static Entry parsing!
 var templateFilePath = testutil.CreateTempFile("template-*.yaml", templateContent)
 
 func TestOptions(t *testing.T) {

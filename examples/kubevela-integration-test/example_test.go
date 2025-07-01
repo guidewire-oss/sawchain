@@ -9,6 +9,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
+// Example using Chainsaw templates for input and expectations,
+// as well as HaveStatusCondition for convenience
 var _ = Describe("Gateway Trait", Ordered, func() {
 	var (
 		sc  *sawchain.Sawchain
@@ -60,6 +62,7 @@ var _ = Describe("Gateway Trait", Ordered, func() {
 			Eventually(checkDeployment).Should(Succeed())
 
 			// Check status condition
+			// Note: This can also be done in YAML using JMESPath syntax
 			Expect(deployment).To(sc.HaveStatusCondition("Available", "True"))
 		})
 

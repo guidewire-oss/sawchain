@@ -18,9 +18,10 @@ import (
 const (
 	fastTimeout  = 100 * time.Millisecond
 	fastInterval = 5 * time.Millisecond
+
+	sawchainPrefix = "[Sawchain]"
 )
 
-// Variables must be assigned inline to beat static Entry parsing!
 var ctx = context.Background()
 
 func TestSawchain(t *testing.T) {

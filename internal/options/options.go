@@ -35,7 +35,7 @@ func ProcessTemplate(template string) (string, error) {
 		var err error
 		content, err = util.ReadFileContent(template)
 		if err != nil {
-			return "", fmt.Errorf("failed to read template file: %v", err)
+			return "", fmt.Errorf("failed to read template file: %w", err)
 		}
 	} else {
 		content = template
@@ -43,7 +43,12 @@ func ProcessTemplate(template string) (string, error) {
 	// Sanitize content
 	sanitized, err := util.PruneYAML(util.DeindentYAML(content))
 	if err != nil {
-		return "", fmt.Errorf("failed to sanitize template content: %v", err)
+		msg := "failed to sanitize template content"
+		tip := "ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)"
+		return "", fmt.Errorf("%s; %s: %w", msg, tip, err)
+	}
+	if len(sanitized) == 0 {
+		return "", errors.New("template is empty after sanitization")
 	}
 	return sanitized, nil
 }
@@ -68,7 +73,11 @@ func parse(
 		if includeDurations {
 			// Check for Timeout and Interval
 			if d, ok := util.AsDuration(arg); ok {
-				if opts.Timeout != 0 && opts.Interval != 0 {
+				if d == 0 {
+					return nil, errors.New("provided duration is zero")
+				} else if d < 0 {
+					return nil, errors.New("provided duration is negative")
+				} else if opts.Timeout != 0 && opts.Interval != 0 {
 					return nil, errors.New("too many duration arguments provided")
 				} else if opts.Timeout == 0 {
 					opts.Timeout = d

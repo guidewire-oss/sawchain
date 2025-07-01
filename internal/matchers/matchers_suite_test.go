@@ -9,7 +9,6 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
-// Variables must be assigned inline to beat static Entry parsing!
 var (
 	standardClient         = testutil.NewStandardFakeClient()
 	clientWithTestResource = testutil.NewStandardFakeClientWithTestResource()
