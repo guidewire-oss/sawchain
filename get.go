@@ -143,8 +143,9 @@ func (s *Sawchain) Get(ctx context.Context, args ...interface{}) error {
 		}
 
 		// Get resources
-		for _, unstructuredObj := range unstructuredObjs {
-			if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObj), &unstructuredObj); err != nil {
+		for i := range unstructuredObjs {
+			// Pass pointer to slice element to save to outer scope
+			if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObjs[i]), &unstructuredObjs[i]); err != nil {
 				return err
 			}
 		}
@@ -206,8 +207,9 @@ func (s *Sawchain) GetFunc(ctx context.Context, args ...interface{}) func() erro
 
 		return func() error {
 			// Get resources
-			for _, unstructuredObj := range unstructuredObjs {
-				if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObj), &unstructuredObj); err != nil {
+			for i := range unstructuredObjs {
+				// Pass pointer to slice element to save to outer scope
+				if err := s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObjs[i]), &unstructuredObjs[i]); err != nil {
 					return err
 				}
 			}
