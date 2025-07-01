@@ -191,6 +191,28 @@ var _ = Describe("Get and GetFunc", func() {
 			},
 		}),
 
+		Entry("single resource with template string and multiple binding maps", testCase{
+			objs: []client.Object{
+				testutil.NewConfigMap("override-cm", "test-ns", map[string]string{"key": "override-value"}),
+			},
+			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
+			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: ($namespace)
+				data:
+				  key: ($value)
+				`,
+				map[string]any{"name": "override-cm", "value": "first-value"},
+				map[string]any{"value": "override-value"},
+			},
+			expectedObj: testutil.NewConfigMap("override-cm", "test-ns", map[string]string{"key": "override-value"}),
+		}),
+
 		Entry("single resource with template and save to typed object", testCase{
 			objs: []client.Object{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
