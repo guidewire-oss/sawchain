@@ -265,40 +265,31 @@ func CopyUnstructuredToObject(
 		return errors.New("destination object is nil")
 	}
 
-	// If the destination is also unstructured, just do a direct deep copy.
+	// Copy directly if destination is already unstructured
 	if dstUnstructured, ok := dst.(*unstructured.Unstructured); ok {
 		src.DeepCopyInto(dstUnstructured)
 		return nil
 	}
 
-	// --- START: NEW FIX ---
-	// Before attempting to copy data, first check if the types are compatible.
-	// We do this by converting the unstructured source to a typed object just for the comparison.
+	// Convert source to typed object
 	srcTyped, err := TypedFromUnstructured(c, src)
 	if err != nil {
-		// This can happen if the GVK is not in the scheme, which is a valid check.
-		return fmt.Errorf("failed to determine source object's typed equivalent: %w", err)
+		return fmt.Errorf("failed to convert source to typed object: %w", err)
 	}
 
-	// Now, compare the type of the source with the type of the destination object.
+	// Verify destination is the correct type
 	if reflect.TypeOf(dst) != reflect.TypeOf(srcTyped) {
-		// This returns the exact error message the test expects!
 		return fmt.Errorf("destination object type %T doesn't match source type %T", dst, srcTyped)
 	}
-	// --- END: NEW FIX ---
 
-	// If types match, proceed with the robust JSON-based copy.
-	bytes, err := src.MarshalJSON()
-	if err != nil {
-		return fmt.Errorf("failed to marshal source unstructured object to JSON: %w", err)
+	// Copy to destination using reflection
+	srcValue := reflect.ValueOf(srcTyped)
+	deepCopyMethod := srcValue.MethodByName("DeepCopyInto")
+	if !deepCopyMethod.IsValid() {
+		return fmt.Errorf("source object of type %T doesn't have DeepCopyInto method", srcTyped)
 	}
-
-	if err := json.Unmarshal(bytes, dst); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON into destination object: %w", err)
-	}
-
-	// The GVK gets lost during JSON unmarshaling, so we restore it.
-	dst.GetObjectKind().SetGroupVersionKind(src.GroupVersionKind())
+	args := []reflect.Value{reflect.ValueOf(dst)}
+	deepCopyMethod.Call(args)
 
 	return nil
 }
