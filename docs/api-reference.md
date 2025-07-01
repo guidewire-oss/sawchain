@@ -716,7 +716,7 @@ fetchedObjs := sc.FetchMultiple(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.FetchMultipleFunc"></a>
-### func \(\*Sawchain\) [FetchMultipleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L297>)
+### func \(\*Sawchain\) [FetchMultipleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L298>)
 
 ```go
 func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...interface{}) func() []client.Object
@@ -801,7 +801,7 @@ fetched := sc.FetchSingle(ctx, configMap, `
 ```
 
 <a name="Sawchain.FetchSingleFunc"></a>
-### func \(\*Sawchain\) [FetchSingleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L253>)
+### func \(\*Sawchain\) [FetchSingleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L254>)
 
 ```go
 func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...interface{}) func() client.Object

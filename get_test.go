@@ -191,6 +191,28 @@ var _ = Describe("Get and GetFunc", func() {
 			},
 		}),
 
+		Entry("single resource with template string and multiple binding maps", testCase{
+			objs: []client.Object{
+				testutil.NewConfigMap("override-cm", "test-ns", map[string]string{"key": "override-value"}),
+			},
+			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
+			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: ($namespace)
+				data:
+				  key: ($value)
+				`,
+				map[string]any{"name": "override-cm", "value": "first-value"},
+				map[string]any{"value": "override-value"},
+			},
+			expectedObj: testutil.NewConfigMap("override-cm", "test-ns", map[string]string{"key": "override-value"}),
+		}),
+
 		Entry("single resource with template and save to typed object", testCase{
 			objs: []client.Object{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
@@ -360,7 +382,7 @@ var _ = Describe("Get and GetFunc", func() {
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 		}),
@@ -372,7 +394,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				"invalid arguments",
+				sawchainPrefix, "invalid arguments",
 				"failed to sanitize template content",
 				"yaml: mapping values are not allowed in this context",
 			},
@@ -401,7 +423,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"single object insufficient for multi-resource template",
+				sawchainPrefix, "single object insufficient for multi-resource template",
 			},
 		}),
 
@@ -424,7 +446,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"objects slice length must match template resource count",
+				sawchainPrefix, "objects slice length must match template resource count",
 			},
 		}),
 
@@ -444,7 +466,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"failed to save state to object",
+				sawchainPrefix, "failed to save state to object",
 				"destination object type *testutil.TestResource doesn't match source type *v1.ConfigMap",
 			},
 		}),
