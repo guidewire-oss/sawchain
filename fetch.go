@@ -216,8 +216,9 @@ func (s *Sawchain) FetchMultiple(ctx context.Context, args ...interface{}) []cli
 		}
 
 		// Get resources
-		for _, unstructuredObj := range unstructuredObjs {
-			s.g.Expect(s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObj), &unstructuredObj)).To(gomega.Succeed(), errFailedGetWithTemplate)
+		for i := range unstructuredObjs {
+			// Pass pointer to slice element to save to outer scope
+			s.g.Expect(s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObjs[i]), &unstructuredObjs[i])).To(gomega.Succeed(), errFailedGetWithTemplate)
 		}
 
 		// Save/return objects
@@ -317,8 +318,9 @@ func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...interface{}) f
 
 		return func() []client.Object {
 			// Get resources
-			for _, unstructuredObj := range unstructuredObjs {
-				s.g.Expect(s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObj), &unstructuredObj)).To(gomega.Succeed(), errFailedGetWithTemplate)
+			for i := range unstructuredObjs {
+				// Pass pointer to slice element to save to outer scope
+				s.g.Expect(s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObjs[i]), &unstructuredObjs[i])).To(gomega.Succeed(), errFailedGetWithTemplate)
 			}
 
 			// Save/return objects
