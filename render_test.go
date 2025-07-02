@@ -181,7 +181,7 @@ var _ = Describe("RenderSingle", func() {
 		// Error cases
 		Entry("should fail with no arguments", testCase{
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"required argument(s) not provided: Template (string)",
 			},
 		}),
@@ -191,7 +191,7 @@ var _ = Describe("RenderSingle", func() {
 				map[string]any{"key": "value"},
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"required argument(s) not provided: Template (string)",
 			},
 		}),
@@ -202,7 +202,7 @@ var _ = Describe("RenderSingle", func() {
 				"template2",
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"multiple template arguments provided",
 			},
 		}),
@@ -220,7 +220,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"multiple client.Object arguments provided",
 			},
 		}),
@@ -237,7 +237,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"provided client.Object is nil or has a nil underlying value",
 			},
 		}),
@@ -254,7 +254,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"unexpected argument type: int",
 			},
 		}),
@@ -264,7 +264,7 @@ var _ = Describe("RenderSingle", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -280,7 +280,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
@@ -292,7 +292,7 @@ var _ = Describe("RenderSingle", func() {
 				"",
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"template is empty after sanitization",
 			},
 		}),
@@ -309,7 +309,7 @@ var _ = Describe("RenderSingle", func() {
 				map[string]any{},
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
@@ -332,7 +332,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"expected template to contain a single resource; found 2",
 			},
 		}),
@@ -351,7 +351,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "failed to save state to object",
+				"[SAWCHAIN][ERROR] failed to save state to object",
 				"destination object type *v1.Secret doesn't match source type *v1.ConfigMap",
 			},
 		}),
@@ -368,7 +368,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "failed to save state to object",
+				"[SAWCHAIN][ERROR] failed to save state to object",
 				"failed to convert source to typed object",
 				"no kind \"UnknownKind\" is registered for version \"unknown.group/v1\" in scheme",
 			},
@@ -648,7 +648,7 @@ var _ = Describe("RenderMultiple", func() {
 		// Error cases
 		Entry("should fail with no arguments", testCase{
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"required argument(s) not provided: Template (string)",
 			},
 		}),
@@ -658,7 +658,7 @@ var _ = Describe("RenderMultiple", func() {
 				map[string]any{"key": "value"},
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"required argument(s) not provided: Template (string)",
 			},
 		}),
@@ -669,7 +669,7 @@ var _ = Describe("RenderMultiple", func() {
 				"template2",
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"multiple template arguments provided",
 			},
 		}),
@@ -687,7 +687,7 @@ var _ = Describe("RenderMultiple", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"multiple []client.Object arguments provided",
 			},
 		}),
@@ -704,7 +704,7 @@ var _ = Describe("RenderMultiple", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"unexpected argument type: int",
 			},
 		}),
@@ -714,7 +714,7 @@ var _ = Describe("RenderMultiple", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -730,7 +730,7 @@ var _ = Describe("RenderMultiple", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
@@ -742,7 +742,7 @@ var _ = Describe("RenderMultiple", func() {
 				"",
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"template is empty after sanitization",
 			},
 		}),
@@ -765,7 +765,7 @@ var _ = Describe("RenderMultiple", func() {
 				map[string]any{},
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
@@ -795,7 +795,7 @@ var _ = Describe("RenderMultiple", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "objects slice length must match template resource count",
+				"[SAWCHAIN][ERROR] objects slice length must match template resource count",
 			},
 		}),
 
@@ -825,7 +825,7 @@ var _ = Describe("RenderMultiple", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "objects slice length must match template resource count",
+				"[SAWCHAIN][ERROR] objects slice length must match template resource count",
 			},
 		}),
 
@@ -854,7 +854,7 @@ var _ = Describe("RenderMultiple", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "failed to save state to object",
+				"[SAWCHAIN][ERROR] failed to save state to object",
 				"destination object type *v1.Secret doesn't match source type",
 			},
 		}),
@@ -873,7 +873,7 @@ var _ = Describe("RenderMultiple", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "failed to save state to object",
+				"[SAWCHAIN][ERROR] failed to save state to object",
 				"failed to convert source to typed object",
 				"no kind \"UnknownKind\" is registered for version \"unknown.group/v1\" in scheme",
 			},
@@ -1282,7 +1282,7 @@ status:
 		Entry("should fail with non-existent template file", testCase{
 			template: "non-existent.yaml",
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -1296,7 +1296,7 @@ status:
 				 badindent: fail
 				`,
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: line 4: did not find expected key",
@@ -1306,7 +1306,7 @@ status:
 		Entry("should fail with empty template", testCase{
 			template: "",
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"template is empty after sanitization",
 			},
 		}),
@@ -1320,7 +1320,7 @@ status:
 				  namespace: default
 				`,
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
@@ -1341,7 +1341,7 @@ status:
 				  namespace: default
 				`,
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},

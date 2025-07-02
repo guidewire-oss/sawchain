@@ -382,7 +382,7 @@ var _ = Describe("Get and GetFunc", func() {
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"required argument(s) not provided: Template (string), Object (client.Object), or Objects ([]client.Object)",
 			},
 		}),
@@ -394,7 +394,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"failed to sanitize template content",
 				"yaml: mapping values are not allowed in this context",
 			},
@@ -423,7 +423,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "single object insufficient for multi-resource template",
+				"[SAWCHAIN][ERROR] single object insufficient for multi-resource template",
 			},
 		}),
 
@@ -446,7 +446,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "objects slice length must match template resource count",
+				"[SAWCHAIN][ERROR] objects slice length must match template resource count",
 			},
 		}),
 
@@ -466,7 +466,7 @@ var _ = Describe("Get and GetFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "failed to save state to object",
+				"[SAWCHAIN][ERROR] failed to save state to object",
 				"destination object type *testutil.TestResource doesn't match source type *v1.ConfigMap",
 			},
 		}),

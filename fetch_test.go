@@ -213,7 +213,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"required argument(s) not provided: Template (string) or Object (client.Object)",
 			},
 		}),
@@ -225,7 +225,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"failed to sanitize template content",
 				"yaml: mapping values are not allowed in this context",
 			},
@@ -254,7 +254,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template/bindings",
 				"expected template to contain a single resource; found 2",
 			},
 		}),
@@ -275,7 +275,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "failed to save state to object",
+				"[SAWCHAIN][ERROR] failed to save state to object",
 				"destination object type *testutil.TestResource doesn't match source type *v1.ConfigMap",
 			},
 		}),
@@ -292,7 +292,8 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "simulated get failure",
+				"[SAWCHAIN][ERROR] failed to get with object",
+				"simulated get failure",
 			},
 		}),
 
@@ -303,7 +304,8 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("non-existent", "default", nil),
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "not found",
+				"[SAWCHAIN][ERROR] failed to get with object",
+				"not found",
 			},
 		}),
 	)
@@ -593,7 +595,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"required argument(s) not provided: Template (string) or Objects ([]client.Object)",
 			},
 		}),
@@ -605,7 +607,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "invalid arguments",
+				"[SAWCHAIN][ERROR] invalid arguments",
 				"failed to sanitize template content",
 				"yaml: mapping values are not allowed in this context",
 			},
@@ -630,7 +632,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "objects slice length must match template resource count",
+				"[SAWCHAIN][ERROR] objects slice length must match template resource count",
 			},
 		}),
 
@@ -660,7 +662,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "failed to save state to object",
+				"[SAWCHAIN][ERROR] failed to save state to object",
 				"destination object type *testutil.TestResource doesn't match source type *v1.ConfigMap",
 			},
 		}),
@@ -681,7 +683,8 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "simulated get failure",
+				"[SAWCHAIN][ERROR] failed to get with object",
+				"simulated get failure",
 			},
 		}),
 
@@ -697,7 +700,8 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				sawchainPrefix, "not found",
+				"[SAWCHAIN][ERROR] failed to get with object",
+				"not found",
 			},
 		}),
 	)
