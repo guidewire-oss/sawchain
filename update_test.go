@@ -1893,7 +1893,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] client cache not synced within timeout",
+				"[SAWCHAIN][ERROR] update not reflected within timeout (client cache sync delay)",
 				"simulated get failure",
 			},
 		}),
@@ -1935,7 +1935,7 @@ var _ = Describe("UpdateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] client cache not synced within timeout",
+				"[SAWCHAIN][ERROR] update not reflected within timeout (client cache sync delay)",
 				"simulated get failure",
 			},
 		}),

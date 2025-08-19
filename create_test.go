@@ -1315,7 +1315,7 @@ var _ = Describe("CreateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"key": "value"}),
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] client cache not synced within timeout",
+				"[SAWCHAIN][ERROR] create not reflected within timeout (client cache sync delay)",
 				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,
@@ -1351,7 +1351,7 @@ var _ = Describe("CreateAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] client cache not synced within timeout",
+				"[SAWCHAIN][ERROR] create not reflected within timeout (client cache sync delay)",
 				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,
