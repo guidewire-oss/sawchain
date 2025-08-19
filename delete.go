@@ -224,7 +224,7 @@ func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{}) {
 			s.g.Expect(s.c.Delete(ctx, &unstructuredObj)).To(gomega.Succeed(), errFailedDeleteWithTemplate)
 		}
 
-		// Wait for cache to sync
+		// Wait for delete to be reflected
 		checkAll := func() error {
 			for i := range unstructuredObjs {
 				// Use index to update object in outer scope
@@ -234,20 +234,20 @@ func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{}) {
 			}
 			return nil
 		}
-		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errDeleteNotReflected)
 	} else if opts.Object != nil {
 		// Delete resource
 		s.g.Expect(s.c.Delete(ctx, opts.Object)).To(gomega.Succeed(), errFailedDeleteWithObject)
 
-		// Wait for cache to sync
-		s.g.Eventually(s.checkNotFoundF(ctx, opts.Object), opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		// Wait for delete to be reflected
+		s.g.Eventually(s.checkNotFoundF(ctx, opts.Object), opts.Timeout, opts.Interval).Should(gomega.Succeed(), errDeleteNotReflected)
 	} else {
 		// Delete resources
 		for _, obj := range opts.Objects {
 			s.g.Expect(s.c.Delete(ctx, obj)).To(gomega.Succeed(), errFailedDeleteWithObject)
 		}
 
-		// Wait for cache to sync
+		// Wait for delete to be reflected
 		checkAll := func() error {
 			for _, obj := range opts.Objects {
 				if err := s.checkNotFound(ctx, obj); err != nil {
@@ -256,6 +256,6 @@ func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{}) {
 			}
 			return nil
 		}
-		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errDeleteNotReflected)
 	}
 }

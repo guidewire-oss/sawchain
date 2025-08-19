@@ -402,7 +402,7 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 			s.g.Expect(s.c.Update(ctx, &unstructuredObjs[i])).To(gomega.Succeed(), errFailedUpdateWithTemplate)
 		}
 
-		// Wait for cache to sync
+		// Wait for update to be reflected
 		updatedResourceVersions := make([]string, len(unstructuredObjs))
 		for i := range unstructuredObjs {
 			updatedResourceVersions[i] = unstructuredObjs[i].GetResourceVersion()
@@ -416,7 +416,7 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 			}
 			return nil
 		}
-		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errUpdateNotReflected)
 
 		// Save objects
 		if opts.Object != nil {
@@ -430,17 +430,17 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 		// Update resource
 		s.g.Expect(s.c.Update(ctx, opts.Object)).To(gomega.Succeed(), errFailedUpdateWithObject)
 
-		// Wait for cache to sync
+		// Wait for update to be reflected
 		updatedResourceVersion := opts.Object.GetResourceVersion()
 		s.g.Eventually(s.checkResourceVersionF(ctx, opts.Object, updatedResourceVersion),
-			opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+			opts.Timeout, opts.Interval).Should(gomega.Succeed(), errUpdateNotReflected)
 	} else {
 		// Update resources
 		for _, obj := range opts.Objects {
 			s.g.Expect(s.c.Update(ctx, obj)).To(gomega.Succeed(), errFailedUpdateWithObject)
 		}
 
-		// Wait for cache to sync
+		// Wait for update to be reflected
 		updatedResourceVersions := make([]string, len(opts.Objects))
 		for i := range opts.Objects {
 			updatedResourceVersions[i] = opts.Objects[i].GetResourceVersion()
@@ -453,6 +453,6 @@ func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
 			}
 			return nil
 		}
-		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		s.g.Eventually(checkAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errUpdateNotReflected)
 	}
 }

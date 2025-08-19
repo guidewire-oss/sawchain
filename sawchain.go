@@ -25,9 +25,11 @@ const (
 	errObjectInsufficient = prefixErr + "single object insufficient for multi-resource template"
 	errObjectsWrongLength = prefixErr + "objects slice length must match template resource count"
 
-	errCacheNotSynced = prefixErr + "client cache not synced within timeout"
-	errFailedSave     = prefixErr + "failed to save state to object"
-	errFailedWrite    = prefixErr + "failed to write file"
+	errCreateNotReflected = prefixErr + "create not reflected within timeout (client cache sync delay)"
+	errUpdateNotReflected = prefixErr + "update not reflected within timeout (client cache sync delay)"
+	errDeleteNotReflected = prefixErr + "delete not reflected within timeout (may be due to finalizers or client cache sync delay)"
+	errFailedSave         = prefixErr + "failed to save state to object"
+	errFailedWrite        = prefixErr + "failed to write file"
 
 	errFailedCreateWithObject   = prefixErr + "failed to create with object"
 	errFailedCreateWithTemplate = prefixErr + "failed to create with template"

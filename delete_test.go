@@ -954,7 +954,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] client cache not synced within timeout",
+				"[SAWCHAIN][ERROR] delete not reflected within timeout (may be due to finalizers or client cache sync delay)",
 				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,
@@ -998,7 +998,7 @@ var _ = Describe("DeleteAndWait", func() {
 				},
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] client cache not synced within timeout",
+				"[SAWCHAIN][ERROR] delete not reflected within timeout (may be due to finalizers or client cache sync delay)",
 				"simulated get failure",
 			},
 			expectedDuration: fastTimeout,

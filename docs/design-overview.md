@@ -112,7 +112,7 @@ err = sc.Create(ctx, objs, template)  // Create resources with multi-document te
 // Test webhook
 Expect(sc.Create(ctx, template)).NotTo(Succeed())
 
-// Create resources, assert success, and wait for client cache to sync
+// Create resources, assert success, and wait for client to reflect changes
 sc.CreateAndWait(ctx, obj)             // Create resource with obj
 sc.CreateAndWait(ctx, template)        // Create resource(s) with template, don't save state
 sc.CreateAndWait(ctx, obj, template)   // Create resource with single-document template, save state to obj
@@ -134,7 +134,7 @@ err = sc.Update(ctx, objs, template)  // Update resources with multi-document te
 // Test webhook
 Expect(sc.Update(ctx, template)).NotTo(Succeed())
 
-// Update resources, assert success, and wait for client cache to sync
+// Update resources, assert success, and wait for client to reflect changes
 sc.UpdateAndWait(ctx, obj)             // Update resource with obj
 sc.UpdateAndWait(ctx, template)        // Update resource(s) with template, don't save state
 sc.UpdateAndWait(ctx, obj, template)   // Update resource with single-document template, save state to obj
@@ -154,7 +154,7 @@ err = sc.Delete(ctx, template)        // Delete resource(s) with template
 // Test webhook
 Expect(sc.Delete(ctx, template)).NotTo(Succeed())
 
-// Delete resources, assert success, and wait for client cache to sync
+// Delete resources, assert success, and wait for client to reflect changes
 sc.DeleteAndWait(ctx, obj)             // Delete resource with obj
 sc.DeleteAndWait(ctx, objs)            // Delete resources with objs
 sc.DeleteAndWait(ctx, template)        // Delete resource(s) with template

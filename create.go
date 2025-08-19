@@ -350,7 +350,7 @@ func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{}) {
 			s.g.Expect(s.c.Create(ctx, &unstructuredObj)).To(gomega.Succeed(), errFailedCreateWithTemplate)
 		}
 
-		// Wait for cache to sync
+		// Wait for create to be reflected
 		getAll := func() error {
 			for i := range unstructuredObjs {
 				// Use index to update object in outer scope
@@ -360,7 +360,7 @@ func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{}) {
 			}
 			return nil
 		}
-		s.g.Eventually(getAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		s.g.Eventually(getAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCreateNotReflected)
 
 		// Save objects
 		if opts.Object != nil {
@@ -374,15 +374,15 @@ func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{}) {
 		// Create resource
 		s.g.Expect(s.c.Create(ctx, opts.Object)).To(gomega.Succeed(), errFailedCreateWithObject)
 
-		// Wait for cache to sync
-		s.g.Eventually(s.getF(ctx, opts.Object), opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		// Wait for create to be reflected
+		s.g.Eventually(s.getF(ctx, opts.Object), opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCreateNotReflected)
 	} else {
 		// Create resources
 		for _, obj := range opts.Objects {
 			s.g.Expect(s.c.Create(ctx, obj)).To(gomega.Succeed(), errFailedCreateWithObject)
 		}
 
-		// Wait for cache to sync
+		// Wait for create to be reflected
 		getAll := func() error {
 			for _, obj := range opts.Objects {
 				if err := s.get(ctx, obj); err != nil {
@@ -391,6 +391,6 @@ func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{}) {
 			}
 			return nil
 		}
-		s.g.Eventually(getAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCacheNotSynced)
+		s.g.Eventually(getAll, opts.Timeout, opts.Interval).Should(gomega.Succeed(), errCreateNotReflected)
 	}
 }
