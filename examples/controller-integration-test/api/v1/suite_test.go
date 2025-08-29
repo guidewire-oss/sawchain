@@ -25,11 +25,11 @@ import (
 )
 
 var (
-	ctx       context.Context
-	cancel    context.CancelFunc
-	testEnv   *envtest.Environment
-	k8sClient client.Client
-	sc        *sawchain.Sawchain
+	ctx      context.Context
+	cancel   context.CancelFunc
+	testEnv  *envtest.Environment
+	sc       *sawchain.Sawchain
+	scDryRun *sawchain.Sawchain
 )
 
 func TestAPIs(t *testing.T) {
@@ -68,12 +68,14 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	// Create client
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	// Initialize Sawchain
-	sc = sawchain.New(GinkgoTB(), k8sClient, map[string]any{"namespace": "default"})
+	// Initialize Sawchains (one with live client, one with dry-run client)
+	globalBindings := map[string]any{"namespace": "default"}
+	sc = sawchain.New(GinkgoTB(), k8sClient, globalBindings)
+	scDryRun = sawchain.New(GinkgoTB(), &DryRunClient{Client: k8sClient}, globalBindings)
 
 	// Create webhook configs
 	webhookOpts := testEnv.WebhookInstallOptions
@@ -127,3 +129,31 @@ var _ = AfterSuite(func() {
 	cancel()
 	Eventually(testEnv.Stop()).Should(Succeed())
 })
+
+// HELPERS
+
+// DryRunClient allows dry-run testing equivalent to `kubectl --dry-run=server`
+// for Create, Update, Patch, and Delete.
+type DryRunClient struct {
+	client.Client
+}
+
+func (d *DryRunClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	opts = append(opts, client.DryRunAll)
+	return d.Client.Create(ctx, obj, opts...)
+}
+
+func (d *DryRunClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	opts = append(opts, client.DryRunAll)
+	return d.Client.Update(ctx, obj, opts...)
+}
+
+func (d *DryRunClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	opts = append(opts, client.DryRunAll)
+	return d.Client.Patch(ctx, obj, patch, opts...)
+}
+
+func (d *DryRunClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	opts = append(opts, client.DryRunAll)
+	return d.Client.Delete(ctx, obj, opts...)
+}

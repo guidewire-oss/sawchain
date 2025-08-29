@@ -54,21 +54,21 @@ var _ = Describe("PodSet Webhooks", func() {
 		})
 	})
 
-	// Example using Chainsaw templates without saving to objects
+	// Example using a dry-run client and Chainsaw templates without saving to objects
 	DescribeTable("validating PodSets",
 		func(invalidPodSetYaml, expectedErr string) {
-			// Test validation on create
-			createErr := sc.Create(ctx, invalidPodSetYaml)
+			// Test validation on create (dry-run)
+			createErr := scDryRun.Create(ctx, invalidPodSetYaml)
 			Expect(createErr).To(HaveOccurred(), "expected create to fail")
 			Expect(createErr.Error()).To(ContainSubstring(expectedErr), "unexpected create error")
 
-			// Test validation on update
-			sc.CreateAndWait(ctx, validPodSetYaml)
-			updateErr := sc.Update(ctx, invalidPodSetYaml)
+			// Test validation on update (dry-run)
+			sc.CreateAndWait(ctx, validPodSetYaml)               // Create live PodSet to enable update testing
+			updateErr := scDryRun.Update(ctx, invalidPodSetYaml) // Execute dry-run update
 			Expect(updateErr).To(HaveOccurred(), "expected update to fail")
 			Expect(updateErr.Error()).To(ContainSubstring(expectedErr), "unexpected update error")
 
-			// Delete PodSet
+			// Delete live PodSet created for update test
 			sc.DeleteAndWait(ctx, validPodSetYaml)
 		},
 
