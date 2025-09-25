@@ -659,6 +659,8 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedReturnErrs: []string{
+				"0 of 1 candidates match expectation",
+				"Candidate #1 mismatch errors:",
 				"v1/ConfigMap/default/test-cm",
 				"data.key: Invalid value: \"value\": Expected value: \"wrong-value\"",
 				"--- expected",
@@ -693,6 +695,8 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedReturnErrs: []string{
+				"0 of 1 candidates match expectation",
+				"Candidate #1 mismatch errors:",
 				"v1/ConfigMap/default/test-cm",
 				"data.(to_number(count) > `5`): Invalid value: false: Expected value: true",
 				"--- expected",

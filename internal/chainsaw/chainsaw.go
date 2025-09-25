@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/kyverno/chainsaw/pkg/apis"
 	"github.com/kyverno/chainsaw/pkg/apis/v1alpha1"
@@ -12,7 +13,6 @@ import (
 	operrors "github.com/kyverno/chainsaw/pkg/engine/operations/errors"
 	"github.com/kyverno/chainsaw/pkg/engine/templating"
 	"github.com/kyverno/chainsaw/pkg/loaders/resource"
-	"go.uber.org/multierr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
@@ -96,26 +96,26 @@ func Match(
 	expected unstructured.Unstructured,
 	bindings Bindings,
 ) (unstructured.Unstructured, error) {
-	var resourceErrs []error
-	for _, candidate := range candidates {
+	var mismatchMessages []string
+	for i, candidate := range candidates {
 		fieldErrs, err := checks.Check(ctx, compilers, candidate.UnstructuredContent(), bindings,
 			ptr.To(v1alpha1.NewCheck(expected.UnstructuredContent())))
 		if err != nil {
 			return unstructured.Unstructured{}, fmt.Errorf("failed to check candidate: %w", err)
 		}
 		if len(fieldErrs) != 0 {
-			resourceErrs = append(resourceErrs,
-				operrors.ResourceError(compilers, expected, candidate, true, bindings, fieldErrs),
-			)
+			resourceErr := operrors.ResourceError(compilers, expected, candidate, true, bindings, fieldErrs)
+			mismatchMessage := fmt.Sprintf("Candidate #%d mismatch errors:\n%s", i+1, resourceErr.Error())
+			mismatchMessages = append(mismatchMessages, mismatchMessage)
 		} else {
 			// Match found
 			return candidate, nil
 		}
 	}
 	var err error
-	if len(resourceErrs) > 0 {
-		err = multierr.Combine(resourceErrs...) // Combine resource errors into one
-		err = errors.New(err.Error())           // Sanitize (only keep message)
+	if len(mismatchMessages) > 0 {
+		detail := strings.Join(mismatchMessages, "\n")
+		err = fmt.Errorf("0 of %d candidates match expectation\n\n%s", len(candidates), detail)
 	}
 	return unstructured.Unstructured{}, err
 }
