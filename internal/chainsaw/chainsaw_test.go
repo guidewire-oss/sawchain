@@ -990,6 +990,8 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
+					"0 of 1 candidates match expectation",
+					"Candidate #1 mismatch errors:",
 					"v1/ConfigMap/default/test-config",
 					"data.key1: Invalid value: \"wrong-value\": Expected value: \"expected-value\"",
 					"--- expected",
@@ -1027,6 +1029,8 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
+					"0 of 1 candidates match expectation",
+					"Candidate #1 mismatch errors:",
 					"v1/ConfigMap/default/test-config",
 					"data: Required value: field not found in the input object",
 					"--- expected",
@@ -1079,12 +1083,15 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
+					"0 of 2 candidates match expectation",
+					"Candidate #1 mismatch errors:",
 					"v1/ConfigMap/default/test-config-1",
 					"data.key1: Invalid value: \"wrong-value-1\": Expected value: \"expected-value\"",
 					"--- expected",
 					"+++ actual",
 					"-  key1: expected-value",
 					"+  key1: wrong-value-1",
+					"Candidate #2 mismatch errors:",
 					"v1/ConfigMap/default/test-config-2",
 					"data.key1: Invalid value: \"wrong-value-2\": Expected value: \"expected-value\"",
 					"--- expected",
@@ -1492,6 +1499,8 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
+					"0 of 1 candidates match expectation",
+					"Candidate #1 mismatch errors:",
 					"v1/ConfigMap/default/test-check-nomatch",
 					"data.key1: Invalid value: \"actual-value\": Expected value: \"expected-value\"",
 					"--- expected",
@@ -1703,6 +1712,8 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
+					"0 of 1 candidates match expectation",
+					"Candidate #1 mismatch errors:",
 					"v1/ConfigMap/default/test-check-length-fail",
 					"data.(length(value) > `1` && length(value) < `10`): Invalid value: false: Expected value: true",
 				},
