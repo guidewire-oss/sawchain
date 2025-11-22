@@ -882,6 +882,27 @@ var _ = Describe("Check and CheckFunc", func() {
 			},
 		}),
 
+		Entry("failure - invalid bindings", testCase{
+			client: testutil.NewStandardFakeClient(),
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				data:
+				  key: value
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("failure - template missing binding", testCase{
 			client: testutil.NewStandardFakeClient(),
 			methodArgs: []interface{}{

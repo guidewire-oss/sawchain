@@ -178,6 +178,22 @@ var _ = Describe("RenderSingle", func() {
 			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"key": "value"}),
 		}),
 
+		Entry("should populate typed object with template and typed map bindings", testCase{
+			methodArgs: []interface{}{
+				&corev1.ConfigMap{},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				data: ($data)
+				`,
+				map[string]any{"data": map[string]string{"key1": "value1", "key2": "value2"}},
+			},
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"key1": "value1", "key2": "value2"}),
+		}),
+
 		// Error cases
 		Entry("should fail with no arguments", testCase{
 			expectedFailureLogs: []string{
@@ -264,7 +280,7 @@ var _ = Describe("RenderSingle", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -297,6 +313,24 @@ var _ = Describe("RenderSingle", func() {
 			},
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding variable", testCase{
 			methodArgs: []interface{}{
 				`
@@ -309,7 +343,7 @@ var _ = Describe("RenderSingle", func() {
 				map[string]any{},
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
@@ -332,7 +366,7 @@ var _ = Describe("RenderSingle", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"expected template to contain a single resource; found 2",
 			},
 		}),
@@ -645,6 +679,38 @@ var _ = Describe("RenderMultiple", func() {
 			},
 		}),
 
+		Entry("should populate typed objects with template and typed map bindings", testCase{
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data: ($data1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data: ($data2)
+				`,
+				map[string]any{
+					"data1": map[string]string{"key1": "value1", "key2": "value2"},
+					"data2": map[string]string{"key3": "value3", "key4": "value4"},
+				},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "value1", "key2": "value2"}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key3": "value3", "key4": "value4"}),
+			},
+		}),
+
 		// Error cases
 		Entry("should fail with no arguments", testCase{
 			expectedFailureLogs: []string{
@@ -714,7 +780,7 @@ var _ = Describe("RenderMultiple", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -747,6 +813,30 @@ var _ = Describe("RenderMultiple", func() {
 			},
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name1)
+				  namespace: default
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name2)
+				  namespace: default
+				`,
+				map[string]any{"name1": "test-cm1", "name2": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding variable", testCase{
 			methodArgs: []interface{}{
 				`
@@ -765,7 +855,7 @@ var _ = Describe("RenderMultiple", func() {
 				map[string]any{},
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
@@ -1282,7 +1372,7 @@ status:
 		Entry("should fail with non-existent template file", testCase{
 			template: "non-existent.yaml",
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -1311,6 +1401,24 @@ status:
 			},
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+			bindings: []map[string]any{
+				{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding variable", testCase{
 			template: `
 				apiVersion: v1
@@ -1320,7 +1428,7 @@ status:
 				  namespace: default
 				`,
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},
@@ -1341,7 +1449,7 @@ status:
 				  namespace: default
 				`,
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing_binding",
 			},

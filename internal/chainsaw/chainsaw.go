@@ -2,6 +2,7 @@ package chainsaw
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,13 +26,58 @@ const errExpectedSingleResource = "expected template to contain a single resourc
 
 var compilers = apis.DefaultCompilers
 
-// BindingsFromMap converts the map into a Bindings object.
-func BindingsFromMap(m map[string]any) Bindings {
-	b := apis.NewBindings()
+// normalizeBindingValue converts a binding value to a form compatible with
+// Kubernetes unstructured objects by performing a JSON round-trip.
+// This converts typed maps (e.g., map[string]string) to map[string]interface{},
+// which prevents panics in Kubernetes's DeepCopyJSONValue function.
+func normalizeBindingValue(v any) (any, error) {
+	// Marshal to JSON
+	data, err := json.Marshal(v)
+	if err != nil {
+		msg := "failed to marshal binding value"
+		tip := "ensure binding values are JSON-serializable (no channels, functions, or complex numbers)"
+		return nil, fmt.Errorf("%s; %s: %w", msg, tip, err)
+	}
+
+	// Unmarshal back to get normalized types
+	var normalized any
+	if err := json.Unmarshal(data, &normalized); err != nil {
+		msg := "failed to unmarshal binding value"
+		tip := "this is unexpected; please report this issue"
+		return nil, fmt.Errorf("%s; %s: %w", msg, tip, err)
+	}
+
+	return normalized, nil
+}
+
+// normalizeBindingsMap normalizes all values in a bindings map.
+func normalizeBindingsMap(m map[string]any) (map[string]any, error) {
+	normalized := make(map[string]any, len(m))
 	for k, v := range m {
+		normalizedValue, err := normalizeBindingValue(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to normalize binding %q: %w", k, err)
+		}
+		normalized[k] = normalizedValue
+	}
+	return normalized, nil
+}
+
+// BindingsFromMap converts the map into a Bindings object.
+// All binding values are normalized through JSON marshaling/unmarshaling
+// to ensure compatibility with Kubernetes unstructured objects.
+func BindingsFromMap(m map[string]any) (Bindings, error) {
+	// Normalize bindings to convert typed maps to map[string]interface{}
+	normalized, err := normalizeBindingsMap(m)
+	if err != nil {
+		return nil, err
+	}
+
+	b := apis.NewBindings()
+	for k, v := range normalized {
 		b = bindings.RegisterBinding(context.TODO(), b, k, v)
 	}
-	return b
+	return b, nil
 }
 
 // parseTemplate parses the template into unstructured objects

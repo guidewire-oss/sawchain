@@ -4,6 +4,7 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
 	"github.com/guidewire-oss/sawchain/internal/matchers"
 	"github.com/guidewire-oss/sawchain/internal/options"
 )
@@ -70,8 +71,12 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 	template, err = options.ProcessTemplate(template)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 
+	// Create bindings
+	b, err := chainsaw.BindingsFromMap(s.mergeBindings(bindings...))
+	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+
 	// Create matcher
-	matcher := matchers.NewChainsawMatcher(s.c, template, s.mergeBindings(bindings...))
+	matcher := matchers.NewChainsawMatcher(s.c, template, b)
 	s.g.Expect(matcher).NotTo(gomega.BeNil(), errCreatedMatcherIsNil)
 
 	return matcher

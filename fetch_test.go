@@ -218,6 +218,26 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 			},
 		}),
 
+		Entry("invalid bindings", testCase{
+			objs:   nil,
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("invalid template", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
@@ -254,7 +274,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"expected template to contain a single resource; found 2",
 			},
 		}),
@@ -265,7 +285,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
-				testutil.NewTestResource("", "", ""),
+				testutil.NewTestResource("", ""),
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -600,6 +620,32 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 			},
 		}),
 
+		Entry("invalid bindings", testCase{
+			objs:   nil,
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name1)
+				  namespace: default
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name2)
+				  namespace: default
+				`,
+				map[string]any{"name1": "test-cm1", "name2": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("invalid template", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
@@ -645,7 +691,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 			methodArgs: []interface{}{
 				[]client.Object{
 					testutil.NewConfigMap("", "", nil),
-					testutil.NewTestResource("", "", ""),
+					testutil.NewTestResource("", ""),
 				},
 				`
 				apiVersion: v1

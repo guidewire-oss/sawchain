@@ -309,6 +309,34 @@ var _ = Describe("Update", func() {
 			}),
 		}),
 
+		Entry("should update ConfigMap with typed map bindings and save to typed object", testCase{
+			originalObjs: []client.Object{
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
+			},
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				&corev1.ConfigMap{},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				data: ($data)
+				`,
+				map[string]any{"data": map[string]string{"key1": "replaced1", "key2": "replaced2"}},
+			},
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced1",
+				"key2": "replaced2",
+				"key3": "preserved",
+			}),
+		}),
+
 		Entry("should update ConfigMap with template string and save to unstructured object", testCase{
 			originalObjs: []client.Object{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{
@@ -706,6 +734,59 @@ var _ = Describe("Update", func() {
 			},
 		}),
 
+		Entry("should update multiple resources with typed map bindings and save to typed objects", testCase{
+			originalObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
+			},
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data: ($data1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data: ($data2)
+				`,
+				map[string]any{
+					"data1": map[string]string{"key1": "replaced1", "key2": "replaced2"},
+					"data2": map[string]string{"keyA": "replacedA", "keyB": "replacedB"},
+				},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key2": "replaced2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replacedA",
+					"keyB": "replacedB",
+					"keyC": "preserved2",
+				}),
+			},
+		}),
+
 		Entry("should update multiple resources with template string and save to unstructured objects", testCase{
 			originalObjs: []client.Object{
 				testutil.NewConfigMap("test-cm1", "default", map[string]string{
@@ -842,7 +923,7 @@ var _ = Describe("Update", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -860,6 +941,25 @@ var _ = Describe("Update", func() {
 			},
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -872,7 +972,7 @@ var _ = Describe("Update", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -1278,6 +1378,34 @@ var _ = Describe("UpdateAndWait", func() {
 				"key1": "replaced",
 				"key3": "preserved",
 				"key4": "added",
+			}),
+		}),
+
+		Entry("should update ConfigMap with typed map bindings and save to typed object", testCase{
+			originalObjs: []client.Object{
+				testutil.NewConfigMap("test-cm", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved",
+				}),
+			},
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				&corev1.ConfigMap{},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				data: ($data)
+				`,
+				map[string]any{"data": map[string]string{"key1": "replaced1", "key2": "replaced2"}},
+			},
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{
+				"key1": "replaced1",
+				"key2": "replaced2",
+				"key3": "preserved",
 			}),
 		}),
 
@@ -1705,6 +1833,59 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 		}),
 
+		Entry("should update multiple resources with typed map bindings and save to typed objects", testCase{
+			originalObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "valueA",
+					"keyB": "valueB",
+					"keyC": "preserved2",
+				}),
+			},
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data: ($data1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data: ($data2)
+				`,
+				map[string]any{
+					"data1": map[string]string{"key1": "replaced1", "key2": "replaced2"},
+					"data2": map[string]string{"keyA": "replacedA", "keyB": "replacedB"},
+				},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{
+					"key1": "replaced1",
+					"key2": "replaced2",
+					"key3": "preserved1",
+				}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{
+					"keyA": "replacedA",
+					"keyB": "replacedB",
+					"keyC": "preserved2",
+				}),
+			},
+		}),
+
 		Entry("should update multiple resources with template string and save to unstructured objects", testCase{
 			originalObjs: []client.Object{
 				testutil.NewConfigMap("test-cm1", "default", map[string]string{
@@ -1828,7 +2009,7 @@ var _ = Describe("UpdateAndWait", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -1846,6 +2027,25 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1858,7 +2058,7 @@ var _ = Describe("UpdateAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
