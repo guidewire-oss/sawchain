@@ -9,30 +9,30 @@ import "github.com/guidewire-oss/sawchain"
 ## Index
 
 - [type Sawchain](<#Sawchain>)
-  - [func New\(t testing.TB, c client.Client, args ...interface\{\}\) \*Sawchain](<#New>)
-  - [func \(s \*Sawchain\) Check\(ctx context.Context, args ...interface\{\}\) error](<#Sawchain.Check>)
-  - [func \(s \*Sawchain\) CheckFunc\(ctx context.Context, args ...interface\{\}\) func\(\) error](<#Sawchain.CheckFunc>)
-  - [func \(s \*Sawchain\) Create\(ctx context.Context, args ...interface\{\}\) error](<#Sawchain.Create>)
-  - [func \(s \*Sawchain\) CreateAndWait\(ctx context.Context, args ...interface\{\}\)](<#Sawchain.CreateAndWait>)
-  - [func \(s \*Sawchain\) Delete\(ctx context.Context, args ...interface\{\}\) error](<#Sawchain.Delete>)
-  - [func \(s \*Sawchain\) DeleteAndWait\(ctx context.Context, args ...interface\{\}\)](<#Sawchain.DeleteAndWait>)
-  - [func \(s \*Sawchain\) FetchMultiple\(ctx context.Context, args ...interface\{\}\) \[\]client.Object](<#Sawchain.FetchMultiple>)
-  - [func \(s \*Sawchain\) FetchMultipleFunc\(ctx context.Context, args ...interface\{\}\) func\(\) \[\]client.Object](<#Sawchain.FetchMultipleFunc>)
-  - [func \(s \*Sawchain\) FetchSingle\(ctx context.Context, args ...interface\{\}\) client.Object](<#Sawchain.FetchSingle>)
-  - [func \(s \*Sawchain\) FetchSingleFunc\(ctx context.Context, args ...interface\{\}\) func\(\) client.Object](<#Sawchain.FetchSingleFunc>)
-  - [func \(s \*Sawchain\) Get\(ctx context.Context, args ...interface\{\}\) error](<#Sawchain.Get>)
-  - [func \(s \*Sawchain\) GetFunc\(ctx context.Context, args ...interface\{\}\) func\(\) error](<#Sawchain.GetFunc>)
+  - [func New\(t testing.TB, c client.Client, args ...any\) \*Sawchain](<#New>)
+  - [func \(s \*Sawchain\) Check\(ctx context.Context, args ...any\) error](<#Sawchain.Check>)
+  - [func \(s \*Sawchain\) CheckFunc\(ctx context.Context, args ...any\) func\(\) error](<#Sawchain.CheckFunc>)
+  - [func \(s \*Sawchain\) Create\(ctx context.Context, args ...any\) error](<#Sawchain.Create>)
+  - [func \(s \*Sawchain\) CreateAndWait\(ctx context.Context, args ...any\)](<#Sawchain.CreateAndWait>)
+  - [func \(s \*Sawchain\) Delete\(ctx context.Context, args ...any\) error](<#Sawchain.Delete>)
+  - [func \(s \*Sawchain\) DeleteAndWait\(ctx context.Context, args ...any\)](<#Sawchain.DeleteAndWait>)
+  - [func \(s \*Sawchain\) FetchMultiple\(ctx context.Context, args ...any\) \[\]client.Object](<#Sawchain.FetchMultiple>)
+  - [func \(s \*Sawchain\) FetchMultipleFunc\(ctx context.Context, args ...any\) func\(\) \[\]client.Object](<#Sawchain.FetchMultipleFunc>)
+  - [func \(s \*Sawchain\) FetchSingle\(ctx context.Context, args ...any\) client.Object](<#Sawchain.FetchSingle>)
+  - [func \(s \*Sawchain\) FetchSingleFunc\(ctx context.Context, args ...any\) func\(\) client.Object](<#Sawchain.FetchSingleFunc>)
+  - [func \(s \*Sawchain\) Get\(ctx context.Context, args ...any\) error](<#Sawchain.Get>)
+  - [func \(s \*Sawchain\) GetFunc\(ctx context.Context, args ...any\) func\(\) error](<#Sawchain.GetFunc>)
   - [func \(s \*Sawchain\) HaveStatusCondition\(conditionType, expectedStatus string\) types.GomegaMatcher](<#Sawchain.HaveStatusCondition>)
   - [func \(s \*Sawchain\) MatchYAML\(template string, bindings ...map\[string\]any\) types.GomegaMatcher](<#Sawchain.MatchYAML>)
-  - [func \(s \*Sawchain\) RenderMultiple\(args ...interface\{\}\) \[\]client.Object](<#Sawchain.RenderMultiple>)
-  - [func \(s \*Sawchain\) RenderSingle\(args ...interface\{\}\) client.Object](<#Sawchain.RenderSingle>)
+  - [func \(s \*Sawchain\) RenderMultiple\(args ...any\) \[\]client.Object](<#Sawchain.RenderMultiple>)
+  - [func \(s \*Sawchain\) RenderSingle\(args ...any\) client.Object](<#Sawchain.RenderSingle>)
   - [func \(s \*Sawchain\) RenderToFile\(filepath, template string, bindings ...map\[string\]any\)](<#Sawchain.RenderToFile>)
   - [func \(s \*Sawchain\) RenderToString\(template string, bindings ...map\[string\]any\) string](<#Sawchain.RenderToString>)
-  - [func \(s \*Sawchain\) Update\(ctx context.Context, args ...interface\{\}\) error](<#Sawchain.Update>)
-  - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...interface\{\}\)](<#Sawchain.UpdateAndWait>)
+  - [func \(s \*Sawchain\) Update\(ctx context.Context, args ...any\) error](<#Sawchain.Update>)
+  - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...any\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L57-L62>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L58-L63>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -47,10 +47,10 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L96>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L97>)
 
 ```go
-func New(t testing.TB, c client.Client, args ...interface{}) *Sawchain
+func New(t testing.TB, c client.Client, args ...any) *Sawchain
 ```
 
 New creates a new Sawchain instance with the provided global settings.
@@ -93,7 +93,7 @@ sc := sawchain.New(t, k8sClient, "10s", "2s")
 ### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L106>)
 
 ```go
-func (s *Sawchain) Check(ctx context.Context, args ...interface{}) error
+func (s *Sawchain) Check(ctx context.Context, args ...any) error
 ```
 
 Check searches the cluster for resources matching YAML expectations defined in a template and optionally saves found matches to objects for type\-safe access. If no match is found, a detailed error will be returned.
@@ -184,10 +184,10 @@ err := sc.Check(ctx, []client.Object{configMap, secret}, `
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 
 <a name="Sawchain.CheckFunc"></a>
-### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L156>)
+### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L158>)
 
 ```go
-func (s *Sawchain) CheckFunc(ctx context.Context, args ...interface{}) func() error
+func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error
 ```
 
 CheckFunc returns a function that searches the cluster for resources matching YAML expectations defined in a template and optionally saves found matches to objects for type\-safe access.
@@ -200,7 +200,7 @@ For details on arguments, examples, and behavior, see the documentation for Chec
 ### func \(\*Sawchain\) [Create](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L137>)
 
 ```go
-func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error
+func (s *Sawchain) Create(ctx context.Context, args ...any) error
 ```
 
 Create creates resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Create operations fail.
@@ -329,10 +329,10 @@ err := sc.Create(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.CreateAndWait"></a>
-### func \(\*Sawchain\) [CreateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L324>)
+### func \(\*Sawchain\) [CreateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L326>)
 
 ```go
-func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{})
+func (s *Sawchain) CreateAndWait(ctx context.Context, args ...any)
 ```
 
 CreateAndWait creates resources with objects, a manifest, or a Chainsaw template, and ensures client Get operations for all resources succeed within a configurable duration before returning. If testing with a cached client, this ensures the client cache is synced and it is safe to make assertions on the resources immediately after execution.
@@ -468,7 +468,7 @@ sc.CreateAndWait(ctx, []client.Object{configMap, secret}, `
 ### func \(\*Sawchain\) [Delete](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L85>)
 
 ```go
-func (s *Sawchain) Delete(ctx context.Context, args ...interface{}) error
+func (s *Sawchain) Delete(ctx context.Context, args ...any) error
 ```
 
 Delete deletes resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Delete operations fail.
@@ -546,10 +546,10 @@ err := sc.Delete(ctx, `
 ```
 
 <a name="Sawchain.DeleteAndWait"></a>
-### func \(\*Sawchain\) [DeleteAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L205>)
+### func \(\*Sawchain\) [DeleteAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L207>)
 
 ```go
-func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{})
+func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...any)
 ```
 
 DeleteAndWait deletes resources with objects, a manifest, or a Chainsaw template, and ensures client Get operations for all resources reflect the deletion \(resources not found\) within a configurable duration before returning. If testing with a cached client, this ensures the client cache is synced and it is safe to make assertions on the resources' absence immediately after execution.
@@ -631,10 +631,10 @@ sc.DeleteAndWait(ctx, `
 ```
 
 <a name="Sawchain.FetchMultiple"></a>
-### func \(\*Sawchain\) [FetchMultiple](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L197>)
+### func \(\*Sawchain\) [FetchMultiple](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L199>)
 
 ```go
-func (s *Sawchain) FetchMultiple(ctx context.Context, args ...interface{}) []client.Object
+func (s *Sawchain) FetchMultiple(ctx context.Context, args ...any) []client.Object
 ```
 
 FetchMultiple retrieves multiple resources with objects, a manifest, or a Chainsaw template, saves their states to the objects \(if provided\), and returns the objects. This is especially useful for assertions on resource states when the resources are expected to already exist.
@@ -716,10 +716,10 @@ fetchedObjs := sc.FetchMultiple(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.FetchMultipleFunc"></a>
-### func \(\*Sawchain\) [FetchMultipleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L298>)
+### func \(\*Sawchain\) [FetchMultipleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L304>)
 
 ```go
-func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...interface{}) func() []client.Object
+func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...any) func() []client.Object
 ```
 
 FetchMultipleFunc returns a function that retrieves multiple resources with objects, a manifest, or a Chainsaw template, saves their states to the objects \(if provided\), and returns the objects.
@@ -732,7 +732,7 @@ For details on arguments, examples, and behavior, see the documentation for Fetc
 ### func \(\*Sawchain\) [FetchSingle](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L82>)
 
 ```go
-func (s *Sawchain) FetchSingle(ctx context.Context, args ...interface{}) client.Object
+func (s *Sawchain) FetchSingle(ctx context.Context, args ...any) client.Object
 ```
 
 FetchSingle retrieves a single resource with an object, a manifest, or a Chainsaw template, saves its state to the object \(if provided\), and returns the object. This is especially useful for assertions on resource state when the resource is expected to already exist.
@@ -801,10 +801,10 @@ fetched := sc.FetchSingle(ctx, configMap, `
 ```
 
 <a name="Sawchain.FetchSingleFunc"></a>
-### func \(\*Sawchain\) [FetchSingleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L254>)
+### func \(\*Sawchain\) [FetchSingleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L258>)
 
 ```go
-func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...interface{}) func() client.Object
+func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...any) func() client.Object
 ```
 
 FetchSingleFunc returns a function that retrieves a single resource with an object, a manifest, or a Chainsaw template, saves its state to the object \(if provided\), and returns the object.
@@ -817,7 +817,7 @@ For details on arguments, examples, and behavior, see the documentation for Fetc
 ### func \(\*Sawchain\) [Get](<https://github.com/guidewire-oss/sawchain/blob/main/get.go#L122>)
 
 ```go
-func (s *Sawchain) Get(ctx context.Context, args ...interface{}) error
+func (s *Sawchain) Get(ctx context.Context, args ...any) error
 ```
 
 Get retrieves resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Get operations fail. This is especially useful for assertions on resource existence.
@@ -930,10 +930,10 @@ err := sc.Get(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.GetFunc"></a>
-### func \(\*Sawchain\) [GetFunc](<https://github.com/guidewire-oss/sawchain/blob/main/get.go#L185>)
+### func \(\*Sawchain\) [GetFunc](<https://github.com/guidewire-oss/sawchain/blob/main/get.go#L187>)
 
 ```go
-func (s *Sawchain) GetFunc(ctx context.Context, args ...interface{}) func() error
+func (s *Sawchain) GetFunc(ctx context.Context, args ...any) func() error
 ```
 
 GetFunc returns a function that retrieves resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Get operations fail.
@@ -943,7 +943,7 @@ The returned function performs the same operations as Get, but is particularly u
 For details on arguments, examples, and behavior, see the documentation for Get.
 
 <a name="Sawchain.HaveStatusCondition"></a>
-### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L111>)
+### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L116>)
 
 ```go
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher
@@ -986,7 +986,7 @@ Expect(myCustomResource).To(sc.HaveStatusCondition("Ready", "True"))
 ```
 
 <a name="Sawchain.MatchYAML"></a>
-### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L65>)
+### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L66>)
 
 ```go
 func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.GomegaMatcher
@@ -1046,10 +1046,10 @@ Expect(deployment).To(sc.MatchYAML(`
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 
 <a name="Sawchain.RenderMultiple"></a>
-### func \(\*Sawchain\) [RenderMultiple](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L195>)
+### func \(\*Sawchain\) [RenderMultiple](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L197>)
 
 ```go
-func (s *Sawchain) RenderMultiple(args ...interface{}) []client.Object
+func (s *Sawchain) RenderMultiple(args ...any) []client.Object
 ```
 
 RenderMultiple renders a multi\-resource Chainsaw template \(or unmarshals a static manifest\) into a slice of objects and returns it.
@@ -1142,7 +1142,7 @@ sc.RenderMultiple([]client.Object{configMap, secret}, "path/to/resources.yaml")
 ### func \(\*Sawchain\) [RenderSingle](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L82>)
 
 ```go
-func (s *Sawchain) RenderSingle(args ...interface{}) client.Object
+func (s *Sawchain) RenderSingle(args ...any) client.Object
 ```
 
 RenderSingle renders a single\-resource Chainsaw template \(or unmarshals a static manifest\) into an object and returns it.
@@ -1210,7 +1210,7 @@ sc.RenderSingle(configMap, "path/to/configmap.yaml")
 ```
 
 <a name="Sawchain.RenderToFile"></a>
-### func \(\*Sawchain\) [RenderToFile](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L347>)
+### func \(\*Sawchain\) [RenderToFile](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L353>)
 
 ```go
 func (s *Sawchain) RenderToFile(filepath, template string, bindings ...map[string]any)
@@ -1266,7 +1266,7 @@ sc.RenderToFile("output.yaml", "path/to/template.yaml",
 ```
 
 <a name="Sawchain.RenderToString"></a>
-### func \(\*Sawchain\) [RenderToString](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L274>)
+### func \(\*Sawchain\) [RenderToString](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L278>)
 
 ```go
 func (s *Sawchain) RenderToString(template string, bindings ...map[string]any) string
@@ -1323,7 +1323,7 @@ yaml := sc.RenderToString("path/to/template.yaml",
 ### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L152>)
 
 ```go
-func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error
+func (s *Sawchain) Update(ctx context.Context, args ...any) error
 ```
 
 Update updates resources with objects, a manifest, or a Chainsaw template, and returns an error if any client Update operations fail.
@@ -1465,10 +1465,10 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.UpdateAndWait"></a>
-### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L366>)
+### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L368>)
 
 ```go
-func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{})
+func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...any)
 ```
 
 UpdateAndWait updates resources with objects, a manifest, or a Chainsaw template, and ensures client Get operations for all resources reflect the updates within a configurable duration before returning. If testing with a cached client, this ensures the client cache is synced and it is safe to make assertions on the updated resources immediately after execution.

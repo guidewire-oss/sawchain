@@ -31,7 +31,7 @@ type chainsawMatcher struct {
 	matchError error
 }
 
-func (m *chainsawMatcher) Match(actual interface{}) (bool, error) {
+func (m *chainsawMatcher) Match(actual any) (bool, error) {
 	if util.IsNil(actual) {
 		return false, errors.New("chainsawMatcher expects a client.Object but got nil")
 	}
@@ -64,17 +64,17 @@ func (m *chainsawMatcher) String() string {
 		wrapYaml(m.templateContent), format.Object(m.bindings, 0))
 }
 
-func (m *chainsawMatcher) failureMessageFormat(actual interface{}, base string) string {
+func (m *chainsawMatcher) failureMessageFormat(actual any, base string) string {
 	actualYamlBytes, _ := yaml.Marshal(actual)
 	actualYamlString := wrapYaml(string(actualYamlBytes))
 	return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n[ERROR]\n%v", base, actualYamlString, m.String(), m.matchError)
 }
 
-func (m *chainsawMatcher) FailureMessage(actual interface{}) string {
+func (m *chainsawMatcher) FailureMessage(actual any) string {
 	return m.failureMessageFormat(actual, "Expected actual to match Chainsaw template")
 }
 
-func (m *chainsawMatcher) NegatedFailureMessage(actual interface{}) string {
+func (m *chainsawMatcher) NegatedFailureMessage(actual any) string {
 	return m.failureMessageFormat(actual, "Expected actual not to match Chainsaw template")
 }
 

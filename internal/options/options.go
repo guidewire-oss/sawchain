@@ -63,7 +63,7 @@ func parse(
 	includeObject bool,
 	includeObjects bool,
 	includeTemplate bool,
-	args ...interface{},
+	args ...any,
 ) (*Options, error) {
 	opts := &Options{
 		Bindings: map[string]any{},
@@ -183,7 +183,7 @@ func ParseAndApplyDefaults(
 	includeObject bool,
 	includeObjects bool,
 	includeTemplate bool,
-	args ...interface{},
+	args ...any,
 ) (*Options, error) {
 	opts, err := parse(includeDurations, includeObject, includeObjects, includeTemplate, args...)
 	if err != nil {

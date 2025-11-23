@@ -65,20 +65,20 @@ func (m *MockT) FailNow() {
 	runtime.Goexit()
 }
 
-func (m *MockT) Errorf(format string, args ...interface{}) {
+func (m *MockT) Errorf(format string, args ...any) {
 	m.ErrorLogs = append(m.ErrorLogs, fmt.Sprintf(format, args...))
 }
 
-func (m *MockT) Error(args ...interface{}) {
+func (m *MockT) Error(args ...any) {
 	m.ErrorLogs = append(m.ErrorLogs, fmt.Sprint(args...))
 }
 
-func (m *MockT) Fatal(args ...interface{}) {
+func (m *MockT) Fatal(args ...any) {
 	m.ErrorLogs = append(m.ErrorLogs, fmt.Sprint(args...))
 	m.failed = true
 }
 
-func (m *MockT) Fatalf(format string, args ...interface{}) {
+func (m *MockT) Fatalf(format string, args ...any) {
 	m.ErrorLogs = append(m.ErrorLogs, fmt.Sprintf(format, args...))
 	m.failed = true
 	runtime.Goexit()

@@ -134,7 +134,7 @@ import (
 //	    username: admin
 //	    password: secret
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error {
+func (s *Sawchain) Create(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
@@ -323,7 +323,7 @@ func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error {
 //	    username: admin
 //	    password: secret
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{}) {
+func (s *Sawchain) CreateAndWait(ctx context.Context, args ...any) {
 	s.t.Helper()
 
 	// Parse options

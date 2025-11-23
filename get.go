@@ -119,7 +119,7 @@ import (
 //	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) Get(ctx context.Context, args ...interface{}) error {
+func (s *Sawchain) Get(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
@@ -184,7 +184,7 @@ func (s *Sawchain) Get(ctx context.Context, args ...interface{}) error {
 // polling scenarios where resources might not be immediately available.
 //
 // For details on arguments, examples, and behavior, see the documentation for Get.
-func (s *Sawchain) GetFunc(ctx context.Context, args ...interface{}) func() error {
+func (s *Sawchain) GetFunc(ctx context.Context, args ...any) func() error {
 	s.t.Helper()
 
 	// Parse options

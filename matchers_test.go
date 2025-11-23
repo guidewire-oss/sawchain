@@ -14,7 +14,7 @@ import (
 var _ = Describe("MatchYAML", func() {
 	type testCase struct {
 		globalBindings      map[string]any
-		actual              interface{}
+		actual              any
 		template            string
 		bindings            []map[string]any
 		expectedFailureLogs []string
@@ -356,7 +356,7 @@ var _ = Describe("MatchYAML", func() {
 var _ = Describe("HaveStatusCondition", func() {
 	type testCase struct {
 		client              client.Client
-		actual              interface{}
+		actual              any
 		conditionType       string
 		expectedStatus      string
 		expectedFailureLogs []string
@@ -494,7 +494,7 @@ var _ = Describe("HaveStatusCondition", func() {
 
 		Entry("no match with missing status field", testCase{
 			client: standardClient,
-			actual: func() interface{} {
+			actual: func() any {
 				obj := &unstructured.Unstructured{}
 				obj.SetAPIVersion("example.com/v1")
 				obj.SetKind("TestResource")

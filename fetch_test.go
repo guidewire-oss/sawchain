@@ -15,7 +15,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 		objs                []client.Object
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedFailureLogs []string
 		expectedObj         client.Object
 	}
@@ -99,7 +99,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
@@ -110,7 +110,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredConfigMap("test-cm", "default", nil),
 			},
 			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
@@ -121,7 +121,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -138,7 +138,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -156,7 +156,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -177,7 +177,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("", "", nil),
 				`
 				apiVersion: v1
@@ -195,7 +195,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&unstructured.Unstructured{},
 				`
 				apiVersion: v1
@@ -221,7 +221,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 		Entry("invalid bindings", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -241,7 +241,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 		Entry("invalid template", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
@@ -257,7 +257,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("", "", nil),
 				`
 				apiVersion: v1
@@ -284,7 +284,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewTestResource("", ""),
 				`
 				apiVersion: v1
@@ -308,7 +308,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: -1, // Fail all get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedFailureLogs: []string{
@@ -320,7 +320,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 		Entry("not found error for non-existent resource", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("non-existent", "default", nil),
 			},
 			expectedFailureLogs: []string{
@@ -336,7 +336,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 		objs                []client.Object
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedFailureLogs []string
 		expectedObjs        []client.Object
 	}
@@ -424,7 +424,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -442,7 +442,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewUnstructuredConfigMap("test-cm1", "default", nil),
 					testutil.NewUnstructuredConfigMap("test-cm2", "default", nil),
@@ -460,7 +460,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -484,7 +484,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -521,7 +521,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "prefix": "global"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -554,7 +554,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("", "", nil),
 					testutil.NewConfigMap("", "", nil),
@@ -585,7 +585,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&unstructured.Unstructured{},
 					&unstructured.Unstructured{},
@@ -623,7 +623,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 		Entry("invalid bindings", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -649,7 +649,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 		Entry("invalid template", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
@@ -664,7 +664,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "value1"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("", "", nil),
 					testutil.NewConfigMap("", "", nil),
@@ -688,7 +688,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("", "", nil),
 					testutil.NewTestResource("", ""),
@@ -722,7 +722,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: -1, // Fail all get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -739,7 +739,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm", "default", nil),
 					testutil.NewConfigMap("non-existent", "default", nil),

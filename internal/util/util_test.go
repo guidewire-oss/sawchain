@@ -204,7 +204,7 @@ var _ = Describe("Util", func() {
 
 	Describe("AsDuration", func() {
 		type testCase struct {
-			input          interface{}
+			input          any
 			expectedResult time.Duration
 			expectedOk     bool
 		}
@@ -247,7 +247,7 @@ var _ = Describe("Util", func() {
 
 	Describe("AsMapStringAny", func() {
 		type testCase struct {
-			input          interface{}
+			input          any
 			expectedResult map[string]any
 			expectedOk     bool
 		}
@@ -295,7 +295,7 @@ var _ = Describe("Util", func() {
 
 	Describe("AsObject", func() {
 		type testCase struct {
-			input      interface{}
+			input      any
 			expectedOk bool
 		}
 
@@ -321,7 +321,7 @@ var _ = Describe("Util", func() {
 
 	Describe("AsSliceOfObjects", func() {
 		type testCase struct {
-			input          interface{}
+			input          any
 			expectedOk     bool
 			expectedLength int
 		}
@@ -345,17 +345,17 @@ var _ = Describe("Util", func() {
 				expectedLength: 0,
 			}),
 			Entry("input is a slice of interfaces that implement client.Object", testCase{
-				input:          []interface{}{&corev1.ConfigMap{}, &corev1.ConfigMap{}},
+				input:          []any{&corev1.ConfigMap{}, &corev1.ConfigMap{}},
 				expectedOk:     true,
 				expectedLength: 2,
 			}),
 			Entry("input is an empty slice of interfaces", testCase{
-				input:          []interface{}{},
+				input:          []any{},
 				expectedOk:     true,
 				expectedLength: 0,
 			}),
 			Entry("input is a slice containing non-client.Object values", testCase{
-				input:          []interface{}{&corev1.ConfigMap{}, "not an object"},
+				input:          []any{&corev1.ConfigMap{}, "not an object"},
 				expectedOk:     false,
 				expectedLength: 0,
 			}),
@@ -374,7 +374,7 @@ var _ = Describe("Util", func() {
 
 	Describe("IsNil", func() {
 		type testCase struct {
-			input    interface{}
+			input    any
 			expected bool
 		}
 
@@ -436,7 +436,7 @@ var _ = Describe("Util", func() {
 
 	Describe("ContainsNil", func() {
 		type testCase struct {
-			input    interface{}
+			input    any
 			expected bool
 		}
 
@@ -446,7 +446,7 @@ var _ = Describe("Util", func() {
 				Expect(result).To(Equal(tc.expected))
 			},
 			Entry("slice with nil interface", testCase{
-				input:    []interface{}{1, nil, "hello"},
+				input:    []any{1, nil, "hello"},
 				expected: true,
 			}),
 			Entry("slice with nil pointer", testCase{
@@ -497,10 +497,10 @@ var _ = Describe("Util", func() {
 			},
 			Entry("input is an Unstructured object", testCase{
 				input: &unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-configmap",
 							"namespace": "default",
 						},
@@ -605,14 +605,14 @@ var _ = Describe("Util", func() {
 			It("converts an unstructured ConfigMap to a typed ConfigMap", func() {
 				// Create an unstructured ConfigMap
 				unstructuredObj := unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-cm",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 						},
@@ -647,8 +647,8 @@ var _ = Describe("Util", func() {
 			It("returns an error when unstructured object has no GVK", func() {
 				// Create an unstructured object with no GVK
 				unstructuredObj := unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"metadata": map[string]interface{}{
+					Object: map[string]any{
+						"metadata": map[string]any{
 							"name":      "test-unknown",
 							"namespace": "default",
 						},
@@ -669,10 +669,10 @@ var _ = Describe("Util", func() {
 			It("returns an error for unknown GVK", func() {
 				// Create an unstructured object with unknown GVK
 				unstructuredObj := unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "unknown.group/v1",
 						"kind":       "UnknownKind",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-unknown",
 							"namespace": "default",
 						},
@@ -695,10 +695,10 @@ var _ = Describe("Util", func() {
 			It("returns an error for invalid unstructured data", func() {
 				// Create an unstructured ConfigMap with invalid data
 				unstructuredObj := unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name": "test-cm",
 							// Add an invalid field type that will cause conversion to fail
 							"creationTimestamp": map[string]string{"invalid": "timestamp"},
@@ -735,14 +735,14 @@ var _ = Describe("Util", func() {
 
 				// Create an unstructured version of the ConfigMap
 				unstructuredObj := unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-cm",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 						},
 					},
@@ -842,14 +842,14 @@ var _ = Describe("Util", func() {
 			It("handles input that is already an unstructured object by returning it as-is", func() {
 				// Create an unstructured object
 				originalUnstructured := &unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-cm",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 						},
 					},
@@ -986,17 +986,17 @@ var _ = Describe("Util", func() {
 		It("copies unstructured to unstructured object directly", func() {
 			// Create source unstructured object
 			srcUnstructured := unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "v1",
 					"kind":       "ConfigMap",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "source-cm",
 						"namespace": "default",
-						"labels": map[string]interface{}{
+						"labels": map[string]any{
 							"app": "test",
 						},
 					},
-					"data": map[string]interface{}{
+					"data": map[string]any{
 						"key1": "value1",
 						"key2": "value2",
 					},
@@ -1035,17 +1035,17 @@ var _ = Describe("Util", func() {
 		It("copies unstructured to typed object correctly", func() {
 			// Create source unstructured object
 			srcUnstructured := unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "v1",
 					"kind":       "ConfigMap",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "source-cm",
 						"namespace": "default",
-						"labels": map[string]interface{}{
+						"labels": map[string]any{
 							"app": "test",
 						},
 					},
-					"data": map[string]interface{}{
+					"data": map[string]any{
 						"key1": "value1",
 						"key2": "value2",
 					},
@@ -1078,14 +1078,14 @@ var _ = Describe("Util", func() {
 		It("returns error when destination object is nil", func() {
 			// Create source unstructured ConfigMap
 			srcUnstructured := unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "v1",
 					"kind":       "ConfigMap",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "source-cm",
 						"namespace": "default",
 					},
-					"data": map[string]interface{}{
+					"data": map[string]any{
 						"key1": "value1",
 					},
 				},
@@ -1103,14 +1103,14 @@ var _ = Describe("Util", func() {
 		It("returns error when destination type doesn't match source type", func() {
 			// Create source unstructured ConfigMap
 			srcUnstructured := unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "v1",
 					"kind":       "ConfigMap",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "source-cm",
 						"namespace": "default",
 					},
-					"data": map[string]interface{}{
+					"data": map[string]any{
 						"key1": "value1",
 					},
 				},
@@ -1131,10 +1131,10 @@ var _ = Describe("Util", func() {
 		It("returns error when unstructured has unknown GVK", func() {
 			// Create source unstructured with unknown GVK
 			srcUnstructured := unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "unknown.group/v1",
 					"kind":       "UnknownKind",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "source-unknown",
 						"namespace": "default",
 					},
@@ -1157,10 +1157,10 @@ var _ = Describe("Util", func() {
 		It("returns error for invalid unstructured data", func() {
 			// Create source unstructured with invalid data
 			srcUnstructured := unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "v1",
 					"kind":       "ConfigMap",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name": "test-cm",
 						// Add an invalid field type that will cause conversion to fail
 						"creationTimestamp": map[string]string{"invalid": "timestamp"},
@@ -1184,9 +1184,9 @@ var _ = Describe("Util", func() {
 
 	Describe("MergePatch", func() {
 		type testCase struct {
-			original     map[string]interface{}
-			patch        map[string]interface{}
-			expectedMap  map[string]interface{}
+			original     map[string]any
+			patch        map[string]any
+			expectedMap  map[string]any
 			expectedErrs []string
 		}
 
@@ -1204,15 +1204,15 @@ var _ = Describe("Util", func() {
 				}
 			},
 			Entry("adds new fields", testCase{
-				original: map[string]interface{}{
+				original: map[string]any{
 					"key1": "value1",
 					"key2": "value2",
 				},
-				patch: map[string]interface{}{
+				patch: map[string]any{
 					"key3": "value3",
 					"key4": true,
 				},
-				expectedMap: map[string]interface{}{
+				expectedMap: map[string]any{
 					"key1": "value1",
 					"key2": "value2",
 					"key3": "value3",
@@ -1220,53 +1220,53 @@ var _ = Describe("Util", func() {
 				},
 			}),
 			Entry("replaces existing fields", testCase{
-				original: map[string]interface{}{
+				original: map[string]any{
 					"key1": "original",
 					"key2": "value2",
 					"key3": "value3",
 				},
-				patch: map[string]interface{}{
+				patch: map[string]any{
 					"key1": "replaced",
 					"key3": "updated",
 				},
-				expectedMap: map[string]interface{}{
+				expectedMap: map[string]any{
 					"key1": "replaced",
 					"key2": "value2",
 					"key3": "updated",
 				},
 			}),
 			Entry("removes existing fields", testCase{
-				original: map[string]interface{}{
+				original: map[string]any{
 					"key1": "value1",
 					"key2": "value2",
 					"key3": "value3",
 				},
-				patch: map[string]interface{}{
+				patch: map[string]any{
 					"key2": nil,
 				},
-				expectedMap: map[string]interface{}{
+				expectedMap: map[string]any{
 					"key1": "value1",
 					"key3": "value3",
 				},
 			}),
 			Entry("removes entire map", testCase{
-				original:    map[string]interface{}{"key1": "value1"},
+				original:    map[string]any{"key1": "value1"},
 				patch:       nil,
 				expectedMap: nil,
 			}),
 			Entry("fails with nil original map", testCase{
 				original:     nil,
-				patch:        map[string]interface{}{"key1": "value1"},
+				patch:        map[string]any{"key1": "value1"},
 				expectedErrs: []string{"failed to merge patch into original"},
 			}),
 			Entry("fails with invalid patch map", testCase{
-				original:     map[string]interface{}{"key1": "value1"},
-				patch:        map[string]interface{}{"key2": make(chan int)}, // Channels can't be marshaled to JSON
+				original:     map[string]any{"key1": "value1"},
+				patch:        map[string]any{"key2": make(chan int)}, // Channels can't be marshaled to JSON
 				expectedErrs: []string{"failed to marshal patch for merge"},
 			}),
 			Entry("fails with invalid original map", testCase{
-				original:     map[string]interface{}{"key1": make(chan int)}, // Channels can't be marshaled to JSON
-				patch:        map[string]interface{}{"key2": "value2"},
+				original:     map[string]any{"key1": make(chan int)}, // Channels can't be marshaled to JSON
+				patch:        map[string]any{"key2": "value2"},
 				expectedErrs: []string{"failed to marshal original for merge"},
 			}),
 		)

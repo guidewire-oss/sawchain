@@ -16,7 +16,7 @@ var _ = Describe("Check and CheckFunc", func() {
 		resourcesYaml       string
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedReturnErrs  []string
 		expectedFailureLogs []string
 		expectedMatchObj    client.Object
@@ -138,7 +138,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -165,7 +165,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  extra: data
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -190,7 +190,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  count: "5"
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -215,7 +215,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: configured-value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -245,7 +245,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			client:         testutil.NewStandardFakeClient(),
 			globalBindings: map[string]any{"namespace": "global-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -270,7 +270,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			client:         testutil.NewStandardFakeClient(),
 			globalBindings: map[string]any{"namespace": "global-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -295,7 +295,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -321,7 +321,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&unstructured.Unstructured{},
 				`
 				apiVersion: v1
@@ -356,7 +356,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key2: value2
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -402,7 +402,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  extra2: data2
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -442,7 +442,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  password: cGFzc3dvcmQ=
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -482,7 +482,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key2: value2
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -530,7 +530,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key2: value2
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -566,7 +566,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -593,7 +593,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -620,7 +620,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -647,7 +647,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -682,7 +682,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  count: "2"
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -717,7 +717,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key2: value2
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -752,7 +752,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: value
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -787,7 +787,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key1: value1
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -816,7 +816,7 @@ var _ = Describe("Check and CheckFunc", func() {
 		// Template issues
 		Entry("failure - no template provided", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				map[string]any{"key": "value"},
 			},
 			expectedFailureLogs: []string{
@@ -827,7 +827,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - empty template", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"",
 			},
 			expectedFailureLogs: []string{
@@ -838,7 +838,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - invalid YAML template", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -857,7 +857,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - non-existent template file", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"non-existent.yaml",
 			},
 			expectedReturnErrs: []string{
@@ -868,7 +868,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - template missing kind", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				metadata:
@@ -884,7 +884,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - invalid bindings", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -905,7 +905,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - template missing binding", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -924,7 +924,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - template missing apiVersion", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				kind: ConfigMap
 				metadata:
@@ -942,7 +942,7 @@ var _ = Describe("Check and CheckFunc", func() {
 		// Object issues
 		Entry("failure - single object with multi-document template", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -965,7 +965,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - objects slice length mismatch", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 				},
@@ -999,7 +999,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				  key: dmFsdWU=
 				`,
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -1019,7 +1019,7 @@ var _ = Describe("Check and CheckFunc", func() {
 
 		Entry("failure - empty objects slice with multi-document template", testCase{
 			client: testutil.NewStandardFakeClient(),
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{},
 				`
 				apiVersion: v1

@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/evanphx/json-patch/v5"
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,7 +48,7 @@ func ReadFileContent(path string) (string, error) {
 }
 
 // AsDuration attempts to convert the given value into a time.Duration.
-func AsDuration(v interface{}) (time.Duration, bool) {
+func AsDuration(v any) (time.Duration, bool) {
 	// Check if it's already a time.Duration
 	if d, ok := v.(time.Duration); ok {
 		return d, true
@@ -65,7 +65,7 @@ func AsDuration(v interface{}) (time.Duration, bool) {
 }
 
 // AsMapStringAny attempts to convert the given value into a map with string keys.
-func AsMapStringAny(v interface{}) (map[string]any, bool) {
+func AsMapStringAny(v any) (map[string]any, bool) {
 	if m, ok := v.(map[string]any); ok {
 		return m, true
 	}
@@ -86,7 +86,7 @@ func AsMapStringAny(v interface{}) (map[string]any, bool) {
 }
 
 // AsObject attempts to convert the given value into a client.Object.
-func AsObject(v interface{}) (client.Object, bool) {
+func AsObject(v any) (client.Object, bool) {
 	if obj, ok := v.(client.Object); ok {
 		return obj, true
 	}
@@ -94,7 +94,7 @@ func AsObject(v interface{}) (client.Object, bool) {
 }
 
 // AsSliceOfObjects attempts to convert the given value into a slice of client.Object.
-func AsSliceOfObjects(v interface{}) ([]client.Object, bool) {
+func AsSliceOfObjects(v any) ([]client.Object, bool) {
 	// Check if it's already a []client.Object
 	if objs, ok := v.([]client.Object); ok {
 		return objs, true
@@ -125,7 +125,7 @@ func AsSliceOfObjects(v interface{}) ([]client.Object, bool) {
 
 // IsNil checks if the given interface is nil
 // or has a nil underlying value.
-func IsNil(v interface{}) bool {
+func IsNil(v any) bool {
 	if v == nil {
 		return true
 	}
@@ -141,7 +141,7 @@ func IsNil(v interface{}) bool {
 
 // ContainsNil checks if the given interface is a slice containing
 // any elements that are nil or have nil underlying values.
-func ContainsNil(v interface{}) bool {
+func ContainsNil(v any) bool {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() == reflect.Slice {
 		for i := 0; i < rv.Len(); i++ {
@@ -295,7 +295,7 @@ func CopyUnstructuredToObject(
 }
 
 // MergePatch merges the patch map into the original map using JSON merge patch (RFC 7386).
-func MergePatch(original, patch map[string]interface{}) (map[string]interface{}, error) {
+func MergePatch(original, patch map[string]any) (map[string]any, error) {
 	originalJson, err := json.Marshal(original)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal original for merge: %w", err)
@@ -308,7 +308,7 @@ func MergePatch(original, patch map[string]interface{}) (map[string]interface{},
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge patch into original: %w", err)
 	}
-	var mergedMap map[string]interface{}
+	var mergedMap map[string]any
 	if err := json.Unmarshal(mergedJson, &mergedMap); err != nil {
 		return nil, fmt.Errorf("failed to marshal result after merge: %w", err)
 	}

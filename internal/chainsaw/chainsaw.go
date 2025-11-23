@@ -28,7 +28,7 @@ var compilers = apis.DefaultCompilers
 
 // normalizeBindingValue converts a binding value to a form compatible with
 // Kubernetes unstructured objects by performing a JSON round-trip.
-// This converts typed maps (e.g. map[string]string) to map[string]interface{},
+// This converts typed maps (e.g. map[string]string) to map[string]any,
 // which prevents panics in Kubernetes's DeepCopyJSONValue function.
 func normalizeBindingValue(v any) (any, error) {
 	// Marshal to JSON
@@ -67,7 +67,7 @@ func normalizeBindingsMap(m map[string]any) (map[string]any, error) {
 // All binding values are normalized through JSON marshaling/unmarshaling
 // to ensure compatibility with Kubernetes unstructured objects.
 func BindingsFromMap(m map[string]any) (Bindings, error) {
-	// Normalize bindings to convert typed maps to map[string]interface{}
+	// Normalize bindings to convert typed maps to map[string]any
 	normalized, err := normalizeBindingsMap(m)
 	if err != nil {
 		return nil, err

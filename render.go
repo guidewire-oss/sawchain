@@ -79,7 +79,7 @@ import (
 //
 //	configMap := &corev1.ConfigMap{}
 //	sc.RenderSingle(configMap, "path/to/configmap.yaml")
-func (s *Sawchain) RenderSingle(args ...interface{}) client.Object {
+func (s *Sawchain) RenderSingle(args ...any) client.Object {
 	s.t.Helper()
 
 	// Parse options
@@ -194,7 +194,7 @@ func (s *Sawchain) RenderSingle(args ...interface{}) client.Object {
 //	configMap := &corev1.ConfigMap{}
 //	secret := &corev1.Secret{}
 //	sc.RenderMultiple([]client.Object{configMap, secret}, "path/to/resources.yaml")
-func (s *Sawchain) RenderMultiple(args ...interface{}) []client.Object {
+func (s *Sawchain) RenderMultiple(args ...any) []client.Object {
 	s.t.Helper()
 
 	// Parse options
