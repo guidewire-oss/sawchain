@@ -648,7 +648,7 @@ var _ = Describe("Create", func() {
 				  name: ($name)
 				  namespace: default
 				`,
-				map[string]any{"name": make(chan int)}, // Channel cannot be marshaled
+				map[string]any{"name": make(chan int)},
 			},
 			expectedFailureLogs: []string{
 				"[SAWCHAIN][ERROR] invalid bindings",
@@ -1440,7 +1440,7 @@ var _ = Describe("CreateAndWait", func() {
 				  name: ($name)
 				  namespace: default
 				`,
-				map[string]any{"name": make(chan int)}, // Channel cannot be marshaled
+				map[string]any{"name": make(chan int)},
 			},
 			expectedFailureLogs: []string{
 				"[SAWCHAIN][ERROR] invalid bindings",
