@@ -15,7 +15,7 @@ import (
 var _ = Describe("Matchers", func() {
 	Describe("NewChainsawMatcher", func() {
 		type testCase struct {
-			actual              interface{}
+			actual              any
 			templateContent     string
 			bindings            map[string]any
 			shouldMatch         bool
@@ -307,7 +307,7 @@ metadata:
 	Describe("NewStatusConditionMatcher", func() {
 		type testCase struct {
 			client              client.Client
-			actual              interface{}
+			actual              any
 			conditionType       string
 			expectedStatus      string
 			shouldMatch         bool

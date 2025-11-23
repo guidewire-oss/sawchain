@@ -88,7 +88,7 @@ var _ = Describe("Chainsaw", func() {
 				},
 			),
 			// Typed map normalization
-			Entry("should normalize typed map[string]string to map[string]interface{}",
+			Entry("should normalize typed map[string]string to map[string]any",
 				testCase{
 					input: map[string]any{
 						"labels": map[string]string{"app": "test", "env": "prod"},
@@ -99,7 +99,7 @@ var _ = Describe("Chainsaw", func() {
 				},
 			),
 			// Typed slice normalization
-			Entry("should normalize typed slices to []interface{}",
+			Entry("should normalize typed slices to []any",
 				testCase{
 					input: map[string]any{
 						"items": []string{"a", "b", "c"},
@@ -249,14 +249,14 @@ data:
 				},
 				expectedObjs: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "rendered-value-1",
 								"key2": "rendered-value-2",
 							},
@@ -283,15 +283,15 @@ stringData:
 				},
 				expectedObjs: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "Secret",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-secret",
 								"namespace": "default",
 							},
 							"type": "Opaque",
-							"stringData": map[string]interface{}{
+							"stringData": map[string]any{
 								"username": "username",
 								"password": "password",
 							},
@@ -328,28 +328,28 @@ stringData:
 				},
 				expectedObjs: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "test-namespace",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "rendered-value",
 							},
 						},
 					},
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "Secret",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-secret",
 								"namespace": "test-namespace",
 							},
 							"type": "Opaque",
-							"stringData": map[string]interface{}{
+							"stringData": map[string]any{
 								"password": "password",
 							},
 						},
@@ -382,19 +382,19 @@ spec:
 				},
 				expectedObjs: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "example.com/v1",
 							"kind":       "Example",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "complex-bindings",
 								"namespace": "default",
 							},
-							"spec": map[string]interface{}{
+							"spec": map[string]any{
 								"intValue":          float64(42), // JSON normalizes int to float64
 								"boolValue":         true,
 								"floatValue":        3.14,
-								"mapValue":          map[string]interface{}{"key": "value"}, // JSON normalizes typed map
-								"sliceValue":        []interface{}{"item1", "item2"},        // JSON normalizes typed slice
+								"mapValue":          map[string]any{"key": "value"}, // JSON normalizes typed map
+								"sliceValue":        []any{"item1", "item2"},        // JSON normalizes typed slice
 								"mapNestedValue":    "value",
 								"sliceElementValue": "item1",
 							},
@@ -420,14 +420,14 @@ data:
 				},
 				expectedObjs: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "functions",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"concatenated": "my-awesome-string-suffix",
 								"joined":       "prefix-my-awesome-string-suffix",
 								"encoded":      "bXktYXdlc29tZS1zdHJpbmc=",
@@ -451,14 +451,14 @@ data:
 				bindings: nil,
 				expectedObjs: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "value1",
 								"key2": "value2",
 							},
@@ -560,14 +560,14 @@ data:
 					"value2": "rendered-value-2",
 				},
 				expectedObj: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "rendered-value-1",
 							"key2": "rendered-value-2",
 						},
@@ -592,15 +592,15 @@ stringData:
 					"password": "password",
 				},
 				expectedObj: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "Secret",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-secret",
 							"namespace": "default",
 						},
 						"type": "Opaque",
-						"stringData": map[string]interface{}{
+						"stringData": map[string]any{
 							"username": "username",
 							"password": "password",
 						},
@@ -632,19 +632,19 @@ spec:
 					"sliceValue": []string{"item1", "item2"},
 				},
 				expectedObj: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "example.com/v1",
 						"kind":       "Example",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "complex-bindings",
 							"namespace": "default",
 						},
-						"spec": map[string]interface{}{
+						"spec": map[string]any{
 							"intValue":          float64(42), // JSON normalizes int to float64
 							"boolValue":         true,
 							"floatValue":        3.14,
-							"mapValue":          map[string]interface{}{"key": "value"}, // JSON normalizes typed map
-							"sliceValue":        []interface{}{"item1", "item2"},        // JSON normalizes typed slice
+							"mapValue":          map[string]any{"key": "value"}, // JSON normalizes typed map
+							"sliceValue":        []any{"item1", "item2"},        // JSON normalizes typed slice
 							"mapNestedValue":    "value",
 							"sliceElementValue": "item1",
 						},
@@ -668,14 +668,14 @@ data:
 					"mapValue":    map[string]string{"key": "value"},
 				},
 				expectedObj: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "functions",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"concatenated": "my-awesome-string-suffix",
 							"joined":       "prefix-my-awesome-string-suffix",
 							"encoded":      "bXktYXdlc29tZS1zdHJpbmc=",
@@ -697,14 +697,14 @@ data:
 `,
 				bindings: nil,
 				expectedObj: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 						},
@@ -816,14 +816,14 @@ data:
 			Entry("should match identical resources", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "value1",
 								"key2": "value2",
 							},
@@ -831,14 +831,14 @@ data:
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 						},
@@ -846,14 +846,14 @@ data:
 				},
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 						},
@@ -864,17 +864,17 @@ data:
 			Entry("should match when expected is a subset of candidate", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "default",
-								"labels": map[string]interface{}{
+								"labels": map[string]any{
 									"app": "test",
 								},
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "value1",
 								"key2": "value2",
 								"key3": "value3",
@@ -883,14 +883,14 @@ data:
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 						},
@@ -898,17 +898,17 @@ data:
 				},
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
-							"labels": map[string]interface{}{
+							"labels": map[string]any{
 								"app": "test",
 							},
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 							"key3": "value3",
@@ -920,67 +920,67 @@ data:
 			Entry("should match first resource that matches", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config-1",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "wrong-value",
 							},
 						},
 					},
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config-2",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "value1",
 							},
 						},
 					},
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config-3",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "value1",
 							},
 						},
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 						},
 					},
 				},
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config-2",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 						},
 					},
@@ -990,28 +990,28 @@ data:
 			Entry("should match with binding substitution", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "test-namespace",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "actual-value",
 							},
 						},
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "($namespace)",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "($value)",
 						},
 					},
@@ -1021,14 +1021,14 @@ data:
 					"value":     "actual-value",
 				},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "test-namespace",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "actual-value",
 						},
 					},
@@ -1038,30 +1038,30 @@ data:
 			Entry("should match with complex binding types", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name": "complex-test",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"intValue":   42,
 								"boolValue":  true,
 								"floatValue": 3.14,
-								"mapValue":   map[string]interface{}{"key": "value"},
-								"sliceValue": []interface{}{"item1", "item2"},
+								"mapValue":   map[string]any{"key": "value"},
+								"sliceValue": []any{"item1", "item2"},
 							},
 						},
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name": "complex-test",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"intValue":   "($intValue)",
 							"boolValue":  "($boolValue)",
 							"floatValue": "($floatValue)",
@@ -1074,22 +1074,22 @@ data:
 					"intValue":   42,
 					"boolValue":  true,
 					"floatValue": 3.14,
-					"mapValue":   map[string]interface{}{"key": "value"},
-					"sliceValue": []interface{}{"item1", "item2"},
+					"mapValue":   map[string]any{"key": "value"},
+					"sliceValue": []any{"item1", "item2"},
 				},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name": "complex-test",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"intValue":   42,
 							"boolValue":  true,
 							"floatValue": 3.14,
-							"mapValue":   map[string]interface{}{"key": "value"},
-							"sliceValue": []interface{}{"item1", "item2"},
+							"mapValue":   map[string]any{"key": "value"},
+							"sliceValue": []any{"item1", "item2"},
 						},
 					},
 				},
@@ -1098,28 +1098,28 @@ data:
 			Entry("should not match when values differ", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "wrong-value",
 							},
 						},
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "expected-value",
 						},
 					},
@@ -1140,10 +1140,10 @@ data:
 			Entry("should not match when fields are missing", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config",
 								"namespace": "default",
 							},
@@ -1151,14 +1151,14 @@ data:
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 						},
 					},
@@ -1179,40 +1179,40 @@ data:
 			Entry("should not match when no candidates match", testCase{
 				candidates: []unstructured.Unstructured{
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config-1",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "wrong-value-1",
 							},
 						},
 					},
 					{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"apiVersion": "v1",
 							"kind":       "ConfigMap",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name":      "test-config-2",
 								"namespace": "default",
 							},
-							"data": map[string]interface{}{
+							"data": map[string]any{
 								"key1": "wrong-value-2",
 							},
 						},
 					},
 				},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "expected-value",
 						},
 					},
@@ -1241,10 +1241,10 @@ data:
 			Entry("should not match when candidates list is empty", testCase{
 				candidates: []unstructured.Unstructured{},
 				expected: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name": "test-config",
 						},
 					},
@@ -1298,62 +1298,62 @@ spec:
           value: "enabled"
 `
 		var deploymentObj = unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "apps/v1",
 				"kind":       "Deployment",
-				"metadata": map[string]interface{}{
+				"metadata": map[string]any{
 					"name":      "test-check-deployment",
 					"namespace": "default",
 				},
-				"spec": map[string]interface{}{
+				"spec": map[string]any{
 					"replicas": int64(3),
-					"selector": map[string]interface{}{
-						"matchLabels": map[string]interface{}{
+					"selector": map[string]any{
+						"matchLabels": map[string]any{
 							"app": "example",
 						},
 					},
-					"strategy": map[string]interface{}{},
-					"template": map[string]interface{}{
-						"metadata": map[string]interface{}{
+					"strategy": map[string]any{},
+					"template": map[string]any{
+						"metadata": map[string]any{
 							"creationTimestamp": nil,
-							"labels": map[string]interface{}{
+							"labels": map[string]any{
 								"app": "example",
 							},
 						},
-						"spec": map[string]interface{}{
-							"containers": []interface{}{
-								map[string]interface{}{
+						"spec": map[string]any{
+							"containers": []any{
+								map[string]any{
 									"name":  "app",
 									"image": "my-app-image:latest",
-									"env": []interface{}{
-										map[string]interface{}{
+									"env": []any{
+										map[string]any{
 											"name":  "APP_ENV",
 											"value": "production",
 										},
 									},
-									"resources": map[string]interface{}{},
+									"resources": map[string]any{},
 								},
-								map[string]interface{}{
+								map[string]any{
 									"name":  "logger",
 									"image": "my-logger-image:latest",
-									"env": []interface{}{
-										map[string]interface{}{
+									"env": []any{
+										map[string]any{
 											"name":  "LOG_LEVEL",
 											"value": "info",
 										},
 									},
-									"resources": map[string]interface{}{},
+									"resources": map[string]any{},
 								},
-								map[string]interface{}{
+								map[string]any{
 									"name":  "sidecar",
 									"image": "my-sidecar-image:latest",
-									"env": []interface{}{
-										map[string]interface{}{
+									"env": []any{
+										map[string]any{
 											"name":  "SIDECAR_MODE",
 											"value": "enabled",
 										},
 									},
-									"resources": map[string]interface{}{},
+									"resources": map[string]any{},
 								},
 							},
 						},
@@ -1461,14 +1461,14 @@ data:
 `,
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-check-configmap",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 						},
@@ -1498,14 +1498,14 @@ data:
 `,
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-check-partial",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value1",
 							"key2": "value2",
 							"key3": "value3",
@@ -1537,14 +1537,14 @@ data:
 					"value": "binding-value",
 				},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-check-bindings",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "binding-value",
 						},
 					},
@@ -1587,14 +1587,14 @@ data:
 `,
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-check-multi-2",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "value2",
 						},
 					},
@@ -1814,14 +1814,14 @@ data:
 					"expectedSubstring": "SUPER",
 				},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-check-functions",
 							"namespace": "default",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"key1": "my awesome string",
 							"key2": "my SUPER awesome string",
 							"key3": "doesn't start with bad prefix",
@@ -1883,14 +1883,14 @@ data:
 `,
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-config-ns2",
 							"namespace": "other-namespace",
 						},
-						"data": map[string]interface{}{
+						"data": map[string]any{
 							"unique-key": "target-value",
 						},
 					},
@@ -1933,20 +1933,20 @@ metadata:
 `,
 				bindings: map[string]any{},
 				expectedMatch: unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"apiVersion": "v1",
 						"kind":       "Secret",
-						"metadata": map[string]interface{}{
+						"metadata": map[string]any{
 							"name":      "test-secret-ns2",
 							"namespace": "other-namespace",
-							"labels": map[string]interface{}{
+							"labels": map[string]any{
 								"app":         "target-app",
 								"environment": "production",
 								"extra":       "label",
 							},
 						},
 						"type": "Opaque",
-						"stringData": map[string]interface{}{
+						"stringData": map[string]any{
 							"username": "username",
 						},
 					},

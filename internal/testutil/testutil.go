@@ -137,7 +137,7 @@ func NewUnstructuredConfigMap(
 	obj.SetName(name)
 	obj.SetNamespace(namespace)
 
-	dataMap := make(map[string]interface{})
+	dataMap := make(map[string]any)
 	for k, v := range data {
 		dataMap[k] = v
 	}
@@ -154,7 +154,7 @@ func NewUnstructuredConfigMap(
 //   - []metav1.Condition: sets Status.Conditions
 //
 // Values of unexpected types are ignored.
-func NewTestResource(name, namespace string, optionalArgs ...interface{}) *TestResource {
+func NewTestResource(name, namespace string, optionalArgs ...any) *TestResource {
 	tr := &TestResource{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "example.com/v1",
@@ -196,7 +196,7 @@ func NewTestResource(name, namespace string, optionalArgs ...interface{}) *TestR
 //   - []metav1.Condition: sets status.conditions
 //
 // Values of unexpected types are ignored.
-func NewUnstructuredTestResource(name, namespace string, optionalArgs ...interface{}) *unstructured.Unstructured {
+func NewUnstructuredTestResource(name, namespace string, optionalArgs ...any) *unstructured.Unstructured {
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("example.com/v1")
 	obj.SetKind("TestResource")
@@ -227,9 +227,9 @@ func NewUnstructuredTestResource(name, namespace string, optionalArgs ...interfa
 		}
 	}
 
-	conditionsData := make([]interface{}, len(conditions))
+	conditionsData := make([]any, len(conditions))
 	for i, condition := range conditions {
-		conditionMap := map[string]interface{}{
+		conditionMap := map[string]any{
 			"type":               condition.Type,
 			"status":             string(condition.Status),
 			"reason":             condition.Reason,
@@ -238,7 +238,7 @@ func NewUnstructuredTestResource(name, namespace string, optionalArgs ...interfa
 		}
 		conditionsData[i] = conditionMap
 	}
-	obj.Object["status"] = map[string]interface{}{
+	obj.Object["status"] = map[string]any{
 		"conditions": conditionsData,
 	}
 

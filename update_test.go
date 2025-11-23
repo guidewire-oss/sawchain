@@ -18,7 +18,7 @@ var _ = Describe("Update", func() {
 		originalObjs        []client.Object
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedReturnErrs  []string
 		expectedFailureLogs []string
 		expectedObj         client.Object
@@ -108,7 +108,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
@@ -119,7 +119,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
@@ -130,7 +130,7 @@ var _ = Describe("Update", func() {
 				testutil.NewTestResource("test-cr", "default", "original"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				func() client.Object {
 					obj := testutil.NewTestResource("test-cr", "default", "updated")
 					obj.SetResourceVersion("1") // Client does not forgive incorrect resource version for custom types
@@ -145,7 +145,7 @@ var _ = Describe("Update", func() {
 				testutil.NewTestResource("test-cr", "default", "original"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				func() client.Object {
 					obj := testutil.NewUnstructuredTestResource("test-cr", "default", "updated")
 					obj.SetResourceVersion("1") // Client does not forgive incorrect resource version for custom types
@@ -164,7 +164,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -194,7 +194,7 @@ var _ = Describe("Update", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -225,7 +225,7 @@ var _ = Describe("Update", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -256,7 +256,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -287,7 +287,7 @@ var _ = Describe("Update", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -318,7 +318,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -346,7 +346,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&unstructured.Unstructured{},
 				`
 				apiVersion: v1
@@ -374,7 +374,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -392,7 +392,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewUnstructuredConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewUnstructuredConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -410,7 +410,7 @@ var _ = Describe("Update", func() {
 				testutil.NewTestResource("test-cr2", "default", "original2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					func() client.Object {
 						obj := testutil.NewTestResource("test-cr1", "default", "updated1")
@@ -436,7 +436,7 @@ var _ = Describe("Update", func() {
 				testutil.NewTestResource("test-cr2", "default", "original2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					func() client.Object {
 						obj := testutil.NewUnstructuredTestResource("test-cr1", "default", "updated1")
@@ -470,7 +470,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -522,7 +522,7 @@ var _ = Describe("Update", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -579,7 +579,7 @@ var _ = Describe("Update", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "prefix": "global"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -632,7 +632,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -688,7 +688,7 @@ var _ = Describe("Update", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -748,7 +748,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -801,7 +801,7 @@ var _ = Describe("Update", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&unstructured.Unstructured{},
 					&unstructured.Unstructured{},
@@ -851,7 +851,7 @@ var _ = Describe("Update", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				updateFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedReturnErrs: []string{"simulated update failure"},
@@ -866,7 +866,7 @@ var _ = Describe("Update", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				updateFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -883,7 +883,7 @@ var _ = Describe("Update", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				updateFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -908,7 +908,7 @@ var _ = Describe("Update", func() {
 
 		Entry("should fail with unexpected argument type", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
@@ -919,7 +919,7 @@ var _ = Describe("Update", func() {
 
 		Entry("should fail with non-existent template file", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
@@ -930,7 +930,7 @@ var _ = Describe("Update", func() {
 
 		Entry("should fail with invalid template", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
@@ -943,7 +943,7 @@ var _ = Describe("Update", func() {
 
 		Entry("should fail with invalid bindings", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -962,7 +962,7 @@ var _ = Describe("Update", func() {
 
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -984,7 +984,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 				},
@@ -1017,7 +1017,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
@@ -1035,7 +1035,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1065,7 +1065,7 @@ var _ = Describe("Update", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1090,7 +1090,7 @@ var _ = Describe("UpdateAndWait", func() {
 		originalObjs        []client.Object
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedFailureLogs []string
 		expectedObj         client.Object
 		expectedObjs        []client.Object
@@ -1179,7 +1179,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedObj:      testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
@@ -1191,7 +1191,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
@@ -1202,7 +1202,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewTestResource("test-cr", "default", "original"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				func() client.Object {
 					obj := testutil.NewTestResource("test-cr", "default", "updated")
 					obj.SetResourceVersion("1") // Client does not forgive incorrect resource version for custom types
@@ -1217,7 +1217,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewTestResource("test-cr", "default", "original"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				func() client.Object {
 					obj := testutil.NewUnstructuredTestResource("test-cr", "default", "updated")
 					obj.SetResourceVersion("1") // Client does not forgive incorrect resource version for custom types
@@ -1236,7 +1236,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1266,7 +1266,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1297,7 +1297,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1328,7 +1328,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -1359,7 +1359,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -1390,7 +1390,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -1418,7 +1418,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&unstructured.Unstructured{},
 				`
 				apiVersion: v1
@@ -1444,7 +1444,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedObj:      testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
@@ -1459,7 +1459,7 @@ var _ = Describe("UpdateAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: 2, // Fail the first 2 get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedObj:      testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
@@ -1473,7 +1473,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -1491,7 +1491,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewUnstructuredConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewUnstructuredConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -1509,7 +1509,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewTestResource("test-cr2", "default", "original2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					func() client.Object {
 						obj := testutil.NewTestResource("test-cr1", "default", "updated1")
@@ -1535,7 +1535,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewTestResource("test-cr2", "default", "original2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					func() client.Object {
 						obj := testutil.NewUnstructuredTestResource("test-cr1", "default", "updated1")
@@ -1569,7 +1569,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1621,7 +1621,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1678,7 +1678,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "prefix": "global"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -1731,7 +1731,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -1787,7 +1787,7 @@ var _ = Describe("UpdateAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -1847,7 +1847,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -1900,7 +1900,7 @@ var _ = Describe("UpdateAndWait", func() {
 				}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&unstructured.Unstructured{},
 					&unstructured.Unstructured{},
@@ -1947,7 +1947,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -1971,7 +1971,7 @@ var _ = Describe("UpdateAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: 2, // Fail the first 2 get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -1994,7 +1994,7 @@ var _ = Describe("UpdateAndWait", func() {
 
 		Entry("should fail with unexpected argument type", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
@@ -2005,7 +2005,7 @@ var _ = Describe("UpdateAndWait", func() {
 
 		Entry("should fail with non-existent template file", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
@@ -2016,7 +2016,7 @@ var _ = Describe("UpdateAndWait", func() {
 
 		Entry("should fail with invalid template", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
@@ -2029,7 +2029,7 @@ var _ = Describe("UpdateAndWait", func() {
 
 		Entry("should fail with invalid bindings", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -2048,7 +2048,7 @@ var _ = Describe("UpdateAndWait", func() {
 
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -2072,7 +2072,7 @@ var _ = Describe("UpdateAndWait", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				updateFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedFailureLogs: []string{
@@ -2089,7 +2089,7 @@ var _ = Describe("UpdateAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: -1, // Fail all get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 			},
 			expectedFailureLogs: []string{
@@ -2107,7 +2107,7 @@ var _ = Describe("UpdateAndWait", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				updateFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -2128,7 +2128,7 @@ var _ = Describe("UpdateAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: -1, // Fail all get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 					testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "updated2"}),
@@ -2146,7 +2146,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
 				},
@@ -2179,7 +2179,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "original1"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "updated"}),
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "updated1"}),
@@ -2197,7 +2197,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "original2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -2227,7 +2227,7 @@ var _ = Describe("UpdateAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "original"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap

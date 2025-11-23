@@ -149,7 +149,7 @@ import (
 //	  stringData:
 //	    password: updated-secret
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
+func (s *Sawchain) Update(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
@@ -365,7 +365,7 @@ func (s *Sawchain) Update(ctx context.Context, args ...interface{}) error {
 //	  stringData:
 //	    password: updated-secret
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...interface{}) {
+func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...any) {
 	s.t.Helper()
 
 	// Parse options

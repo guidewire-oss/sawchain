@@ -17,7 +17,7 @@ import (
 var _ = Describe("RenderSingle", func() {
 	type testCase struct {
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedObj         client.Object
 		expectedFailureLogs []string
 	}
@@ -63,7 +63,7 @@ var _ = Describe("RenderSingle", func() {
 
 		// Success cases - return mode
 		Entry("should render template with bindings (return mode)", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -80,7 +80,7 @@ var _ = Describe("RenderSingle", func() {
 
 		Entry("should render template with multiple binding maps (return mode)", testCase{
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -97,7 +97,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should return typed object when scheme supports it", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -112,7 +112,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should return unstructured object when scheme doesn't support type", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: example.com/v1
 				kind: TestResource
@@ -129,7 +129,7 @@ var _ = Describe("RenderSingle", func() {
 
 		// Success cases - populate mode
 		Entry("should populate typed object", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -145,7 +145,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should populate unstructured object", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&unstructured.Unstructured{},
 				`
 				apiVersion: v1
@@ -162,7 +162,7 @@ var _ = Describe("RenderSingle", func() {
 
 		Entry("should populate with template and bindings", testCase{
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -179,7 +179,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should populate typed object with template and typed map bindings", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: v1
@@ -203,7 +203,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with no template", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				map[string]any{"key": "value"},
 			},
 			expectedFailureLogs: []string{
@@ -213,7 +213,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with multiple template arguments", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"template1",
 				"template2",
 			},
@@ -224,7 +224,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with multiple object arguments", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				&corev1.Secret{},
 				`
@@ -242,7 +242,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with nil object", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				(*corev1.ConfigMap)(nil),
 				`
 				apiVersion: v1
@@ -259,7 +259,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with invalid argument type", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				123,
 				`
 				apiVersion: v1
@@ -276,7 +276,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with non-existent template file", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
@@ -286,7 +286,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with invalid YAML syntax", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -304,7 +304,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with empty template", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"",
 			},
 			expectedFailureLogs: []string{
@@ -314,7 +314,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with invalid bindings", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -332,7 +332,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with missing binding variable", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -350,7 +350,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with multiple resources in template", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -372,7 +372,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with type mismatch", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.Secret{},
 				`
 				apiVersion: v1
@@ -391,7 +391,7 @@ var _ = Describe("RenderSingle", func() {
 		}),
 
 		Entry("should fail with unknown GVK in template with typed object", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.ConfigMap{},
 				`
 				apiVersion: unknown.group/v1
@@ -413,7 +413,7 @@ var _ = Describe("RenderSingle", func() {
 var _ = Describe("RenderMultiple", func() {
 	type testCase struct {
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedObjs        []client.Object
 		expectedFailureLogs []string
 	}
@@ -460,7 +460,7 @@ var _ = Describe("RenderMultiple", func() {
 		// Success cases - return mode
 		Entry("should render multiple ConfigMaps with template and bindings (return mode)", testCase{
 			globalBindings: map[string]any{"namespace": "default"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -488,7 +488,7 @@ var _ = Describe("RenderMultiple", func() {
 
 		Entry("should render multiple ConfigMaps with template and multiple binding maps (return mode)", testCase{
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -516,7 +516,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should return typed ConfigMaps when scheme supports them", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -542,7 +542,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should return unstructured objects when scheme doesn't support types", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: example.com/v1
 				kind: TestResource
@@ -570,7 +570,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should render single resource as multiple", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -588,7 +588,7 @@ var _ = Describe("RenderMultiple", func() {
 
 		// Success cases - populate mode
 		Entry("should populate typed ConfigMaps slice", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -618,7 +618,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should populate unstructured objects slice", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&unstructured.Unstructured{},
 					&unstructured.Unstructured{},
@@ -649,7 +649,7 @@ var _ = Describe("RenderMultiple", func() {
 
 		Entry("should populate with template and bindings", testCase{
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -680,7 +680,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should populate typed objects with template and typed map bindings", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -720,7 +720,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with no template", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				map[string]any{"key": "value"},
 			},
 			expectedFailureLogs: []string{
@@ -730,7 +730,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with multiple template arguments", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"template1",
 				"template2",
 			},
@@ -741,7 +741,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with multiple objects slice arguments", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{&corev1.ConfigMap{}},
 				[]client.Object{&corev1.ConfigMap{}},
 				`
@@ -759,7 +759,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with invalid argument type", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				123,
 				`
 				apiVersion: v1
@@ -776,7 +776,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with non-existent template file", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
@@ -786,7 +786,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with invalid YAML syntax", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -804,7 +804,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with empty template", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"",
 			},
 			expectedFailureLogs: []string{
@@ -814,7 +814,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with invalid bindings", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -838,7 +838,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with missing binding variable", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -862,7 +862,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with objects slice length mismatch (too few)", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 				},
@@ -890,7 +890,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with objects slice length mismatch (too many)", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.ConfigMap{},
@@ -920,7 +920,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with type mismatch in objects slice", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 					&corev1.Secret{}, // Wrong type
@@ -950,7 +950,7 @@ var _ = Describe("RenderMultiple", func() {
 		}),
 
 		Entry("should fail with unknown GVK in template with typed objects", testCase{
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 				},

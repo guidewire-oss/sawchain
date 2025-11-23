@@ -82,7 +82,7 @@ import (
 //	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) Delete(ctx context.Context, args ...interface{}) error {
+func (s *Sawchain) Delete(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
@@ -204,7 +204,7 @@ func (s *Sawchain) Delete(ctx context.Context, args ...interface{}) error {
 //	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{}) {
+func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...any) {
 	s.t.Helper()
 
 	// Parse options

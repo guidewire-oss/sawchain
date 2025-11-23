@@ -207,12 +207,12 @@ var _ = Describe("Testutil", func() {
 	)
 
 	DescribeTable("NewTestResource",
-		func(optionalArgs []interface{}, expected *testutil.TestResource) {
+		func(optionalArgs []any, expected *testutil.TestResource) {
 			tr := testutil.NewTestResource("test-resource", "default", optionalArgs...)
 			Expect(tr).To(Equal(expected))
 		},
 		Entry("no optional args",
-			[]interface{}{},
+			[]any{},
 			&testutil.TestResource{
 				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
 				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
@@ -220,7 +220,7 @@ var _ = Describe("Testutil", func() {
 			},
 		),
 		Entry("with data only",
-			[]interface{}{"test-data"},
+			[]any{"test-data"},
 			&testutil.TestResource{
 				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
 				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
@@ -229,7 +229,7 @@ var _ = Describe("Testutil", func() {
 			},
 		),
 		Entry("with count (int)",
-			[]interface{}{42},
+			[]any{42},
 			&testutil.TestResource{
 				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
 				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
@@ -238,7 +238,7 @@ var _ = Describe("Testutil", func() {
 			},
 		),
 		Entry("with count (int32)",
-			[]interface{}{int32(42)},
+			[]any{int32(42)},
 			&testutil.TestResource{
 				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
 				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
@@ -247,7 +247,7 @@ var _ = Describe("Testutil", func() {
 			},
 		),
 		Entry("with data and count",
-			[]interface{}{"test-data", 42},
+			[]any{"test-data", 42},
 			&testutil.TestResource{
 				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
 				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
@@ -257,7 +257,7 @@ var _ = Describe("Testutil", func() {
 			},
 		),
 		Entry("with conditions",
-			[]interface{}{
+			[]any{
 				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
 			},
 			&testutil.TestResource{
@@ -269,7 +269,7 @@ var _ = Describe("Testutil", func() {
 			},
 		),
 		Entry("with all fields",
-			[]interface{}{
+			[]any{
 				"test-data",
 				int32(42),
 				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
@@ -287,110 +287,110 @@ var _ = Describe("Testutil", func() {
 	)
 
 	DescribeTable("NewUnstructuredTestResource",
-		func(optionalArgs []interface{}, expected *unstructured.Unstructured) {
+		func(optionalArgs []any, expected *unstructured.Unstructured) {
 			result := testutil.NewUnstructuredTestResource("test-resource", "default", optionalArgs...)
 			Expect(result).To(Equal(expected))
 		},
 		Entry("no optional args",
-			[]interface{}{},
+			[]any{},
 			&unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-resource",
 						"namespace": "default",
 					},
-					"status": map[string]interface{}{
-						"conditions": []interface{}{},
+					"status": map[string]any{
+						"conditions": []any{},
 					},
 				},
 			},
 		),
 		Entry("with data only",
-			[]interface{}{"test-data"},
+			[]any{"test-data"},
 			&unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-resource",
 						"namespace": "default",
 					},
 					"data": "test-data",
-					"status": map[string]interface{}{
-						"conditions": []interface{}{},
+					"status": map[string]any{
+						"conditions": []any{},
 					},
 				},
 			},
 		),
 		Entry("with count (int)",
-			[]interface{}{42},
+			[]any{42},
 			&unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-resource",
 						"namespace": "default",
 					},
 					"count": int32(42),
-					"status": map[string]interface{}{
-						"conditions": []interface{}{},
+					"status": map[string]any{
+						"conditions": []any{},
 					},
 				},
 			},
 		),
 		Entry("with count (int32)",
-			[]interface{}{int32(42)},
+			[]any{int32(42)},
 			&unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-resource",
 						"namespace": "default",
 					},
 					"count": int32(42),
-					"status": map[string]interface{}{
-						"conditions": []interface{}{},
+					"status": map[string]any{
+						"conditions": []any{},
 					},
 				},
 			},
 		),
 		Entry("with data and count",
-			[]interface{}{"test-data", 42},
+			[]any{"test-data", 42},
 			&unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-resource",
 						"namespace": "default",
 					},
 					"data":  "test-data",
 					"count": int32(42),
-					"status": map[string]interface{}{
-						"conditions": []interface{}{},
+					"status": map[string]any{
+						"conditions": []any{},
 					},
 				},
 			},
 		),
 		Entry("with conditions",
-			[]interface{}{
+			[]any{
 				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
 			},
 			&unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-resource",
 						"namespace": "default",
 					},
-					"status": map[string]interface{}{
-						"conditions": []interface{}{
-							map[string]interface{}{
+					"status": map[string]any{
+						"conditions": []any{
+							map[string]any{
 								"type":               "Ready",
 								"status":             "True",
 								"reason":             "TestReason",
@@ -403,24 +403,24 @@ var _ = Describe("Testutil", func() {
 			},
 		),
 		Entry("with all fields",
-			[]interface{}{
+			[]any{
 				"test-data",
 				int32(42),
 				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
 			},
 			&unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-resource",
 						"namespace": "default",
 					},
 					"data":  "test-data",
 					"count": int32(42),
-					"status": map[string]interface{}{
-						"conditions": []interface{}{
-							map[string]interface{}{
+					"status": map[string]any{
+						"conditions": []any{
+							map[string]any{
 								"type":               "Ready",
 								"status":             "True",
 								"reason":             "TestReason",
@@ -507,10 +507,10 @@ var _ = Describe("Testutil", func() {
 			}(),
 			// Expected unstructured result
 			unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "example.com/v1",
 					"kind":       "TestResource",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-name",
 						"namespace": "test-namespace",
 					},
@@ -530,14 +530,14 @@ var _ = Describe("Testutil", func() {
 			}(),
 			// Expected unstructured result
 			unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "v1",
 					"kind":       "ConfigMap",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-cm",
 						"namespace": "default",
 					},
-					"data": map[string]interface{}{
+					"data": map[string]any{
 						"key": "value",
 					},
 				},

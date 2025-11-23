@@ -15,7 +15,7 @@ var _ = Describe("Get and GetFunc", func() {
 		objs                []client.Object
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedReturnErrs  []string
 		expectedFailureLogs []string
 		expectedObj         client.Object
@@ -129,7 +129,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
@@ -140,7 +140,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredConfigMap("test-cm", "default", nil),
 			},
 			expectedObj: testutil.NewUnstructuredConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
@@ -151,7 +151,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewTestResource("test-cr", "default", "test-data"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewTestResource("test-cr", "default"),
 			},
 			expectedObj: testutil.NewTestResource("test-cr", "default", "test-data"),
@@ -162,7 +162,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -179,7 +179,7 @@ var _ = Describe("Get and GetFunc", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -197,7 +197,7 @@ var _ = Describe("Get and GetFunc", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "test-cm"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -218,7 +218,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("", "", nil),
 				`
 				apiVersion: v1
@@ -236,7 +236,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&unstructured.Unstructured{},
 				`
 				apiVersion: v1
@@ -256,7 +256,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -274,7 +274,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -297,7 +297,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("", "", nil),
 					testutil.NewConfigMap("", "", nil),
@@ -328,7 +328,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&unstructured.Unstructured{},
 					&unstructured.Unstructured{},
@@ -362,7 +362,7 @@ var _ = Describe("Get and GetFunc", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: -1, // Fail all get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedReturnErrs: []string{"simulated get failure"},
@@ -371,7 +371,7 @@ var _ = Describe("Get and GetFunc", func() {
 		Entry("not found error for non-existent resource", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("non-existent", "default", nil),
 			},
 			expectedReturnErrs: []string{"not found"},
@@ -390,7 +390,7 @@ var _ = Describe("Get and GetFunc", func() {
 		Entry("invalid template", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
@@ -403,7 +403,7 @@ var _ = Describe("Get and GetFunc", func() {
 		Entry("invalid bindings for single resource", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -423,7 +423,7 @@ var _ = Describe("Get and GetFunc", func() {
 		Entry("invalid bindings for multiple resources", testCase{
 			objs:   nil,
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -452,7 +452,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("", "", nil), // Single object but template has multiple resources
 				`
 				apiVersion: v1
@@ -478,7 +478,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "value1"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("", "", nil), // Two objects but template has one resource
 					testutil.NewConfigMap("", "", nil),
@@ -501,7 +501,7 @@ var _ = Describe("Get and GetFunc", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewTestResource("", ""), // TestResource object but template describes ConfigMap
 				`
 				apiVersion: v1

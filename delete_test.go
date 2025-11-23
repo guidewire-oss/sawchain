@@ -17,7 +17,7 @@ var _ = Describe("Delete", func() {
 		objs                []client.Object
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedReturnErrs  []string
 		expectedFailureLogs []string
 	}
@@ -67,7 +67,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 		}),
@@ -77,7 +77,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredConfigMap("test-cm", "default", nil),
 			},
 		}),
@@ -87,7 +87,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewTestResource("test-cr", "default", "test-data"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewTestResource("test-cr", "default"),
 			},
 		}),
@@ -97,7 +97,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewTestResource("test-cr", "default", "test-data"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredTestResource("test-cr", "default"),
 			},
 		}),
@@ -107,7 +107,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -124,7 +124,7 @@ var _ = Describe("Delete", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -142,7 +142,7 @@ var _ = Describe("Delete", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "global-cm"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -160,7 +160,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.Secret{},
 				`
 				apiVersion: v1
@@ -179,7 +179,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -193,7 +193,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewUnstructuredConfigMap("test-cm1", "default", nil),
 					testutil.NewUnstructuredConfigMap("test-cm2", "default", nil),
@@ -207,7 +207,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewTestResource("test-cr2", "default", "data2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewTestResource("test-cr1", "default"),
 					testutil.NewTestResource("test-cr2", "default"),
@@ -221,7 +221,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewTestResource("test-cr2", "default", "data2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewUnstructuredTestResource("test-cr1", "default"),
 					testutil.NewUnstructuredTestResource("test-cr2", "default"),
@@ -235,7 +235,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -259,7 +259,7 @@ var _ = Describe("Delete", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -284,7 +284,7 @@ var _ = Describe("Delete", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "prefix": "global"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -309,7 +309,7 @@ var _ = Describe("Delete", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 				},
@@ -338,7 +338,7 @@ var _ = Describe("Delete", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				deleteFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedReturnErrs: []string{"simulated delete failure"},
@@ -353,7 +353,7 @@ var _ = Describe("Delete", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				deleteFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -370,7 +370,7 @@ var _ = Describe("Delete", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				deleteFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -393,7 +393,7 @@ var _ = Describe("Delete", func() {
 
 		Entry("should fail with unexpected argument type", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
@@ -404,7 +404,7 @@ var _ = Describe("Delete", func() {
 
 		Entry("should fail with non-existent template file", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
@@ -415,7 +415,7 @@ var _ = Describe("Delete", func() {
 
 		Entry("should fail with invalid template", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
@@ -428,7 +428,7 @@ var _ = Describe("Delete", func() {
 
 		Entry("should fail with invalid bindings", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -447,7 +447,7 @@ var _ = Describe("Delete", func() {
 
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -465,7 +465,7 @@ var _ = Describe("Delete", func() {
 
 		Entry("should fail with object and objects together", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
@@ -484,7 +484,7 @@ var _ = Describe("DeleteAndWait", func() {
 		objs                []client.Object
 		client              client.Client
 		globalBindings      map[string]any
-		methodArgs          []interface{}
+		methodArgs          []any
 		expectedFailureLogs []string
 		expectedDuration    time.Duration
 	}
@@ -537,7 +537,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedDuration: fastTimeout,
@@ -548,7 +548,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredConfigMap("test-cm", "default", nil),
 			},
 			expectedDuration: fastTimeout,
@@ -559,7 +559,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewTestResource("test-cr", "default", "test-data"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewTestResource("test-cr", "default"),
 			},
 			expectedDuration: fastTimeout,
@@ -570,7 +570,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewTestResource("test-cr", "default", "test-data"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewUnstructuredTestResource("test-cr", "default"),
 			},
 			expectedDuration: fastTimeout,
@@ -581,7 +581,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -599,7 +599,7 @@ var _ = Describe("DeleteAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -618,7 +618,7 @@ var _ = Describe("DeleteAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "name": "global-cm"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -637,7 +637,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				&corev1.Secret{},
 				`
 				apiVersion: v1
@@ -655,7 +655,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm", "default", map[string]string{"foo": "bar"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 				"50ms", // Custom timeout
 				"10ms", // Custom interval
@@ -671,7 +671,7 @@ var _ = Describe("DeleteAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: 2, // Fail the first 2 get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedDuration: fastTimeout,
@@ -684,7 +684,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -699,7 +699,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewUnstructuredConfigMap("test-cm1", "default", nil),
 					testutil.NewUnstructuredConfigMap("test-cm2", "default", nil),
@@ -714,7 +714,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewTestResource("test-cr2", "default", "data2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewTestResource("test-cr1", "default"),
 					testutil.NewTestResource("test-cr2", "default"),
@@ -729,7 +729,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewTestResource("test-cr2", "default", "data2"),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewUnstructuredTestResource("test-cr1", "default"),
 					testutil.NewUnstructuredTestResource("test-cr2", "default"),
@@ -744,7 +744,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -769,7 +769,7 @@ var _ = Describe("DeleteAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -795,7 +795,7 @@ var _ = Describe("DeleteAndWait", func() {
 			},
 			client:         &MockClient{Client: testutil.NewStandardFakeClient()},
 			globalBindings: map[string]any{"namespace": "test-ns", "prefix": "global"},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -821,7 +821,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					&corev1.ConfigMap{},
 				},
@@ -848,7 +848,7 @@ var _ = Describe("DeleteAndWait", func() {
 				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key2": "value2"}),
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -868,7 +868,7 @@ var _ = Describe("DeleteAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: 2, // Fail the first 2 get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -889,7 +889,7 @@ var _ = Describe("DeleteAndWait", func() {
 
 		Entry("should fail with unexpected argument type", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]string{"unexpected", "argument", "type"},
 			},
 			expectedFailureLogs: []string{
@@ -901,7 +901,7 @@ var _ = Describe("DeleteAndWait", func() {
 
 		Entry("should fail with non-existent template file", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
@@ -912,7 +912,7 @@ var _ = Describe("DeleteAndWait", func() {
 
 		Entry("should fail with invalid template", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`invalid: yaml: [`,
 			},
 			expectedFailureLogs: []string{
@@ -926,7 +926,7 @@ var _ = Describe("DeleteAndWait", func() {
 
 		Entry("should fail with invalid bindings", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -945,7 +945,7 @@ var _ = Describe("DeleteAndWait", func() {
 
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				`
 				apiVersion: v1
 				kind: ConfigMap
@@ -970,7 +970,7 @@ var _ = Describe("DeleteAndWait", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				deleteFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedFailureLogs: []string{
@@ -988,7 +988,7 @@ var _ = Describe("DeleteAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: -1, // Fail all get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				testutil.NewConfigMap("test-cm", "default", nil),
 			},
 			expectedFailureLogs: []string{
@@ -1007,7 +1007,7 @@ var _ = Describe("DeleteAndWait", func() {
 				Client:           testutil.NewStandardFakeClient(),
 				deleteFailFirstN: 1,
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),
@@ -1029,7 +1029,7 @@ var _ = Describe("DeleteAndWait", func() {
 				Client:        testutil.NewStandardFakeClient(),
 				getFailFirstN: -1, // Fail all get attempts
 			},
-			methodArgs: []interface{}{
+			methodArgs: []any{
 				[]client.Object{
 					testutil.NewConfigMap("test-cm1", "default", nil),
 					testutil.NewConfigMap("test-cm2", "default", nil),

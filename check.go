@@ -103,7 +103,7 @@ import (
 //	  `, map[string]any{"namespace": "default"})
 //
 // For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
-func (s *Sawchain) Check(ctx context.Context, args ...interface{}) error {
+func (s *Sawchain) Check(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
@@ -155,7 +155,7 @@ func (s *Sawchain) Check(ctx context.Context, args ...interface{}) error {
 // polling scenarios where resources might not be immediately available.
 //
 // For details on arguments, examples, and behavior, see the documentation for Check.
-func (s *Sawchain) CheckFunc(ctx context.Context, args ...interface{}) func() error {
+func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error {
 	s.t.Helper()
 
 	// Parse options

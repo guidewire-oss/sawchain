@@ -94,7 +94,7 @@ type Sawchain struct {
 // Initialize Sawchain with custom timeout and interval settings:
 //
 //	sc := sawchain.New(t, k8sClient, "10s", "2s")
-func New(t testing.TB, c client.Client, args ...interface{}) *Sawchain {
+func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 	t.Helper()
 	// Initialize Gomega
 	g := gomega.NewWithT(t)

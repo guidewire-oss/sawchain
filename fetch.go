@@ -79,7 +79,7 @@ import (
 //	    name: ($name)
 //	    namespace: ($namespace)
 //	  `, map[string]any{"name": "test-cm", "namespace": "default"})
-func (s *Sawchain) FetchSingle(ctx context.Context, args ...interface{}) client.Object {
+func (s *Sawchain) FetchSingle(ctx context.Context, args ...any) client.Object {
 	s.t.Helper()
 
 	// Parse options
@@ -196,7 +196,7 @@ func (s *Sawchain) FetchSingle(ctx context.Context, args ...interface{}) client.
 //	    name: (concat($prefix, '-secret'))
 //	    namespace: ($namespace)
 //	  `, map[string]any{"prefix": "test", "namespace": "default"})
-func (s *Sawchain) FetchMultiple(ctx context.Context, args ...interface{}) []client.Object {
+func (s *Sawchain) FetchMultiple(ctx context.Context, args ...any) []client.Object {
 	s.t.Helper()
 
 	// Parse options
@@ -255,7 +255,7 @@ func (s *Sawchain) FetchMultiple(ctx context.Context, args ...interface{}) []cli
 // polling scenarios where resources might not immediately reflect the desired state.
 //
 // For details on arguments, examples, and behavior, see the documentation for FetchSingle.
-func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...interface{}) func() client.Object {
+func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...any) func() client.Object {
 	s.t.Helper()
 
 	// Parse options
@@ -301,7 +301,7 @@ func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...interface{}) fun
 // polling scenarios where resources might not immediately reflect the desired state.
 //
 // For details on arguments, examples, and behavior, see the documentation for FetchMultiple.
-func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...interface{}) func() []client.Object {
+func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...any) func() []client.Object {
 	s.t.Helper()
 
 	// Parse options
