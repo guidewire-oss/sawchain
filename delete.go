@@ -95,7 +95,9 @@ func (s *Sawchain) Delete(ctx context.Context, args ...interface{}) error {
 
 	if len(opts.Template) > 0 {
 		// Render template
-		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, chainsaw.BindingsFromMap(opts.Bindings))
+		bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, bindings)
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 		// Delete resources
@@ -216,7 +218,9 @@ func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...interface{}) {
 
 	if len(opts.Template) > 0 {
 		// Render template
-		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, chainsaw.BindingsFromMap(opts.Bindings))
+		bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, bindings)
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 		// Delete resources

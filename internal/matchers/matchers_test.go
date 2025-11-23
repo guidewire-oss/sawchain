@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
 	"github.com/guidewire-oss/sawchain/internal/matchers"
 	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
@@ -24,7 +25,9 @@ var _ = Describe("Matchers", func() {
 
 		DescribeTable("matching resources against templates",
 			func(tc testCase) {
-				matcher := matchers.NewChainsawMatcher(standardClient, tc.templateContent, tc.bindings)
+				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
+				Expect(err).NotTo(HaveOccurred())
+				matcher := matchers.NewChainsawMatcher(standardClient, tc.templateContent, bindings)
 
 				// Test Match
 				match, err := matcher.Match(tc.actual)
@@ -188,6 +191,26 @@ data:
 				expectedMatchErr: "data.key1: Required value: field not found in the input object",
 			}),
 
+			Entry("failure message includes bindings", testCase{
+				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+					"key1": "wrong-value",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data:
+  key1: ($expectedValue)
+`,
+				bindings: map[string]any{
+					"expectedValue": "correct-value",
+				},
+				shouldMatch:      false,
+				expectedMatchErr: "<string>\"correct-value\"",
+			}),
+
 			// Edge cases
 			Entry("match with metadata only", testCase{
 				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
@@ -201,6 +224,28 @@ metadata:
   namespace: default
 `,
 				bindings:    map[string]any{},
+				shouldMatch: true,
+			}),
+
+			Entry("match with typed map bindings", testCase{
+				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data: ($data)
+`,
+				bindings: map[string]any{
+					"data": map[string]string{
+						"key1": "value1",
+						"key2": "value2",
+					},
+				},
 				shouldMatch: true,
 			}),
 
@@ -302,7 +347,7 @@ metadata:
 			// Success cases with typed objects
 			Entry("condition Ready=True match", testCase{
 				client: clientWithTestResource,
-				actual: testutil.NewTestResource("test-resource", "default", "",
+				actual: testutil.NewTestResource("test-resource", "default",
 					metav1.Condition{
 						Type:   "Ready",
 						Status: metav1.ConditionTrue,
@@ -315,7 +360,7 @@ metadata:
 
 			Entry("condition Ready=False match", testCase{
 				client: clientWithTestResource,
-				actual: testutil.NewTestResource("test-resource", "default", "",
+				actual: testutil.NewTestResource("test-resource", "default",
 					metav1.Condition{
 						Type:   "Ready",
 						Status: metav1.ConditionFalse,
@@ -329,7 +374,7 @@ metadata:
 			// Success cases with unstructured objects
 			Entry("condition Ready=Unknown match", testCase{
 				client: clientWithTestResource,
-				actual: testutil.NewUnstructuredTestResource("test-resource", "default", "",
+				actual: testutil.NewUnstructuredTestResource("test-resource", "default",
 					metav1.Condition{
 						Type:   "Ready",
 						Status: metav1.ConditionUnknown,
@@ -342,7 +387,7 @@ metadata:
 
 			Entry("match with multiple conditions", testCase{
 				client: clientWithTestResource,
-				actual: testutil.NewUnstructuredTestResource("test-resource", "default", "",
+				actual: testutil.NewUnstructuredTestResource("test-resource", "default",
 					metav1.Condition{
 						Type:   "Available",
 						Status: metav1.ConditionTrue,
@@ -364,7 +409,7 @@ metadata:
 			// Failure cases
 			Entry("no match with different status", testCase{
 				client: clientWithTestResource,
-				actual: testutil.NewTestResource("test-resource", "default", "",
+				actual: testutil.NewTestResource("test-resource", "default",
 					metav1.Condition{
 						Type:   "Ready",
 						Status: metav1.ConditionFalse,
@@ -378,7 +423,7 @@ metadata:
 
 			Entry("no match with missing condition", testCase{
 				client: clientWithTestResource,
-				actual: testutil.NewTestResource("test-resource", "default", "",
+				actual: testutil.NewTestResource("test-resource", "default",
 					metav1.Condition{
 						Type:   "Available",
 						Status: metav1.ConditionTrue,
@@ -393,7 +438,7 @@ metadata:
 			// Edge cases
 			Entry("no match with empty conditions", testCase{
 				client:           clientWithTestResource,
-				actual:           testutil.NewTestResource("test-resource", "default", ""),
+				actual:           testutil.NewTestResource("test-resource", "default"),
 				conditionType:    "Ready",
 				expectedStatus:   "True",
 				shouldMatch:      false,
@@ -435,7 +480,7 @@ metadata:
 
 			Entry("error on unrecognized type", testCase{
 				client: standardClient, // standardClient doesn't have TestResource
-				actual: testutil.NewTestResource("test-resource", "default", "",
+				actual: testutil.NewTestResource("test-resource", "default",
 					metav1.Condition{
 						Type:   "Ready",
 						Status: metav1.ConditionTrue,

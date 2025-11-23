@@ -21,7 +21,8 @@ const (
 	prefixInfo        = "[SAWCHAIN][INFO] "
 
 	errInvalidArgs        = prefixErr + "invalid arguments"
-	errInvalidTemplate    = prefixErr + "invalid template/bindings"
+	errInvalidTemplate    = prefixErr + "invalid template"
+	errInvalidBindings    = prefixErr + "invalid bindings"
 	errObjectInsufficient = prefixErr + "single object insufficient for multi-resource template"
 	errObjectsWrongLength = prefixErr + "objects slice length must match template resource count"
 

@@ -147,7 +147,9 @@ func (s *Sawchain) Create(ctx context.Context, args ...interface{}) error {
 
 	if len(opts.Template) > 0 {
 		// Render template
-		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, chainsaw.BindingsFromMap(opts.Bindings))
+		bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, bindings)
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 		// Validate objects length
@@ -335,7 +337,9 @@ func (s *Sawchain) CreateAndWait(ctx context.Context, args ...interface{}) {
 
 	if len(opts.Template) > 0 {
 		// Render template
-		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, chainsaw.BindingsFromMap(opts.Bindings))
+		bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+		unstructuredObjs, err := chainsaw.RenderTemplate(ctx, opts.Template, bindings)
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 		// Validate objects length

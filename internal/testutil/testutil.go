@@ -19,12 +19,20 @@ import (
 type TestResource struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
-	Data              string             `json:"data"`
-	Status            TestResourceStatus `json:"status"`
+
+	Data  string `json:"data,omitempty"`
+	Count int32  `json:"count,omitempty"`
+
+	Status TestResourceStatus `json:"status,omitempty"`
 }
 
 type TestResourceStatus struct {
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+func (t *TestResource) DeepCopyInto(out *TestResource) {
+	data, _ := json.Marshal(t)
+	json.Unmarshal(data, out)
 }
 
 func (t *TestResource) DeepCopyObject() runtime.Object {
@@ -32,8 +40,7 @@ func (t *TestResource) DeepCopyObject() runtime.Object {
 		return nil
 	}
 	copy := &TestResource{}
-	data, _ := json.Marshal(t)
-	json.Unmarshal(data, copy)
+	t.DeepCopyInto(copy)
 	return copy
 }
 
@@ -139,13 +146,16 @@ func NewUnstructuredConfigMap(
 	return obj
 }
 
-// NewTestResource returns a typed TestResource with the
-// given name, namespace, data, and status conditions.
-func NewTestResource(
-	name, namespace, data string,
-	conditions ...metav1.Condition,
-) *TestResource {
-	return &TestResource{
+// NewTestResource returns a typed TestResource with the given name and namespace.
+// Optional arguments are assigned by type:
+//   - string: sets the Data field
+//   - int32 or int: sets the Count field
+//   - metav1.Condition: appends to Status.Conditions
+//   - []metav1.Condition: sets Status.Conditions
+//
+// Values of unexpected types are ignored.
+func NewTestResource(name, namespace string, optionalArgs ...interface{}) *TestResource {
+	tr := &TestResource{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "example.com/v1",
 			Kind:       "TestResource",
@@ -154,30 +164,70 @@ func NewTestResource(
 			Name:      name,
 			Namespace: namespace,
 		},
-		Data: data,
 		Status: TestResourceStatus{
-			Conditions: conditions,
+			Conditions: []metav1.Condition{},
 		},
 	}
+
+	// Process optional arguments by type
+	for _, arg := range optionalArgs {
+		switch v := arg.(type) {
+		case string:
+			tr.Data = v
+		case int32:
+			tr.Count = v
+		case int:
+			tr.Count = int32(v)
+		case metav1.Condition:
+			tr.Status.Conditions = append(tr.Status.Conditions, v)
+		case []metav1.Condition:
+			tr.Status.Conditions = v
+		}
+	}
+
+	return tr
 }
 
-// NewUnstructuredTestResource returns an unstructured TestResource
-// with the given name, namespace, data, and status conditions.
-func NewUnstructuredTestResource(
-	name, namespace, data string,
-	conditions ...metav1.Condition,
-) *unstructured.Unstructured {
+// NewUnstructuredTestResource returns an unstructured TestResource with the given name and namespace.
+// Optional arguments are assigned by type:
+//   - string: sets the data field
+//   - int32 or int: sets the count field
+//   - metav1.Condition: appends to status.conditions
+//   - []metav1.Condition: sets status.conditions
+//
+// Values of unexpected types are ignored.
+func NewUnstructuredTestResource(name, namespace string, optionalArgs ...interface{}) *unstructured.Unstructured {
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("example.com/v1")
 	obj.SetKind("TestResource")
 	obj.SetName(name)
 	obj.SetNamespace(namespace)
 
-	obj.Object["data"] = data
+	conditions := []metav1.Condition{}
 
-	status := map[string]interface{}{}
+	// Process optional arguments by type
+	for _, arg := range optionalArgs {
+		switch v := arg.(type) {
+		case string:
+			if v != "" {
+				obj.Object["data"] = v
+			}
+		case int32:
+			if v != 0 {
+				obj.Object["count"] = v
+			}
+		case int:
+			if v != 0 {
+				obj.Object["count"] = int32(v)
+			}
+		case metav1.Condition:
+			conditions = append(conditions, v)
+		case []metav1.Condition:
+			conditions = v
+		}
+	}
+
 	conditionsData := make([]interface{}, len(conditions))
-
 	for i, condition := range conditions {
 		conditionMap := map[string]interface{}{
 			"type":               condition.Type,
@@ -188,9 +238,9 @@ func NewUnstructuredTestResource(
 		}
 		conditionsData[i] = conditionMap
 	}
-
-	status["conditions"] = conditionsData
-	obj.Object["status"] = status
+	obj.Object["status"] = map[string]interface{}{
+		"conditions": conditionsData,
+	}
 
 	return obj
 }

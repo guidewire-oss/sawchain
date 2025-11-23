@@ -91,7 +91,9 @@ func (s *Sawchain) RenderSingle(args ...interface{}) client.Object {
 	s.g.Expect(options.RequireTemplate(opts)).To(gomega.Succeed(), errInvalidArgs)
 
 	// Render template
-	unstructuredObj, err := chainsaw.RenderTemplateSingle(context.TODO(), opts.Template, chainsaw.BindingsFromMap(opts.Bindings))
+	bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+	unstructuredObj, err := chainsaw.RenderTemplateSingle(context.TODO(), opts.Template, bindings)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 	// Save/return object
@@ -204,7 +206,9 @@ func (s *Sawchain) RenderMultiple(args ...interface{}) []client.Object {
 	s.g.Expect(options.RequireTemplate(opts)).To(gomega.Succeed(), errInvalidArgs)
 
 	// Render template
-	unstructuredObjs, err := chainsaw.RenderTemplate(context.TODO(), opts.Template, chainsaw.BindingsFromMap(opts.Bindings))
+	bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+	unstructuredObjs, err := chainsaw.RenderTemplate(context.TODO(), opts.Template, bindings)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 	// Validate objects length
@@ -280,7 +284,9 @@ func (s *Sawchain) RenderToString(template string, bindings ...map[string]any) s
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 
 	// Render template
-	objs, err := chainsaw.RenderTemplate(context.TODO(), template, chainsaw.BindingsFromMap(s.mergeBindings(bindings...)))
+	b, err := chainsaw.BindingsFromMap(s.mergeBindings(bindings...))
+	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
+	objs, err := chainsaw.RenderTemplate(context.TODO(), template, b)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 	// Marshal objects

@@ -314,6 +314,27 @@ var _ = Describe("MatchYAML", func() {
 			},
 		}),
 
+		Entry("error on invalid bindings", testCase{
+			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+				"key1": "value1",
+			}),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+			`,
+			bindings: []map[string]any{
+				{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("error on undefined binding", testCase{
 			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
 				"key1": "value1",
@@ -374,7 +395,7 @@ var _ = Describe("HaveStatusCondition", func() {
 		// Success cases with typed objects
 		Entry("condition Ready=True match", testCase{
 			client: clientWithTestResource,
-			actual: testutil.NewTestResource("test-resource", "default", "",
+			actual: testutil.NewTestResource("test-resource", "default",
 				metav1.Condition{
 					Type:   "Ready",
 					Status: metav1.ConditionTrue,
@@ -386,7 +407,7 @@ var _ = Describe("HaveStatusCondition", func() {
 
 		Entry("condition Ready=False match", testCase{
 			client: clientWithTestResource,
-			actual: testutil.NewTestResource("test-resource", "default", "",
+			actual: testutil.NewTestResource("test-resource", "default",
 				metav1.Condition{
 					Type:   "Ready",
 					Status: metav1.ConditionFalse,
@@ -399,7 +420,7 @@ var _ = Describe("HaveStatusCondition", func() {
 		// Success cases with unstructured objects
 		Entry("condition Ready=Unknown match", testCase{
 			client: standardClient,
-			actual: testutil.NewUnstructuredTestResource("test-resource", "default", "",
+			actual: testutil.NewUnstructuredTestResource("test-resource", "default",
 				metav1.Condition{
 					Type:   "Ready",
 					Status: metav1.ConditionUnknown,
@@ -411,7 +432,7 @@ var _ = Describe("HaveStatusCondition", func() {
 
 		Entry("match with multiple conditions", testCase{
 			client: standardClient,
-			actual: testutil.NewUnstructuredTestResource("test-resource", "default", "",
+			actual: testutil.NewUnstructuredTestResource("test-resource", "default",
 				metav1.Condition{
 					Type:   "Available",
 					Status: metav1.ConditionTrue,
@@ -432,7 +453,7 @@ var _ = Describe("HaveStatusCondition", func() {
 		// Failure cases
 		Entry("no match with different status", testCase{
 			client: clientWithTestResource,
-			actual: testutil.NewTestResource("test-resource", "default", "",
+			actual: testutil.NewTestResource("test-resource", "default",
 				metav1.Condition{
 					Type:   "Ready",
 					Status: metav1.ConditionFalse,
@@ -447,7 +468,7 @@ var _ = Describe("HaveStatusCondition", func() {
 
 		Entry("no match with missing condition", testCase{
 			client: clientWithTestResource,
-			actual: testutil.NewTestResource("test-resource", "default", "",
+			actual: testutil.NewTestResource("test-resource", "default",
 				metav1.Condition{
 					Type:   "Available",
 					Status: metav1.ConditionTrue,
@@ -463,7 +484,7 @@ var _ = Describe("HaveStatusCondition", func() {
 		// Edge cases
 		Entry("no match with empty conditions", testCase{
 			client:         clientWithTestResource,
-			actual:         testutil.NewTestResource("test-resource", "default", ""),
+			actual:         testutil.NewTestResource("test-resource", "default"),
 			conditionType:  "Ready",
 			expectedStatus: "True",
 			expectedFailureLogs: []string{
@@ -511,7 +532,7 @@ var _ = Describe("HaveStatusCondition", func() {
 
 		Entry("error on unrecognized type", testCase{
 			client: standardClient, // standardClient doesn't have TestResource
-			actual: testutil.NewTestResource("test-resource", "default", "",
+			actual: testutil.NewTestResource("test-resource", "default",
 				metav1.Condition{
 					Type:   "Ready",
 					Status: metav1.ConditionTrue,

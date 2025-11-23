@@ -88,7 +88,7 @@ var _ = Describe("Delete", func() {
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewTestResource("test-cr", "default", ""),
+				testutil.NewTestResource("test-cr", "default"),
 			},
 		}),
 
@@ -98,7 +98,7 @@ var _ = Describe("Delete", func() {
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewUnstructuredTestResource("test-cr", "default", ""),
+				testutil.NewUnstructuredTestResource("test-cr", "default"),
 			},
 		}),
 
@@ -209,8 +209,8 @@ var _ = Describe("Delete", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewTestResource("test-cr1", "default", ""),
-					testutil.NewTestResource("test-cr2", "default", ""),
+					testutil.NewTestResource("test-cr1", "default"),
+					testutil.NewTestResource("test-cr2", "default"),
 				},
 			},
 		}),
@@ -223,8 +223,8 @@ var _ = Describe("Delete", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewUnstructuredTestResource("test-cr1", "default", ""),
-					testutil.NewUnstructuredTestResource("test-cr2", "default", ""),
+					testutil.NewUnstructuredTestResource("test-cr1", "default"),
+					testutil.NewUnstructuredTestResource("test-cr2", "default"),
 				},
 			},
 		}),
@@ -408,7 +408,7 @@ var _ = Describe("Delete", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -426,6 +426,25 @@ var _ = Describe("Delete", func() {
 			},
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -438,7 +457,7 @@ var _ = Describe("Delete", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -541,7 +560,7 @@ var _ = Describe("DeleteAndWait", func() {
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewTestResource("test-cr", "default", ""),
+				testutil.NewTestResource("test-cr", "default"),
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -552,7 +571,7 @@ var _ = Describe("DeleteAndWait", func() {
 			},
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewUnstructuredTestResource("test-cr", "default", ""),
+				testutil.NewUnstructuredTestResource("test-cr", "default"),
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -697,8 +716,8 @@ var _ = Describe("DeleteAndWait", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewTestResource("test-cr1", "default", ""),
-					testutil.NewTestResource("test-cr2", "default", ""),
+					testutil.NewTestResource("test-cr1", "default"),
+					testutil.NewTestResource("test-cr2", "default"),
 				},
 			},
 			expectedDuration: fastTimeout,
@@ -712,8 +731,8 @@ var _ = Describe("DeleteAndWait", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewUnstructuredTestResource("test-cr1", "default", ""),
-					testutil.NewUnstructuredTestResource("test-cr2", "default", ""),
+					testutil.NewUnstructuredTestResource("test-cr1", "default"),
+					testutil.NewUnstructuredTestResource("test-cr2", "default"),
 				},
 			},
 			expectedDuration: fastTimeout,
@@ -886,7 +905,7 @@ var _ = Describe("DeleteAndWait", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -905,6 +924,25 @@ var _ = Describe("DeleteAndWait", func() {
 			expectedDuration: fastTimeout,
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -917,7 +955,7 @@ var _ = Describe("DeleteAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing",
 			},

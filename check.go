@@ -125,9 +125,11 @@ func (s *Sawchain) Check(ctx context.Context, args ...interface{}) error {
 	}
 
 	// Execute checks
+	bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 	matches := make([]unstructured.Unstructured, len(documents))
 	for i, document := range documents {
-		match, err := chainsaw.Check(s.c, ctx, document, chainsaw.BindingsFromMap(opts.Bindings))
+		match, err := chainsaw.Check(s.c, ctx, document, bindings)
 		if err != nil {
 			return err
 		}
@@ -176,9 +178,11 @@ func (s *Sawchain) CheckFunc(ctx context.Context, args ...interface{}) func() er
 
 	return func() error {
 		// Execute checks
+		bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
+		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 		matches := make([]unstructured.Unstructured, len(documents))
 		for i, document := range documents {
-			match, err := chainsaw.Check(s.c, ctx, document, chainsaw.BindingsFromMap(opts.Bindings))
+			match, err := chainsaw.Check(s.c, ctx, document, bindings)
 			if err != nil {
 				return err
 			}

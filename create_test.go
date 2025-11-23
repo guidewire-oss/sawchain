@@ -116,17 +116,17 @@ var _ = Describe("Create", func() {
 		Entry("should create custom resource with typed object", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewTestResource("test-cr", "default", ""),
+				testutil.NewTestResource("test-cr", "default"),
 			},
-			expectedObj: testutil.NewTestResource("test-cr", "default", ""),
+			expectedObj: testutil.NewTestResource("test-cr", "default"),
 		}),
 
 		Entry("should create custom resource with unstructured object", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewUnstructuredTestResource("test-cr", "default", ""),
+				testutil.NewUnstructuredTestResource("test-cr", "default"),
 			},
-			expectedObj: testutil.NewUnstructuredTestResource("test-cr", "default", ""),
+			expectedObj: testutil.NewUnstructuredTestResource("test-cr", "default"),
 		}),
 
 		Entry("should create ConfigMap with static template string", testCase{
@@ -218,6 +218,41 @@ var _ = Describe("Create", func() {
 			expectedObj: testutil.NewConfigMap("test-cm", "test-ns", map[string]string{"key": "configured-value"}),
 		}),
 
+		Entry("should create ConfigMap with typed map bindings and save to typed object", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				&corev1.ConfigMap{},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				data: ($data)
+				`,
+				map[string]any{"data": map[string]string{"key1": "value1", "key2": "value2"}},
+			},
+			expectedObj: testutil.NewConfigMap("test-cm", "default", map[string]string{"key1": "value1", "key2": "value2"}),
+		}),
+
+		Entry("should create custom resource with numeric binding and save to typed object", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
+			methodArgs: []interface{}{
+				&testutil.TestResource{},
+				`
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr
+				  namespace: default
+				data: ($data)
+				count: ($count)
+				`,
+				map[string]any{"data": "test-data", "count": 42},
+			},
+			expectedObj: testutil.NewTestResource("test-cr", "default", "test-data", 42),
+		}),
+
 		Entry("should create ConfigMap with template string and save to unstructured object", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -268,13 +303,13 @@ var _ = Describe("Create", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewTestResource("test-cr1", "default", ""),
-					testutil.NewTestResource("test-cr2", "default", ""),
+					testutil.NewTestResource("test-cr1", "default"),
+					testutil.NewTestResource("test-cr2", "default"),
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewTestResource("test-cr1", "default", ""),
-				testutil.NewTestResource("test-cr2", "default", ""),
+				testutil.NewTestResource("test-cr1", "default"),
+				testutil.NewTestResource("test-cr2", "default"),
 			},
 		}),
 
@@ -282,13 +317,13 @@ var _ = Describe("Create", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewUnstructuredTestResource("test-cr1", "default", ""),
-					testutil.NewUnstructuredTestResource("test-cr2", "default", ""),
+					testutil.NewUnstructuredTestResource("test-cr1", "default"),
+					testutil.NewUnstructuredTestResource("test-cr2", "default"),
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewUnstructuredTestResource("test-cr1", "default", ""),
-				testutil.NewUnstructuredTestResource("test-cr2", "default", ""),
+				testutil.NewUnstructuredTestResource("test-cr1", "default"),
+				testutil.NewUnstructuredTestResource("test-cr2", "default"),
 			},
 		}),
 
@@ -450,6 +485,39 @@ var _ = Describe("Create", func() {
 			},
 		}),
 
+		Entry("should create multiple resources with typed map bindings and save to typed objects", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data: ($data1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data: ($data2)
+				`,
+				map[string]any{
+					"data1": map[string]string{"key1": "value1", "key2": "value2"},
+					"data2": map[string]string{"key3": "value3", "key4": "value4"},
+				},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "value1", "key2": "value2"}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key3": "value3", "key4": "value4"}),
+			},
+		}),
+
 		Entry("should create multiple resources with template string and save to unstructured objects", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -552,7 +620,7 @@ var _ = Describe("Create", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -570,6 +638,25 @@ var _ = Describe("Create", func() {
 			},
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+		}),
+
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -582,7 +669,7 @@ var _ = Describe("Create", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing",
 			},
@@ -784,18 +871,18 @@ var _ = Describe("CreateAndWait", func() {
 		Entry("should create custom resource with typed object", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewTestResource("test-cr", "default", ""),
+				testutil.NewTestResource("test-cr", "default"),
 			},
-			expectedObj:      testutil.NewTestResource("test-cr", "default", ""),
+			expectedObj:      testutil.NewTestResource("test-cr", "default"),
 			expectedDuration: fastTimeout,
 		}),
 
 		Entry("should create custom resource with unstructured object", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
-				testutil.NewUnstructuredTestResource("test-cr", "default", ""),
+				testutil.NewUnstructuredTestResource("test-cr", "default"),
 			},
-			expectedObj:      testutil.NewUnstructuredTestResource("test-cr", "default", ""),
+			expectedObj:      testutil.NewUnstructuredTestResource("test-cr", "default"),
 			expectedDuration: fastTimeout,
 		}),
 
@@ -893,6 +980,43 @@ var _ = Describe("CreateAndWait", func() {
 			expectedDuration: fastTimeout,
 		}),
 
+		Entry("should create ConfigMap with typed map bindings and save to typed object", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				&corev1.ConfigMap{},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm
+				  namespace: default
+				data: ($data)
+				`,
+				map[string]any{"data": map[string]string{"key1": "value1", "key2": "value2"}},
+			},
+			expectedObj:      testutil.NewConfigMap("test-cm", "default", map[string]string{"key1": "value1", "key2": "value2"}),
+			expectedDuration: fastTimeout,
+		}),
+
+		Entry("should create custom resource with numeric binding and save to typed object", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
+			methodArgs: []interface{}{
+				&testutil.TestResource{},
+				`
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr
+				  namespace: default
+				data: ($data)
+				count: ($count)
+				`,
+				map[string]any{"data": "test-data", "count": 42},
+			},
+			expectedObj:      testutil.NewTestResource("test-cr", "default", "test-data", 42),
+			expectedDuration: fastTimeout,
+		}),
+
 		Entry("should create ConfigMap with template string and save to unstructured object", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -969,13 +1093,13 @@ var _ = Describe("CreateAndWait", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewTestResource("test-cr1", "default", ""),
-					testutil.NewTestResource("test-cr2", "default", ""),
+					testutil.NewTestResource("test-cr1", "default"),
+					testutil.NewTestResource("test-cr2", "default"),
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewTestResource("test-cr1", "default", ""),
-				testutil.NewTestResource("test-cr2", "default", ""),
+				testutil.NewTestResource("test-cr1", "default"),
+				testutil.NewTestResource("test-cr2", "default"),
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -984,13 +1108,13 @@ var _ = Describe("CreateAndWait", func() {
 			client: &MockClient{Client: testutil.NewStandardFakeClientWithTestResource()},
 			methodArgs: []interface{}{
 				[]client.Object{
-					testutil.NewUnstructuredTestResource("test-cr1", "default", ""),
-					testutil.NewUnstructuredTestResource("test-cr2", "default", ""),
+					testutil.NewUnstructuredTestResource("test-cr1", "default"),
+					testutil.NewUnstructuredTestResource("test-cr2", "default"),
 				},
 			},
 			expectedObjs: []client.Object{
-				testutil.NewUnstructuredTestResource("test-cr1", "default", ""),
-				testutil.NewUnstructuredTestResource("test-cr2", "default", ""),
+				testutil.NewUnstructuredTestResource("test-cr1", "default"),
+				testutil.NewUnstructuredTestResource("test-cr2", "default"),
 			},
 			expectedDuration: fastTimeout,
 		}),
@@ -1158,6 +1282,40 @@ var _ = Describe("CreateAndWait", func() {
 			expectedDuration: fastTimeout,
 		}),
 
+		Entry("should create multiple resources with typed map bindings and save to typed objects", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				[]client.Object{
+					&corev1.ConfigMap{},
+					&corev1.ConfigMap{},
+				},
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm1
+				  namespace: default
+				data: ($data1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-cm2
+				  namespace: default
+				data: ($data2)
+				`,
+				map[string]any{
+					"data1": map[string]string{"key1": "value1", "key2": "value2"},
+					"data2": map[string]string{"key3": "value3", "key4": "value4"},
+				},
+			},
+			expectedObjs: []client.Object{
+				testutil.NewConfigMap("test-cm1", "default", map[string]string{"key1": "value1", "key2": "value2"}),
+				testutil.NewConfigMap("test-cm2", "default", map[string]string{"key3": "value3", "key4": "value4"}),
+			},
+			expectedDuration: fastTimeout,
+		}),
+
 		Entry("should create multiple resources with template string and save to unstructured objects", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1253,7 +1411,7 @@ var _ = Describe("CreateAndWait", func() {
 				"non-existent.yaml",
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"if using a file, ensure the file exists and the path is correct",
 			},
 		}),
@@ -1272,6 +1430,26 @@ var _ = Describe("CreateAndWait", func() {
 			expectedDuration: fastTimeout,
 		}),
 
+		Entry("should fail with invalid bindings", testCase{
+			client: &MockClient{Client: testutil.NewStandardFakeClient()},
+			methodArgs: []interface{}{
+				`
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: ($name)
+				  namespace: default
+				`,
+				map[string]any{"name": make(chan int)},
+			},
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] invalid bindings",
+				"failed to normalize binding",
+				"ensure binding values are JSON-serializable",
+			},
+			expectedDuration: fastTimeout,
+		}),
+
 		Entry("should fail with missing binding", testCase{
 			client: &MockClient{Client: testutil.NewStandardFakeClient()},
 			methodArgs: []interface{}{
@@ -1284,7 +1462,7 @@ var _ = Describe("CreateAndWait", func() {
 				`,
 			},
 			expectedFailureLogs: []string{
-				"[SAWCHAIN][ERROR] invalid template/bindings",
+				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $missing",
 			},

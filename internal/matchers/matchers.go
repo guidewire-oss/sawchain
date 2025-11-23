@@ -27,8 +27,6 @@ type chainsawMatcher struct {
 	templateContent string
 	// Template bindings.
 	bindings chainsaw.Bindings
-	// Template bindings map.
-	bindingsMap map[string]any
 	// Current match error.
 	matchError error
 }
@@ -63,7 +61,7 @@ func wrapYaml(s string) string {
 
 func (m *chainsawMatcher) String() string {
 	return fmt.Sprintf("\n[TEMPLATE]\n%s\n\n[BINDINGS]\n%s\n",
-		wrapYaml(m.templateContent), format.Object(m.bindingsMap, 0))
+		wrapYaml(m.templateContent), format.Object(m.bindings, 0))
 }
 
 func (m *chainsawMatcher) failureMessageFormat(actual interface{}, base string) string {
@@ -84,15 +82,14 @@ func (m *chainsawMatcher) NegatedFailureMessage(actual interface{}) string {
 func NewChainsawMatcher(
 	c client.Client,
 	templateContent string,
-	bindings map[string]any,
+	bindings chainsaw.Bindings,
 ) types.GomegaMatcher {
 	return &chainsawMatcher{
 		c: c,
 		createTemplateContent: func(c client.Client, obj client.Object) (string, error) {
 			return templateContent, nil
 		},
-		bindings:    chainsaw.BindingsFromMap(bindings),
-		bindingsMap: bindings,
+		bindings: bindings,
 	}
 }
 

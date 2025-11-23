@@ -207,102 +207,231 @@ var _ = Describe("Testutil", func() {
 	)
 
 	DescribeTable("NewTestResource",
-		func(name, namespace, data string, conditions []metav1.Condition) {
-			tr := testutil.NewTestResource(name, namespace, data, conditions...)
-			Expect(tr.APIVersion).To(Equal("example.com/v1"))
-			Expect(tr.Kind).To(Equal("TestResource"))
-			Expect(tr.Name).To(Equal(name))
-			Expect(tr.Namespace).To(Equal(namespace))
-			Expect(tr.Data).To(Equal(data))
-			Expect(tr.Status.Conditions).To(Equal(conditions))
+		func(optionalArgs []interface{}, expected *testutil.TestResource) {
+			tr := testutil.NewTestResource("test-resource", "default", optionalArgs...)
+			Expect(tr).To(Equal(expected))
 		},
-		Entry("with non-empty data and conditions",
-			"test-resource",
-			"default",
-			"test-data",
-			[]metav1.Condition{
-				{
-					Type:    "Ready",
-					Status:  metav1.ConditionTrue,
-					Reason:  "TestReason",
-					Message: "Test message",
+		Entry("no optional args",
+			[]interface{}{},
+			&testutil.TestResource{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
+				Status:     testutil.TestResourceStatus{Conditions: []metav1.Condition{}},
+			},
+		),
+		Entry("with data only",
+			[]interface{}{"test-data"},
+			&testutil.TestResource{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
+				Data:       "test-data",
+				Status:     testutil.TestResourceStatus{Conditions: []metav1.Condition{}},
+			},
+		),
+		Entry("with count (int)",
+			[]interface{}{42},
+			&testutil.TestResource{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
+				Count:      42,
+				Status:     testutil.TestResourceStatus{Conditions: []metav1.Condition{}},
+			},
+		),
+		Entry("with count (int32)",
+			[]interface{}{int32(42)},
+			&testutil.TestResource{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
+				Count:      42,
+				Status:     testutil.TestResourceStatus{Conditions: []metav1.Condition{}},
+			},
+		),
+		Entry("with data and count",
+			[]interface{}{"test-data", 42},
+			&testutil.TestResource{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
+				Data:       "test-data",
+				Count:      42,
+				Status:     testutil.TestResourceStatus{Conditions: []metav1.Condition{}},
+			},
+		),
+		Entry("with conditions",
+			[]interface{}{
+				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
+			},
+			&testutil.TestResource{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
+				Status: testutil.TestResourceStatus{
+					Conditions: []metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
 				},
 			},
 		),
-		Entry("with empty data and non-empty conditions",
-			"test-resource",
-			"default",
-			"",
-			[]metav1.Condition{
-				{
-					Type:    "Ready",
-					Status:  metav1.ConditionTrue,
-					Reason:  "TestReason",
-					Message: "Test message",
+		Entry("with all fields",
+			[]interface{}{
+				"test-data",
+				int32(42),
+				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
+			},
+			&testutil.TestResource{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "example.com/v1", Kind: "TestResource"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test-resource", Namespace: "default"},
+				Data:       "test-data",
+				Count:      42,
+				Status: testutil.TestResourceStatus{
+					Conditions: []metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
 				},
 			},
 		),
-		Entry("with non-empty data and empty conditions", "test-resource", "default", "test-data", []metav1.Condition{}),
-		Entry("with empty data and conditions", "test-resource", "default", "", []metav1.Condition{}),
 	)
 
 	DescribeTable("NewUnstructuredTestResource",
-		func(name, namespace, data string, conditions []metav1.Condition) {
-			unstructuredTr := testutil.NewUnstructuredTestResource(name, namespace, data, conditions...)
-			Expect(unstructuredTr.GetAPIVersion()).To(Equal("example.com/v1"))
-			Expect(unstructuredTr.GetKind()).To(Equal("TestResource"))
-			Expect(unstructuredTr.GetName()).To(Equal(name))
-			Expect(unstructuredTr.GetNamespace()).To(Equal(namespace))
-
-			// Check data field
-			dataValue, found, err := unstructured.NestedString(unstructuredTr.Object, "data")
-			Expect(err).NotTo(HaveOccurred(), "failed to get data from unstructured TestResource")
-			Expect(found).To(BeTrue(), "data not found in unstructured TestResource")
-			Expect(dataValue).To(Equal(data))
-
-			// Check conditions
-			unstructuredConditions, found, err := unstructured.NestedSlice(unstructuredTr.Object, "status", "conditions")
-			Expect(err).NotTo(HaveOccurred(), "failed to get conditions from unstructured TestResource")
-			Expect(found).To(BeTrue(), "conditions not found in unstructured TestResource")
-			Expect(unstructuredConditions).To(HaveLen(len(conditions)))
-			for i, condition := range conditions {
-				Expect(unstructuredConditions[i]).To(HaveKeyWithValue("type", condition.Type))
-				Expect(unstructuredConditions[i]).To(HaveKeyWithValue("status", string(condition.Status)))
-				Expect(unstructuredConditions[i]).To(HaveKeyWithValue("reason", condition.Reason))
-				Expect(unstructuredConditions[i]).To(HaveKeyWithValue("message", condition.Message))
-				Expect(unstructuredConditions[i]).To(HaveKeyWithValue("lastTransitionTime", condition.LastTransitionTime.String()))
-			}
+		func(optionalArgs []interface{}, expected *unstructured.Unstructured) {
+			result := testutil.NewUnstructuredTestResource("test-resource", "default", optionalArgs...)
+			Expect(result).To(Equal(expected))
 		},
-		Entry("with non-empty data and conditions",
-			"test-resource",
-			"default",
-			"test-data",
-			[]metav1.Condition{
-				{
-					Type:               "Ready",
-					Status:             metav1.ConditionTrue,
-					Reason:             "TestReason",
-					Message:            "Test message",
-					LastTransitionTime: metav1.Now(),
+		Entry("no optional args",
+			[]interface{}{},
+			&unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "example.com/v1",
+					"kind":       "TestResource",
+					"metadata": map[string]interface{}{
+						"name":      "test-resource",
+						"namespace": "default",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{},
+					},
 				},
 			},
 		),
-		Entry("with empty data and non-empty conditions",
-			"test-resource",
-			"default",
-			"",
-			[]metav1.Condition{
-				{
-					Type:               "Ready",
-					Status:             metav1.ConditionTrue,
-					Reason:             "TestReason",
-					Message:            "Test message",
-					LastTransitionTime: metav1.Now(),
+		Entry("with data only",
+			[]interface{}{"test-data"},
+			&unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "example.com/v1",
+					"kind":       "TestResource",
+					"metadata": map[string]interface{}{
+						"name":      "test-resource",
+						"namespace": "default",
+					},
+					"data": "test-data",
+					"status": map[string]interface{}{
+						"conditions": []interface{}{},
+					},
 				},
 			},
 		),
-		Entry("with non-empty data and empty conditions", "test-resource", "default", "test-data", []metav1.Condition{}),
-		Entry("with empty data and conditions", "test-resource", "default", "", []metav1.Condition{}),
+		Entry("with count (int)",
+			[]interface{}{42},
+			&unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "example.com/v1",
+					"kind":       "TestResource",
+					"metadata": map[string]interface{}{
+						"name":      "test-resource",
+						"namespace": "default",
+					},
+					"count": int32(42),
+					"status": map[string]interface{}{
+						"conditions": []interface{}{},
+					},
+				},
+			},
+		),
+		Entry("with count (int32)",
+			[]interface{}{int32(42)},
+			&unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "example.com/v1",
+					"kind":       "TestResource",
+					"metadata": map[string]interface{}{
+						"name":      "test-resource",
+						"namespace": "default",
+					},
+					"count": int32(42),
+					"status": map[string]interface{}{
+						"conditions": []interface{}{},
+					},
+				},
+			},
+		),
+		Entry("with data and count",
+			[]interface{}{"test-data", 42},
+			&unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "example.com/v1",
+					"kind":       "TestResource",
+					"metadata": map[string]interface{}{
+						"name":      "test-resource",
+						"namespace": "default",
+					},
+					"data":  "test-data",
+					"count": int32(42),
+					"status": map[string]interface{}{
+						"conditions": []interface{}{},
+					},
+				},
+			},
+		),
+		Entry("with conditions",
+			[]interface{}{
+				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
+			},
+			&unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "example.com/v1",
+					"kind":       "TestResource",
+					"metadata": map[string]interface{}{
+						"name":      "test-resource",
+						"namespace": "default",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":               "Ready",
+								"status":             "True",
+								"reason":             "TestReason",
+								"message":            "Test",
+								"lastTransitionTime": "0001-01-01 00:00:00 +0000 UTC",
+							},
+						},
+					},
+				},
+			},
+		),
+		Entry("with all fields",
+			[]interface{}{
+				"test-data",
+				int32(42),
+				[]metav1.Condition{{Type: "Ready", Status: metav1.ConditionTrue, Reason: "TestReason", Message: "Test"}},
+			},
+			&unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "example.com/v1",
+					"kind":       "TestResource",
+					"metadata": map[string]interface{}{
+						"name":      "test-resource",
+						"namespace": "default",
+					},
+					"data":  "test-data",
+					"count": int32(42),
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":               "Ready",
+								"status":             "True",
+								"reason":             "TestReason",
+								"message":            "Test",
+								"lastTransitionTime": "0001-01-01 00:00:00 +0000 UTC",
+							},
+						},
+					},
+				},
+			},
+		),
 	)
 
 	Describe("TestResource.DeepCopyObject", func() {

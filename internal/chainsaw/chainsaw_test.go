@@ -15,55 +15,189 @@ import (
 
 var _ = Describe("Chainsaw", func() {
 	Describe("BindingsFromMap", func() {
-		DescribeTable("converting maps to bindings",
-			func(bindingsMap map[string]any) {
+		type testCase struct {
+			input          map[string]any
+			expectedOutput map[string]any // Expected values after JSON normalization
+			expectedErrs   []string       // Expected error message substrings
+		}
+
+		DescribeTable("converting maps to normalized bindings",
+			func(tc testCase) {
 				// Test BindingsFromMap
-				bindings := chainsaw.BindingsFromMap(bindingsMap)
-				// Check bindings
-				if len(bindingsMap) == 0 {
-					Expect(bindings).To(Equal(apis.NewBindings()))
+				bindings, err := chainsaw.BindingsFromMap(tc.input)
+
+				// Check error expectations
+				if len(tc.expectedErrs) > 0 {
+					Expect(err).To(HaveOccurred())
+					for _, expectedErr := range tc.expectedErrs {
+						Expect(err.Error()).To(ContainSubstring(expectedErr))
+					}
 				} else {
-					for name, expectedValue := range bindingsMap {
-						binding, err := bindings.Get("$" + name)
-						Expect(err).NotTo(HaveOccurred(), "Expected binding %s not found", name)
-						actualValue, err := binding.Value()
-						Expect(err).NotTo(HaveOccurred(), "Failed to extract value for binding %s", name)
-						if expectedValue == nil {
-							Expect(actualValue).To(BeNil())
-						} else {
-							Expect(actualValue).To(Equal(expectedValue))
+					// No error expected
+					Expect(err).NotTo(HaveOccurred())
+
+					// Check bindings
+					if len(tc.input) == 0 {
+						Expect(bindings).To(Equal(apis.NewBindings()))
+					} else {
+						for name, expectedValue := range tc.expectedOutput {
+							binding, err := bindings.Get("$" + name)
+							Expect(err).NotTo(HaveOccurred(), "Expected binding %s not found", name)
+							actualValue, err := binding.Value()
+							Expect(err).NotTo(HaveOccurred(), "Failed to extract value for binding %s", name)
+							if expectedValue == nil {
+								Expect(actualValue).To(BeNil())
+							} else {
+								Expect(actualValue).To(Equal(expectedValue))
+							}
 						}
 					}
 				}
 			},
 			// Empty map
 			Entry("should handle empty map",
-				map[string]any{},
-			),
-			// Single binding
-			Entry("should convert single binding",
-				map[string]any{
-					"key": "value",
+				testCase{
+					input:          map[string]any{},
+					expectedOutput: map[string]any{},
 				},
 			),
-			// Multiple bindings
-			Entry("should convert multiple bindings",
-				map[string]any{
-					"key1": "value1",
-					"key2": 42,
-					"key3": true,
+			// Single string binding
+			Entry("should convert single string binding",
+				testCase{
+					input: map[string]any{
+						"key": "value",
+					},
+					expectedOutput: map[string]any{
+						"key": "value",
+					},
 				},
 			),
-			// Different value types
-			Entry("should handle different value types",
-				map[string]any{
-					"string": "text",
-					"int":    123,
-					"bool":   true,
-					"float":  3.14,
-					"slice":  []string{"a", "b"},
-					"map":    map[string]string{"k": "v"},
-					"nilVal": nil,
+			// Multiple bindings with different types
+			Entry("should convert multiple bindings with type preservation",
+				testCase{
+					input: map[string]any{
+						"key1": "value1",
+						"key2": 42,
+						"key3": true,
+					},
+					expectedOutput: map[string]any{
+						"key1": "value1",
+						"key2": float64(42), // JSON converts int to float64
+						"key3": true,
+					},
+				},
+			),
+			// Typed map normalization
+			Entry("should normalize typed map[string]string to map[string]interface{}",
+				testCase{
+					input: map[string]any{
+						"labels": map[string]string{"app": "test", "env": "prod"},
+					},
+					expectedOutput: map[string]any{
+						"labels": map[string]any{"app": "test", "env": "prod"},
+					},
+				},
+			),
+			// Typed slice normalization
+			Entry("should normalize typed slices to []interface{}",
+				testCase{
+					input: map[string]any{
+						"items": []string{"a", "b", "c"},
+					},
+					expectedOutput: map[string]any{
+						"items": []any{"a", "b", "c"},
+					},
+				},
+			),
+			// Nested structures
+			Entry("should handle nested maps and slices",
+				testCase{
+					input: map[string]any{
+						"config": map[string]any{
+							"nested": map[string]int{"count": 5},
+							"tags":   []string{"tag1", "tag2"},
+						},
+					},
+					expectedOutput: map[string]any{
+						"config": map[string]any{
+							"nested": map[string]any{"count": float64(5)},
+							"tags":   []any{"tag1", "tag2"},
+						},
+					},
+				},
+			),
+			// Nil value
+			Entry("should handle nil values",
+				testCase{
+					input: map[string]any{
+						"nilVal": nil,
+					},
+					expectedOutput: map[string]any{
+						"nilVal": nil,
+					},
+				},
+			),
+			// All basic JSON types
+			Entry("should handle all basic JSON-serializable types",
+				testCase{
+					input: map[string]any{
+						"string": "text",
+						"int":    123,
+						"float":  3.14,
+						"bool":   true,
+						"null":   nil,
+						"array":  []int{1, 2, 3},
+						"object": map[string]bool{"enabled": true},
+					},
+					expectedOutput: map[string]any{
+						"string": "text",
+						"int":    float64(123),
+						"float":  3.14,
+						"bool":   true,
+						"null":   nil,
+						"array":  []any{float64(1), float64(2), float64(3)},
+						"object": map[string]any{"enabled": true},
+					},
+				},
+			),
+			// Error cases
+			Entry("should fail with channel type",
+				testCase{
+					input: map[string]any{
+						"channel": make(chan int),
+					},
+					expectedErrs: []string{
+						"failed to normalize binding",
+						"channel",
+						"failed to marshal binding value",
+						"ensure binding values are JSON-serializable",
+					},
+				},
+			),
+			Entry("should fail with function type",
+				testCase{
+					input: map[string]any{
+						"function": func() {},
+					},
+					expectedErrs: []string{
+						"failed to normalize binding",
+						"function",
+						"failed to marshal binding value",
+						"ensure binding values are JSON-serializable",
+					},
+				},
+			),
+			Entry("should fail with complex number type",
+				testCase{
+					input: map[string]any{
+						"complex": complex(1, 2),
+					},
+					expectedErrs: []string{
+						"failed to normalize binding",
+						"complex",
+						"failed to marshal binding value",
+						"ensure binding values are JSON-serializable",
+					},
 				},
 			),
 		)
@@ -80,7 +214,8 @@ var _ = Describe("Chainsaw", func() {
 		DescribeTable("rendering templates into unstructured objects",
 			func(tc testCase) {
 				// Create bindings from map
-				bindings := chainsaw.BindingsFromMap(tc.bindings)
+				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
+				Expect(err).NotTo(HaveOccurred())
 				// Test RenderTemplate
 				objs, err := chainsaw.RenderTemplate(context.Background(), tc.templateContent, bindings)
 				// Check error
@@ -255,11 +390,11 @@ spec:
 								"namespace": "default",
 							},
 							"spec": map[string]interface{}{
-								"intValue":          42,
+								"intValue":          float64(42), // JSON normalizes int to float64
 								"boolValue":         true,
 								"floatValue":        3.14,
-								"mapValue":          map[string]string{"key": "value"},
-								"sliceValue":        []string{"item1", "item2"},
+								"mapValue":          map[string]interface{}{"key": "value"}, // JSON normalizes typed map
+								"sliceValue":        []interface{}{"item1", "item2"},        // JSON normalizes typed slice
 								"mapNestedValue":    "value",
 								"sliceElementValue": "item1",
 							},
@@ -389,7 +524,8 @@ data:
 		DescribeTable("rendering single-resource templates into unstructured objects",
 			func(tc testCase) {
 				// Create bindings from map
-				bindings := chainsaw.BindingsFromMap(tc.bindings)
+				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
+				Expect(err).NotTo(HaveOccurred())
 				// Test RenderTemplateSingle
 				obj, err := chainsaw.RenderTemplateSingle(context.Background(), tc.templateContent, bindings)
 				// Check error
@@ -504,11 +640,11 @@ spec:
 							"namespace": "default",
 						},
 						"spec": map[string]interface{}{
-							"intValue":          42,
+							"intValue":          float64(42), // JSON normalizes int to float64
 							"boolValue":         true,
 							"floatValue":        3.14,
-							"mapValue":          map[string]string{"key": "value"},
-							"sliceValue":        []string{"item1", "item2"},
+							"mapValue":          map[string]interface{}{"key": "value"}, // JSON normalizes typed map
+							"sliceValue":        []interface{}{"item1", "item2"},        // JSON normalizes typed slice
 							"mapNestedValue":    "value",
 							"sliceElementValue": "item1",
 						},
@@ -660,7 +796,8 @@ data:
 		DescribeTable("matching resources against expectations",
 			func(tc testCase) {
 				// Create bindings from map
-				bindings := chainsaw.BindingsFromMap(tc.bindings)
+				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
+				Expect(err).NotTo(HaveOccurred())
 				// Test Match
 				match, err := chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings)
 				// Check error
@@ -1230,6 +1367,7 @@ spec:
 				var (
 					createdResources []unstructured.Unstructured
 					bindings         apis.Bindings
+					err              error
 				)
 
 				BeforeEach(func() {
@@ -1255,7 +1393,8 @@ spec:
 					}
 
 					// Create bindings
-					bindings = chainsaw.BindingsFromMap(tc.bindings)
+					bindings, err = chainsaw.BindingsFromMap(tc.bindings)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				AfterEach(func() {
