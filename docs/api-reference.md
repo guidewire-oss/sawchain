@@ -10,6 +10,7 @@ import "github.com/guidewire-oss/sawchain"
 
 - [type Sawchain](<#Sawchain>)
   - [func New\(t testing.TB, c client.Client, args ...any\) \*Sawchain](<#New>)
+  - [func NewWithGomega\(t testing.TB, g gomega.Gomega, c client.Client, args ...any\) \*Sawchain](<#NewWithGomega>)
   - [func \(s \*Sawchain\) Check\(ctx context.Context, args ...any\) error](<#Sawchain.Check>)
   - [func \(s \*Sawchain\) CheckFunc\(ctx context.Context, args ...any\) func\(\) error](<#Sawchain.CheckFunc>)
   - [func \(s \*Sawchain\) Create\(ctx context.Context, args ...any\) error](<#Sawchain.Create>)
@@ -32,7 +33,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...any\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L58-L63>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L59-L64>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -47,13 +48,15 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L97>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L105>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
 ```
 
-New creates a new Sawchain instance with the provided global settings.
+New creates a new Sawchain instance with the provided global settings, using an internal Gomega instance for assertions.
+
+The testing.TB is used for test helper marking, logging, and Gomega assertions. The client.Client is used for all K8s API operations.
 
 #### Arguments
 
@@ -68,6 +71,8 @@ The following arguments may be provided in any order \(unless noted otherwise\) 
 #### Notes
 
 - Invalid input will result in immediate test failure.
+
+- Sawchain's timeout and interval settings control all internal eventual assertions. Gomega global or instance\-level duration defaults are ignored within Sawchain operations.
 
 #### Examples
 
@@ -87,6 +92,62 @@ Initialize Sawchain with custom timeout and interval settings:
 
 ```go
 sc := sawchain.New(t, k8sClient, "10s", "2s")
+```
+
+<a name="NewWithGomega"></a>
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L173>)
+
+```go
+func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
+```
+
+NewWithGomega creates a new Sawchain instance with a custom Gomega instance and provided global settings.
+
+All assertions performed by Sawchain \(including input validation\) will use the provided Gomega instance. This is useful for registering custom fail handlers or maintaining consistent Gomega configuration across multiple Sawchain instances.
+
+The testing.TB is used for test helper marking and logging. The gomega.Gomega is used for all Sawchain assertions. The client.Client is used for all K8s API operations.
+
+#### Arguments
+
+The following arguments may be provided in any order \(unless noted otherwise\) after t, g, and c:
+
+- Bindings \(map\[string\]any\): Optional. Global bindings to be used in all Chainsaw template operations. If multiple maps are provided, they will be merged in natural order.
+
+- Timeout \(string or time.Duration\): Optional. Defaults to 5s. Default timeout for eventual assertions. If provided, must be before interval.
+
+- Interval \(string or time.Duration\): Optional. Defaults to 1s. Default polling interval for eventual assertions. If provided, must be after timeout.
+
+#### Notes
+
+- Invalid input will result in immediate test failure.
+
+- Sawchain's timeout and interval settings control all internal eventual assertions. Gomega global or instance\-level duration defaults are ignored within Sawchain operations.
+
+#### Examples
+
+Initialize Sawchain with a custom fail handler:
+
+```go
+customFailHandler := func(message string, callerSkip ...int) {
+    isTestFailed = true
+    Fail(message, callerSkip...)
+}
+g := gomega.NewGomega(customFailHandler)
+sc := sawchain.NewWithGomega(t, g, k8sClient)
+```
+
+Initialize Sawchain with a custom Gomega instance and global bindings:
+
+```go
+g := gomega.NewGomega(customFailHandler)
+sc := sawchain.NewWithGomega(t, g, k8sClient, map[string]any{"namespace": "test"})
+```
+
+Initialize Sawchain with a custom Gomega instance and custom timeout settings:
+
+```go
+g := gomega.NewGomega(customFailHandler)
+sc := sawchain.NewWithGomega(t, g, k8sClient, "10s", "2s")
 ```
 
 <a name="Sawchain.Check"></a>
@@ -659,7 +720,7 @@ A template or objects must be provided.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
 
-- When no input objects are provided and objects must be returned, FetchMultiple attempts to return typed objects. If typed objects cannot be created \(i.e. if the client scheme does not support the necessary types\), unstructured objects will be returned instead.
+- When no input objects are provided and objects must be returned, FetchMultiple attempts to return typed objects. If typed objects cannot be created \(i.e., if the client scheme does not support the necessary types\), unstructured objects will be returned instead.
 
 - Use FetchMultipleFunc if you need to create a FetchMultiple function for polling.
 
@@ -757,7 +818,7 @@ A template or an object must be provided.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
 
-- When no input object is provided and an object must be returned, FetchSingle attempts to return a typed object. If a typed object cannot be created \(i.e. if the client scheme does not support the necessary type\), an unstructured object will be returned instead.
+- When no input object is provided and an object must be returned, FetchSingle attempts to return a typed object. If a typed object cannot be created \(i.e., if the client scheme does not support the necessary type\), an unstructured object will be returned instead.
 
 - Use FetchSingleFunc if you need to create a FetchSingle function for polling.
 
@@ -963,7 +1024,7 @@ HaveStatusCondition returns a Gomega matcher that uses Chainsaw matching to chec
 
 - When dealing with typed objects, the client scheme will be used for internal conversions.
 
-- For optimal failure output with collection matchers \(e.g. ContainElement, ConsistOf\), enable Gomega's format.UseStringerRepresentation.
+- For optimal failure output with collection matchers \(e.g., ContainElement, ConsistOf\), enable Gomega's format.UseStringerRepresentation.
 
 #### Examples
 
@@ -1010,7 +1071,7 @@ MatchYAML returns a Gomega matcher that checks if a client.Object matches YAML e
 
 - Because Chainsaw performs partial/subset matching on resource fields \(expected fields must exist, extras are allowed\), template expectations only have to include fields of interest, not necessarily complete resource definitions.
 
-- For optimal failure output with collection matchers \(e.g. ContainElement, ConsistOf\), enable Gomega's format.UseStringerRepresentation.
+- For optimal failure output with collection matchers \(e.g., ContainElement, ConsistOf\), enable Gomega's format.UseStringerRepresentation.
 
 #### Examples
 
@@ -1064,7 +1125,7 @@ The following arguments may be provided in any order:
 
 - Objects \(\[\]client.Object\): Slice of typed or unstructured objects to render into.
 
-When no objects are provided, RenderMultiple attempts to return typed objects. If typed objects cannot be created \(i.e. if the client scheme does not support the necessary types\), unstructured objects will be returned instead.
+When no objects are provided, RenderMultiple attempts to return typed objects. If typed objects cannot be created \(i.e., if the client scheme does not support the necessary types\), unstructured objects will be returned instead.
 
 #### Notes
 
@@ -1157,7 +1218,7 @@ The following arguments may be provided in any order:
 
 - Object \(client.Object\): Typed or unstructured object to render into.
 
-When no object is provided, RenderSingle attempts to return a typed object. If a typed object cannot be created \(i.e. if the client scheme does not support the necessary type\), an unstructured object will be returned instead.
+When no object is provided, RenderSingle attempts to return a typed object. If a typed object cannot be created \(i.e., if the client scheme does not support the necessary type\), an unstructured object will be returned instead.
 
 #### Notes
 

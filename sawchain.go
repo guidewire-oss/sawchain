@@ -20,6 +20,7 @@ const (
 	prefixErrInternal = "[SAWCHAIN][ERROR][INTERNAL] "
 	prefixInfo        = "[SAWCHAIN][INFO] "
 
+	errClientNil          = prefixErr + "client must not be nil"
 	errInvalidArgs        = prefixErr + "invalid arguments"
 	errInvalidTemplate    = prefixErr + "invalid template"
 	errInvalidBindings    = prefixErr + "invalid bindings"
@@ -62,7 +63,11 @@ type Sawchain struct {
 	opts options.Options
 }
 
-// New creates a new Sawchain instance with the provided global settings.
+// New creates a new Sawchain instance with the provided global settings, using an internal
+// Gomega instance for assertions.
+//
+// The testing.TB is used for test helper marking, logging, and Gomega assertions.
+// The client.Client is used for all K8s API operations.
 //
 // # Arguments
 //
@@ -80,6 +85,9 @@ type Sawchain struct {
 // # Notes
 //
 //   - Invalid input will result in immediate test failure.
+//
+//   - Sawchain's timeout and interval settings control all internal eventual assertions. Gomega
+//     global or instance-level duration defaults are ignored within Sawchain operations.
 //
 // # Examples
 //
@@ -99,7 +107,73 @@ func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 	// Initialize Gomega
 	g := gomega.NewWithT(t)
 	// Check client
-	g.Expect(c).NotTo(gomega.BeNil(), "client must not be nil")
+	g.Expect(c).NotTo(gomega.BeNil(), errClientNil)
+	// Parse options
+	opts, err := options.ParseAndApplyDefaults(&options.Options{
+		Timeout:  time.Second * 5,
+		Interval: time.Second,
+	}, true, false, false, false, args...)
+	g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
+	g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
+	// Check required options
+	g.Expect(options.RequireDurations(opts)).To(gomega.Succeed(), errInvalidArgs)
+	// Instantiate Sawchain
+	return &Sawchain{t: t, g: g, c: c, opts: *opts}
+}
+
+// NewWithGomega creates a new Sawchain instance with a custom Gomega instance and provided global settings.
+//
+// All assertions performed by Sawchain (including input validation) will use the provided Gomega
+// instance. This is useful for registering custom fail handlers or maintaining consistent Gomega
+// configuration across multiple Sawchain instances.
+//
+// The testing.TB is used for test helper marking and logging. The gomega.Gomega is used for all
+// Sawchain assertions. The client.Client is used for all K8s API operations.
+//
+// # Arguments
+//
+// The following arguments may be provided in any order (unless noted otherwise) after t, g, and c:
+//
+//   - Bindings (map[string]any): Optional. Global bindings to be used in all Chainsaw template
+//     operations. If multiple maps are provided, they will be merged in natural order.
+//
+//   - Timeout (string or time.Duration): Optional. Defaults to 5s. Default timeout for eventual
+//     assertions. If provided, must be before interval.
+//
+//   - Interval (string or time.Duration): Optional. Defaults to 1s. Default polling interval for
+//     eventual assertions. If provided, must be after timeout.
+//
+// # Notes
+//
+//   - Invalid input will result in immediate test failure.
+//
+//   - Sawchain's timeout and interval settings control all internal eventual assertions. Gomega
+//     global or instance-level duration defaults are ignored within Sawchain operations.
+//
+// # Examples
+//
+// Initialize Sawchain with a custom fail handler:
+//
+//	customFailHandler := func(message string, callerSkip ...int) {
+//	    isTestFailed = true
+//	    Fail(message, callerSkip...)
+//	}
+//	g := gomega.NewGomega(customFailHandler)
+//	sc := sawchain.NewWithGomega(t, g, k8sClient)
+//
+// Initialize Sawchain with a custom Gomega instance and global bindings:
+//
+//	g := gomega.NewGomega(customFailHandler)
+//	sc := sawchain.NewWithGomega(t, g, k8sClient, map[string]any{"namespace": "test"})
+//
+// Initialize Sawchain with a custom Gomega instance and custom timeout settings:
+//
+//	g := gomega.NewGomega(customFailHandler)
+//	sc := sawchain.NewWithGomega(t, g, k8sClient, "10s", "2s")
+func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain {
+	t.Helper()
+	// Check client
+	g.Expect(c).NotTo(gomega.BeNil(), errClientNil)
 	// Parse options
 	opts, err := options.ParseAndApplyDefaults(&options.Options{
 		Timeout:  time.Second * 5,

@@ -4,8 +4,8 @@ This example demonstrates how Sawchain can be used to test [KubeVela](https://ku
 
 ## How To Run
 
-1. Create or log into a K8s cluster (e.g. `k3d cluster create example`)
-1. Ensure KubeVela is installed (e.g. `vela install`)
+1. Create or log into a K8s cluster (e.g., `k3d cluster create example`)
+1. Ensure KubeVela is installed (e.g., `vela install`)
 1. Run `go test -v`
 
 ## References

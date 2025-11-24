@@ -44,7 +44,7 @@ import (
 //     whitespace prefix from non-empty lines) and pruning empty documents.
 //
 //   - When no input object is provided and an object must be returned, FetchSingle attempts to return a
-//     typed object. If a typed object cannot be created (i.e. if the client scheme does not support the
+//     typed object. If a typed object cannot be created (i.e., if the client scheme does not support the
 //     necessary type), an unstructured object will be returned instead.
 //
 //   - Use FetchSingleFunc if you need to create a FetchSingle function for polling.
@@ -148,7 +148,7 @@ func (s *Sawchain) FetchSingle(ctx context.Context, args ...any) client.Object {
 //     whitespace prefix from non-empty lines) and pruning empty documents.
 //
 //   - When no input objects are provided and objects must be returned, FetchMultiple attempts to return
-//     typed objects. If typed objects cannot be created (i.e. if the client scheme does not support the
+//     typed objects. If typed objects cannot be created (i.e., if the client scheme does not support the
 //     necessary types), unstructured objects will be returned instead.
 //
 //   - Use FetchMultipleFunc if you need to create a FetchMultiple function for polling.

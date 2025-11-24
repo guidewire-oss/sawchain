@@ -26,10 +26,9 @@ const errExpectedSingleResource = "expected template to contain a single resourc
 
 var compilers = apis.DefaultCompilers
 
-// normalizeBindingValue converts a binding value to a form compatible with
-// Kubernetes unstructured objects by performing a JSON round-trip.
-// This converts typed maps (e.g. map[string]string) to map[string]any,
-// which prevents panics in Kubernetes's DeepCopyJSONValue function.
+// normalizeBindingValue converts a binding value to a form compatible with K8s unstructured
+// objects by performing a JSON round-trip. This converts typed maps (e.g., map[string]string)
+// to map[string]any, which prevents panics in the K8s DeepCopyJSONValue function.
 func normalizeBindingValue(v any) (any, error) {
 	// Marshal to JSON
 	data, err := json.Marshal(v)
@@ -63,9 +62,8 @@ func normalizeBindingsMap(m map[string]any) (map[string]any, error) {
 	return normalized, nil
 }
 
-// BindingsFromMap converts the map into a Bindings object.
-// All binding values are normalized through JSON marshaling/unmarshaling
-// to ensure compatibility with Kubernetes unstructured objects.
+// BindingsFromMap converts the map into a Bindings object. All binding values are normalized through
+// JSON marshaling/unmarshaling to ensure compatibility with K8s unstructured objects.
 func BindingsFromMap(m map[string]any) (Bindings, error) {
 	// Normalize bindings to convert typed maps to map[string]any
 	normalized, err := normalizeBindingsMap(m)

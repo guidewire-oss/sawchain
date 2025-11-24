@@ -34,7 +34,7 @@ import (
 //     extras are allowed), template expectations only have to include fields of interest, not necessarily
 //     complete resource definitions.
 //
-//   - For optimal failure output with collection matchers (e.g. ContainElement, ConsistOf),
+//   - For optimal failure output with collection matchers (e.g., ContainElement, ConsistOf),
 //     enable Gomega's format.UseStringerRepresentation.
 //
 // # Examples
@@ -97,7 +97,7 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 //   - When dealing with typed objects, the client scheme will be used for internal conversions.
 //
-//   - For optimal failure output with collection matchers (e.g. ContainElement, ConsistOf),
+//   - For optimal failure output with collection matchers (e.g., ContainElement, ConsistOf),
 //     enable Gomega's format.UseStringerRepresentation.
 //
 // # Examples

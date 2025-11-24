@@ -31,7 +31,7 @@ import (
 //   - Object (client.Object): Typed or unstructured object to render into.
 //
 // When no object is provided, RenderSingle attempts to return a typed object. If a typed object cannot be
-// created (i.e. if the client scheme does not support the necessary type), an unstructured object will be
+// created (i.e., if the client scheme does not support the necessary type), an unstructured object will be
 // returned instead.
 //
 // # Notes
@@ -123,7 +123,7 @@ func (s *Sawchain) RenderSingle(args ...any) client.Object {
 //   - Objects ([]client.Object): Slice of typed or unstructured objects to render into.
 //
 // When no objects are provided, RenderMultiple attempts to return typed objects. If typed objects cannot be
-// created (i.e. if the client scheme does not support the necessary types), unstructured objects will be
+// created (i.e., if the client scheme does not support the necessary types), unstructured objects will be
 // returned instead.
 //
 // # Notes
