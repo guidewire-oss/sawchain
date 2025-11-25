@@ -89,6 +89,8 @@ type Sawchain struct {
 //   - Sawchain's timeout and interval settings control all internal eventual assertions. Gomega
 //     global or instance-level duration defaults are ignored within Sawchain operations.
 //
+//   - Use NewWithGomega if you need to provide a custom Gomega instance with a custom fail handler.
+//
 // # Examples
 //
 // Initialize Sawchain with the default settings:
@@ -127,8 +129,8 @@ func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 // instance. This is useful for registering custom fail handlers or maintaining consistent Gomega
 // configuration across multiple Sawchain instances.
 //
-// The testing.TB is used for test helper marking and logging. The gomega.Gomega is used for all
-// Sawchain assertions. The client.Client is used for all K8s API operations.
+// The testing.TB is used for test helper marking and logging.
+// The client.Client is used for all K8s API operations.
 //
 // # Arguments
 //

@@ -83,7 +83,6 @@ var _ = Describe("NewWithGomega", func() {
 		args                []any
 		expectedFailureLogs []string
 	}
-
 	DescribeTable("creating Sawchain with NewWithGomega",
 		func(tc testCase) {
 			// Test with NewWithT
@@ -135,18 +134,16 @@ var _ = Describe("NewWithGomega", func() {
 				// Verify failure
 				if len(tc.expectedFailureLogs) > 0 {
 					Expect(t.Failed()).To(BeTrue(), "expected failure")
+					Expect(failHandlerCalled).To(BeTrue(), "custom fail handler should have been called")
+					Expect(capturedCallerSkip).NotTo(BeEmpty(), "fail handler should receive caller skip info")
 					for _, expectedLog := range tc.expectedFailureLogs {
 						Expect(t.ErrorLogs).To(ContainElement(ContainSubstring(expectedLog)))
+						Expect(capturedMessage).To(ContainSubstring(expectedLog))
 					}
-					// Verify custom fail handler was invoked
-					Expect(failHandlerCalled).To(BeTrue(), "custom fail handler should have been called")
-					Expect(capturedMessage).To(ContainSubstring(tc.expectedFailureLogs[0]))
-					Expect(capturedCallerSkip).NotTo(BeEmpty(), "fail handler should receive caller skip info")
 				} else {
 					Expect(t.Failed()).To(BeFalse(), "expected no failure")
-					Expect(sc).NotTo(BeNil())
-					// Verify custom fail handler was not invoked
 					Expect(failHandlerCalled).To(BeFalse(), "custom fail handler should not have been called")
+					Expect(sc).NotTo(BeNil())
 				}
 			}
 		},
