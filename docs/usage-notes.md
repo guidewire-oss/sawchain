@@ -24,14 +24,14 @@ type-safe access later in the test. This enables hybrid testing, where specs may
 objects for more granular or logic-intensive assertions.
 
 Sawchain works with all objects implementing [client.Object](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object), including
-typed objects (e.g. `&corev1.Pod{}`) and [unstructured](https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured#Unstructured)
-objects (e.g. `&unstructured.Unstructured{}`).
+typed objects (e.g., `&corev1.Pod{}`) and [unstructured](https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured#Unstructured)
+objects (e.g., `&unstructured.Unstructured{}`).
 
 When dealing with typed objects, Sawchain uses the client [scheme](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#Scheme)
 to perform internal type conversions.
 
 When no input objects are provided and objects must be returned, Sawchain methods return typed objects if possible.
-If not possible (i.e. if internal type conversions fail), unstructured objects will be returned instead.
+If not possible (i.e., if internal type conversions fail), unstructured objects will be returned instead.
 
 ## Templates
 
@@ -148,4 +148,4 @@ prefix from non-empty lines) and pruning empty documents.
 ### Bindings
 
 Unlike Chainsaw, Sawchain does not inject any built-in template
-[bindings](https://kyverno.github.io/chainsaw/latest/quick-start/bindings/) (e.g. `$namespace`) by default.
+[bindings](https://kyverno.github.io/chainsaw/latest/quick-start/bindings/) (e.g., `$namespace`) by default.
