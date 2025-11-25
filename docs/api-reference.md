@@ -48,7 +48,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L105>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L107>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -74,6 +74,8 @@ The following arguments may be provided in any order \(unless noted otherwise\) 
 
 - Sawchain's timeout and interval settings control all internal eventual assertions. Gomega global or instance\-level duration defaults are ignored within Sawchain operations.
 
+- Use NewWithGomega if you need to provide a custom Gomega instance with a custom fail handler.
+
 #### Examples
 
 Initialize Sawchain with the default settings:
@@ -95,7 +97,7 @@ sc := sawchain.New(t, k8sClient, "10s", "2s")
 ```
 
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L173>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L175>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -105,7 +107,7 @@ NewWithGomega creates a new Sawchain instance with a custom Gomega instance and 
 
 All assertions performed by Sawchain \(including input validation\) will use the provided Gomega instance. This is useful for registering custom fail handlers or maintaining consistent Gomega configuration across multiple Sawchain instances.
 
-The testing.TB is used for test helper marking and logging. The gomega.Gomega is used for all Sawchain assertions. The client.Client is used for all K8s API operations.
+The testing.TB is used for test helper marking and logging. The client.Client is used for all K8s API operations.
 
 #### Arguments
 
