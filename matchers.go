@@ -10,7 +10,8 @@ import (
 )
 
 // MatchYAML returns a Gomega matcher that checks if a client.Object matches YAML expectations defined in a
-// single-document template, including full support for Chainsaw JMESPath expressions.
+// template, including full support for Chainsaw JMESPath expressions, as well as multi-document matching
+// with "match any document" semantics.
 //
 // # Arguments
 //
@@ -29,6 +30,9 @@ import (
 //
 //   - Templates will be sanitized before use, including de-indenting (removing any common leading
 //     whitespace prefix from non-empty lines) and pruning empty documents.
+//
+//   - Multi-document templates use "match any document" semantics: the matcher succeeds if the object
+//     matches at least one of the documents in the template.
 //
 //   - Because Chainsaw performs partial/subset matching on resource fields (expected fields must exist,
 //     extras are allowed), template expectations only have to include fields of interest, not necessarily

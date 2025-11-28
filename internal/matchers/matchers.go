@@ -16,8 +16,9 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
-// chainsawMatcher is a Gomega matcher that checks if
-// a client.Object matches a Chainsaw template.
+// chainsawMatcher is a Gomega matcher that checks if a client.Object matches
+// a Chainsaw template. Supports single-document matching and multi-document
+// matching with "match any document" semantics.
 type chainsawMatcher struct {
 	// K8s client used for type conversions.
 	c client.Client
@@ -27,32 +28,52 @@ type chainsawMatcher struct {
 	templateContent string
 	// Template bindings.
 	bindings chainsaw.Bindings
-	// Current match error.
-	matchError error
+	// Current match errors (one per document).
+	matchErrs []error
 }
 
 func (m *chainsawMatcher) Match(actual any) (bool, error) {
+	// Convert actual to unstructured
 	if util.IsNil(actual) {
-		return false, errors.New("chainsawMatcher expects a client.Object but got nil")
+		return false, errors.New("actual must be a client.Object, not nil")
 	}
 	obj, ok := util.AsObject(actual)
 	if !ok {
-		return false, fmt.Errorf("chainsawMatcher expects a client.Object but got %T", actual)
+		return false, fmt.Errorf("actual must be a client.Object, not %T", actual)
 	}
 	candidate, err := util.UnstructuredFromObject(m.c, obj)
 	if err != nil {
 		return false, err
 	}
+
+	// Render expectation objects
 	m.templateContent, err = m.createTemplateContent(m.c, obj)
 	if err != nil {
 		return false, err
 	}
-	expected, err := chainsaw.RenderTemplateSingle(context.TODO(), m.templateContent, m.bindings)
+	expectedObjs, err := chainsaw.RenderTemplate(
+		context.TODO(), m.templateContent, m.bindings,
+	)
 	if err != nil {
 		return false, err
 	}
-	_, m.matchError = chainsaw.Match(context.TODO(), []unstructured.Unstructured{candidate}, expected, m.bindings)
-	return m.matchError == nil, nil
+	if len(expectedObjs) == 0 {
+		return false, errors.New("template must contain at least one resource")
+	}
+
+	// Try matching against each expectation document
+	m.matchErrs = nil
+	for _, expected := range expectedObjs {
+		_, matchErr := chainsaw.Match(
+			context.TODO(), []unstructured.Unstructured{candidate}, expected, m.bindings,
+		)
+		if matchErr == nil {
+			// Match found
+			return true, nil
+		}
+		m.matchErrs = append(m.matchErrs, matchErr)
+	}
+	return false, nil
 }
 
 func wrapYaml(s string) string {
@@ -64,18 +85,51 @@ func (m *chainsawMatcher) String() string {
 		wrapYaml(m.templateContent), format.Object(m.bindings, 0))
 }
 
-func (m *chainsawMatcher) failureMessageFormat(actual any, base string) string {
+func (m *chainsawMatcher) failureMessageFormat(actual any, negated bool) string {
 	actualYamlBytes, _ := yaml.Marshal(actual)
 	actualYamlString := wrapYaml(string(actualYamlBytes))
-	return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n[ERROR]\n%v", base, actualYamlString, m.String(), m.matchError)
+
+	var base string
+	if len(m.matchErrs) > 1 {
+		if negated {
+			base = "Expected actual not to match any documents in Chainsaw template"
+		} else {
+			base = "Expected actual to match at least one document in Chainsaw template"
+		}
+	} else {
+		if negated {
+			base = "Expected actual not to match Chainsaw template"
+		} else {
+			base = "Expected actual to match Chainsaw template"
+		}
+	}
+
+	if len(m.matchErrs) == 0 {
+		// Safety: should not happen, but handle gracefully
+		return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n[ERROR]\nno match errors recorded\n",
+			base, actualYamlString, m.String())
+	} else if len(m.matchErrs) == 1 {
+		// Single document case: include single [ERROR] section
+		return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n[ERROR]\n%s\n",
+			base, actualYamlString, m.String(), strings.TrimSpace(m.matchErrs[0].Error()))
+	} else {
+		// Multi-document case: include multiple [ERROR - DOCUMENT #N] sections
+		var errorSections []string
+		for i, err := range m.matchErrs {
+			errorSections = append(errorSections,
+				fmt.Sprintf("[ERROR - DOCUMENT #%d]\n%s", i+1, strings.TrimSpace(err.Error())))
+		}
+		return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n%s\n",
+			base, actualYamlString, m.String(), strings.Join(errorSections, "\n\n"))
+	}
 }
 
 func (m *chainsawMatcher) FailureMessage(actual any) string {
-	return m.failureMessageFormat(actual, "Expected actual to match Chainsaw template")
+	return m.failureMessageFormat(actual, false)
 }
 
 func (m *chainsawMatcher) NegatedFailureMessage(actual any) string {
-	return m.failureMessageFormat(actual, "Expected actual not to match Chainsaw template")
+	return m.failureMessageFormat(actual, true)
 }
 
 // NewChainsawMatcher creates a new chainsawMatcher with static template content.

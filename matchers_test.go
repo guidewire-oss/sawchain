@@ -136,6 +136,149 @@ var _ = Describe("MatchYAML", func() {
 			},
 		}),
 
+		// Success cases with multi-document templates
+		Entry("match first document", testCase{
+			actual: testutil.NewConfigMap("cm1", "default", map[string]string{
+				"key": "val1",
+			}),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm1
+				  namespace: default
+				data:
+				  key: val1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm2
+				  namespace: default
+				data:
+				  key: val2
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm3
+				  namespace: default
+				data:
+				  key: val3
+			`,
+		}),
+
+		Entry("match middle document", testCase{
+			actual: testutil.NewConfigMap("cm2", "default", map[string]string{
+				"key": "val2",
+			}),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm1
+				  namespace: default
+				data:
+				  key: val1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm2
+				  namespace: default
+				data:
+				  key: val2
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm3
+				  namespace: default
+				data:
+				  key: val3
+			`,
+		}),
+
+		Entry("match last document", testCase{
+			actual: testutil.NewConfigMap("cm3", "default", map[string]string{
+				"key": "val3",
+			}),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm1
+				  namespace: default
+				data:
+				  key: val1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm2
+				  namespace: default
+				data:
+				  key: val2
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm3
+				  namespace: default
+				data:
+				  key: val3
+			`,
+		}),
+
+		Entry("match with multi-document template and bindings", testCase{
+			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+				"key": "bound-value",
+			}),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-config
+				  namespace: default
+				data:
+				  key: ($val1)
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-config
+				  namespace: default
+				data:
+				  key: ($val2)
+			`,
+			bindings: []map[string]any{
+				{"val1": "wrong", "val2": "bound-value"},
+			},
+		}),
+
+		Entry("subset match with multi-document template", testCase{
+			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+				"key3": "value3",
+			}),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: wrong-config
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-config
+				  namespace: default
+				data:
+				  key1: value1
+				  key2: value2
+			`,
+		}),
+
 		// Failure cases
 		Entry("no match with different value", testCase{
 			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
@@ -171,6 +314,36 @@ var _ = Describe("MatchYAML", func() {
 			`,
 			expectedFailureLogs: []string{
 				"data.key1: Required value: field not found in the input object",
+			},
+		}),
+
+		Entry("no match with multi-document template", testCase{
+			actual: testutil.NewConfigMap("cm-other", "default", map[string]string{
+				"key": "other",
+			}),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm1
+				  namespace: default
+				data:
+				  key: val1
+				---
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: cm2
+				  namespace: default
+				data:
+				  key: val2
+			`,
+			expectedFailureLogs: []string{
+				"Expected actual to match at least one document in Chainsaw template",
+				"[ERROR - DOCUMENT #1]",
+				"metadata.name: Invalid value: \"cm-other\": Expected value: \"cm1\"",
+				"[ERROR - DOCUMENT #2]",
+				"metadata.name: Invalid value: \"cm-other\": Expected value: \"cm2\"",
 			},
 		}),
 
@@ -244,7 +417,7 @@ var _ = Describe("MatchYAML", func() {
 				kind: ConfigMap
 			`,
 			expectedFailureLogs: []string{
-				"chainsawMatcher expects a client.Object but got nil",
+				"actual must be a client.Object, not nil",
 			},
 		}),
 
@@ -255,7 +428,7 @@ var _ = Describe("MatchYAML", func() {
 				kind: ConfigMap
 			`,
 			expectedFailureLogs: []string{
-				"chainsawMatcher expects a client.Object but got string",
+				"actual must be a client.Object, not string",
 			},
 		}),
 
@@ -280,22 +453,6 @@ var _ = Describe("MatchYAML", func() {
 				"failed to sanitize template content",
 				"ensure leading whitespace is consistent and YAML is indented with spaces (not tabs)",
 				"yaml: mapping values are not allowed in this context",
-			},
-		}),
-
-		Entry("error on multi-document template", testCase{
-			actual: testutil.NewConfigMap("test-config", "default", map[string]string{
-				"key1": "value1",
-			}),
-			template: `
-				apiVersion: v1
-				kind: ConfigMap
-				---
-				apiVersion: v1
-				kind: ConfigMap
-			`,
-			expectedFailureLogs: []string{
-				"expected template to contain a single resource; found 2",
 			},
 		}),
 
@@ -516,7 +673,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			conditionType:  "Ready",
 			expectedStatus: "True",
 			expectedFailureLogs: []string{
-				"chainsawMatcher expects a client.Object but got nil",
+				"actual must be a client.Object, not nil",
 			},
 		}),
 
@@ -526,7 +683,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			conditionType:  "Ready",
 			expectedStatus: "True",
 			expectedFailureLogs: []string{
-				"chainsawMatcher expects a client.Object but got string",
+				"actual must be a client.Object, not string",
 			},
 		}),
 
