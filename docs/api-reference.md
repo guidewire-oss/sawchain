@@ -1006,7 +1006,7 @@ The returned function performs the same operations as Get, but is particularly u
 For details on arguments, examples, and behavior, see the documentation for Get.
 
 <a name="Sawchain.HaveStatusCondition"></a>
-### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L116>)
+### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L120>)
 
 ```go
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher
@@ -1049,13 +1049,13 @@ Expect(myCustomResource).To(sc.HaveStatusCondition("Ready", "True"))
 ```
 
 <a name="Sawchain.MatchYAML"></a>
-### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L66>)
+### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L70>)
 
 ```go
 func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.GomegaMatcher
 ```
 
-MatchYAML returns a Gomega matcher that checks if a client.Object matches YAML expectations defined in a single\-document template, including full support for Chainsaw JMESPath expressions.
+MatchYAML returns a Gomega matcher that checks if a client.Object matches YAML expectations defined in a template, including full support for Chainsaw JMESPath expressions, as well as multi\-document matching with "match any document" semantics.
 
 #### Arguments
 
@@ -1070,6 +1070,8 @@ MatchYAML returns a Gomega matcher that checks if a client.Object matches YAML e
 - When dealing with typed objects, the client scheme will be used for internal conversions.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- Multi\-document templates use "match any document" semantics: the matcher succeeds if the object matches at least one of the documents in the template.
 
 - Because Chainsaw performs partial/subset matching on resource fields \(expected fields must exist, extras are allowed\), template expectations only have to include fields of interest, not necessarily complete resource definitions.
 

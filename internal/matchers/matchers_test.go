@@ -20,7 +20,7 @@ var _ = Describe("Matchers", func() {
 			bindings            map[string]any
 			shouldMatch         bool
 			expectedInternalErr string
-			expectedMatchErr    string
+			expectedMatchErrs   []string
 		}
 
 		DescribeTable("matching resources against templates",
@@ -39,18 +39,19 @@ var _ = Describe("Matchers", func() {
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				// Test FailureMessage
-				failureMsg := matcher.FailureMessage(tc.actual)
-				Expect(failureMsg).To(ContainSubstring("Expected actual to match Chainsaw template"))
-				if tc.expectedMatchErr != "" {
-					Expect(failureMsg).To(ContainSubstring(tc.expectedMatchErr))
-				}
+				// Test FailureMessage and NegatedFailureMessage
+				if !tc.shouldMatch {
+					failureMsg := matcher.FailureMessage(tc.actual)
+					Expect(failureMsg).To(ContainSubstring("Expected actual to match"))
+					for _, expectedErr := range tc.expectedMatchErrs {
+						Expect(failureMsg).To(ContainSubstring(expectedErr))
+					}
 
-				// Test NegatedFailureMessage
-				negatedFailureMsg := matcher.NegatedFailureMessage(tc.actual)
-				Expect(negatedFailureMsg).To(ContainSubstring("Expected actual not to match Chainsaw template"))
-				if tc.expectedMatchErr != "" {
-					Expect(negatedFailureMsg).To(ContainSubstring(tc.expectedMatchErr))
+					negatedFailureMsg := matcher.NegatedFailureMessage(tc.actual)
+					Expect(negatedFailureMsg).To(ContainSubstring("Expected actual not to match"))
+					for _, expectedErr := range tc.expectedMatchErrs {
+						Expect(negatedFailureMsg).To(ContainSubstring(expectedErr))
+					}
 				}
 			},
 
@@ -153,6 +154,159 @@ data:
 				shouldMatch: true,
 			}),
 
+			// Success cases with multi-document templates
+			Entry("match first document", testCase{
+				actual: testutil.NewConfigMap("cm1", "default", map[string]string{
+					"key": "val1",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm1
+  namespace: default
+data:
+  key: val1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm2
+  namespace: default
+data:
+  key: val2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm3
+  namespace: default
+data:
+  key: val3
+`,
+				bindings:    map[string]any{},
+				shouldMatch: true,
+			}),
+
+			Entry("match middle document", testCase{
+				actual: testutil.NewConfigMap("cm2", "default", map[string]string{
+					"key": "val2",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm1
+  namespace: default
+data:
+  key: val1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm2
+  namespace: default
+data:
+  key: val2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm3
+  namespace: default
+data:
+  key: val3
+`,
+				bindings:    map[string]any{},
+				shouldMatch: true,
+			}),
+
+			Entry("match last document", testCase{
+				actual: testutil.NewConfigMap("cm3", "default", map[string]string{
+					"key": "val3",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm1
+  namespace: default
+data:
+  key: val1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm2
+  namespace: default
+data:
+  key: val2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm3
+  namespace: default
+data:
+  key: val3
+`,
+				bindings:    map[string]any{},
+				shouldMatch: true,
+			}),
+
+			Entry("match with multi-document template and bindings", testCase{
+				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+					"key": "bound-value",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data:
+  key: ($val1)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data:
+  key: ($val2)
+`,
+				bindings: map[string]any{
+					"val1": "wrong",
+					"val2": "bound-value",
+				},
+				shouldMatch: true,
+			}),
+
+			Entry("subset match with multi-document template", testCase{
+				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "value3",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wrong-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data:
+  key1: value1
+  key2: value2
+`,
+				bindings:    map[string]any{},
+				shouldMatch: true,
+			}),
+
 			// Failure cases
 			Entry("no match with different value", testCase{
 				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
@@ -166,11 +320,20 @@ metadata:
   name: test-config
   namespace: default
 data:
-  key1: expected-value
+  key1: ($expectedValue)
 `,
-				bindings:         map[string]any{},
-				shouldMatch:      false,
-				expectedMatchErr: "data.key1: Invalid value: \"wrong-value\": Expected value: \"expected-value\"",
+				bindings: map[string]any{
+					"expectedValue": "expected-value",
+				},
+				shouldMatch: false,
+				expectedMatchErrs: []string{
+					"[ACTUAL]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
+					"<string>\"expected-value\"",
+					"[ERROR]",
+					"* data.key1: Invalid value: \"wrong-value\": Expected value: \"expected-value\"",
+				},
 			}),
 
 			Entry("no match with missing field", testCase{
@@ -186,29 +349,51 @@ metadata:
 data:
   key1: value1
 `,
-				bindings:         map[string]any{},
-				shouldMatch:      false,
-				expectedMatchErr: "data.key1: Required value: field not found in the input object",
+				bindings:    map[string]any{},
+				shouldMatch: false,
+				expectedMatchErrs: []string{
+					"[ACTUAL]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
+					"[ERROR]",
+					"* data.key1: Required value: field not found in the input object",
+				},
 			}),
 
-			Entry("failure message includes bindings", testCase{
-				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
-					"key1": "wrong-value",
+			Entry("no match with multi-document template", testCase{
+				actual: testutil.NewConfigMap("cm-other", "default", map[string]string{
+					"key": "other",
 				}),
 				templateContent: `
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-config
+  name: cm1
   namespace: default
 data:
-  key1: ($expectedValue)
+  key: val1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm2
+  namespace: default
+data:
+  key: val2
 `,
-				bindings: map[string]any{
-					"expectedValue": "correct-value",
+				bindings:    map[string]any{},
+				shouldMatch: false,
+				expectedMatchErrs: []string{
+					"[ACTUAL]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
+					"[ERROR - DOCUMENT #1]",
+					"* data.key: Invalid value: \"other\": Expected value: \"val1\"",
+					"* metadata.name: Invalid value: \"cm-other\": Expected value: \"cm1\"",
+					"[ERROR - DOCUMENT #2]",
+					"* data.key: Invalid value: \"other\": Expected value: \"val2\"",
+					"* metadata.name: Invalid value: \"cm-other\": Expected value: \"cm2\"",
 				},
-				shouldMatch:      false,
-				expectedMatchErr: "<string>\"correct-value\"",
 			}),
 
 			// Edge cases
@@ -257,7 +442,7 @@ apiVersion: v1
 kind: ConfigMap
 `,
 				bindings:            map[string]any{},
-				expectedInternalErr: "chainsawMatcher expects a client.Object but got nil",
+				expectedInternalErr: "actual must be a client.Object, not nil",
 			}),
 
 			Entry("error on non-object input", testCase{
@@ -267,7 +452,7 @@ apiVersion: v1
 kind: ConfigMap
 `,
 				bindings:            map[string]any{},
-				expectedInternalErr: "chainsawMatcher expects a client.Object but got string",
+				expectedInternalErr: "actual must be a client.Object, not string",
 			}),
 
 			Entry("error on non-existent template file", testCase{
@@ -312,7 +497,7 @@ metadata:
 			expectedStatus      string
 			shouldMatch         bool
 			expectedInternalErr string
-			expectedMatchErr    string
+			expectedMatchErrs   []string
 		}
 
 		DescribeTable("matching resources against status conditions",
@@ -329,18 +514,19 @@ metadata:
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				// Test FailureMessage
-				failureMsg := matcher.FailureMessage(tc.actual)
-				Expect(failureMsg).To(ContainSubstring("Expected actual to match Chainsaw template"))
-				if tc.expectedMatchErr != "" {
-					Expect(failureMsg).To(ContainSubstring(tc.expectedMatchErr))
-				}
+				// Test FailureMessage and NegatedFailureMessage
+				if !tc.shouldMatch {
+					failureMsg := matcher.FailureMessage(tc.actual)
+					Expect(failureMsg).To(ContainSubstring("Expected actual to match"))
+					for _, expectedErr := range tc.expectedMatchErrs {
+						Expect(failureMsg).To(ContainSubstring(expectedErr))
+					}
 
-				// Test NegatedFailureMessage
-				negatedFailureMsg := matcher.NegatedFailureMessage(tc.actual)
-				Expect(negatedFailureMsg).To(ContainSubstring("Expected actual not to match Chainsaw template"))
-				if tc.expectedMatchErr != "" {
-					Expect(negatedFailureMsg).To(ContainSubstring(tc.expectedMatchErr))
+					negatedFailureMsg := matcher.NegatedFailureMessage(tc.actual)
+					Expect(negatedFailureMsg).To(ContainSubstring("Expected actual not to match"))
+					for _, expectedErr := range tc.expectedMatchErrs {
+						Expect(negatedFailureMsg).To(ContainSubstring(expectedErr))
+					}
 				}
 			},
 
@@ -415,10 +601,16 @@ metadata:
 						Status: metav1.ConditionFalse,
 					},
 				),
-				conditionType:    "Ready",
-				expectedStatus:   "True",
-				shouldMatch:      false,
-				expectedMatchErr: "status.(conditions[?type == 'Ready'])[0].status: Invalid value: \"False\": Expected value: \"True\"",
+				conditionType:  "Ready",
+				expectedStatus: "True",
+				shouldMatch:    false,
+				expectedMatchErrs: []string{
+					"[ACTUAL]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
+					"[ERROR]",
+					"* status.(conditions[?type == 'Ready'])[0].status: Invalid value: \"False\": Expected value: \"True\"",
+				},
 			}),
 
 			Entry("no match with missing condition", testCase{
@@ -429,20 +621,32 @@ metadata:
 						Status: metav1.ConditionTrue,
 					},
 				),
-				conditionType:    "Ready",
-				expectedStatus:   "True",
-				shouldMatch:      false,
-				expectedMatchErr: "status.(conditions[?type == 'Ready']): Invalid value: []interface {}{}: lengths of slices don't match",
+				conditionType:  "Ready",
+				expectedStatus: "True",
+				shouldMatch:    false,
+				expectedMatchErrs: []string{
+					"[ACTUAL]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
+					"[ERROR]",
+					"* status.(conditions[?type == 'Ready']): Invalid value: []interface {}{}: lengths of slices don't match",
+				},
 			}),
 
 			// Edge cases
 			Entry("no match with empty conditions", testCase{
-				client:           clientWithTestResource,
-				actual:           testutil.NewTestResource("test-resource", "default"),
-				conditionType:    "Ready",
-				expectedStatus:   "True",
-				shouldMatch:      false,
-				expectedMatchErr: "status.(conditions[?type == 'Ready']): Invalid value: \"null\": value is null",
+				client:         clientWithTestResource,
+				actual:         testutil.NewTestResource("test-resource", "default"),
+				conditionType:  "Ready",
+				expectedStatus: "True",
+				shouldMatch:    false,
+				expectedMatchErrs: []string{
+					"[ACTUAL]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
+					"[ERROR]",
+					"* status.(conditions[?type == 'Ready']): Invalid value: \"null\": value is null",
+				},
 			}),
 
 			Entry("no match with missing status field", testCase{
@@ -455,10 +659,16 @@ metadata:
 					obj.SetNamespace("default")
 					return obj
 				}(),
-				conditionType:    "Ready",
-				expectedStatus:   "True",
-				shouldMatch:      false,
-				expectedMatchErr: "status: Required value: field not found in the input object",
+				conditionType:  "Ready",
+				expectedStatus: "True",
+				shouldMatch:    false,
+				expectedMatchErrs: []string{
+					"[ACTUAL]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
+					"[ERROR]",
+					"* status: Required value: field not found in the input object",
+				},
 			}),
 
 			// Error cases
@@ -467,7 +677,7 @@ metadata:
 				actual:              nil,
 				conditionType:       "Ready",
 				expectedStatus:      "True",
-				expectedInternalErr: "chainsawMatcher expects a client.Object but got nil",
+				expectedInternalErr: "actual must be a client.Object, not nil",
 			}),
 
 			Entry("error on non-object input", testCase{
@@ -475,7 +685,7 @@ metadata:
 				actual:              "not an object",
 				conditionType:       "Ready",
 				expectedStatus:      "True",
-				expectedInternalErr: "chainsawMatcher expects a client.Object but got string",
+				expectedInternalErr: "actual must be a client.Object, not string",
 			}),
 
 			Entry("error on unrecognized type", testCase{
