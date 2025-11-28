@@ -113,7 +113,7 @@ func (m *chainsawMatcher) failureMessageFormat(actual any, negated bool) string 
 		return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n[ERROR]\n%s\n",
 			base, actualYamlString, m.String(), strings.TrimSpace(m.matchErrs[0].Error()))
 	} else {
-		// Multi-document case: include multiple [ERROR: Document #N] sections
+		// Multi-document case: include multiple [ERROR - DOCUMENT #N] sections
 		var errorSections []string
 		for i, err := range m.matchErrs {
 			errorSections = append(errorSections,
