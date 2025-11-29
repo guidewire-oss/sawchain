@@ -1,0 +1,14 @@
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: AccessKey
+metadata:
+  annotations:
+    crossplane.io/composition-resource-name: access-key
+status:
+  # Mock status properties used by composition
+  atProvider:
+    id: AKIAIOSFODNN7EXAMPLE
+  conditions:
+    - type: Ready
+      status: "True"
+    - type: Synced
+      status: "True"

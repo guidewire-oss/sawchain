@@ -1,0 +1,15 @@
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: User
+metadata:
+  annotations:
+    crossplane.io/composition-resource-name: iam-user
+status:
+  # Mock status properties used by composition
+  atProvider:
+    arn: arn:aws:iam::000000000000:user/alice-developer
+    id: alice-developer
+  conditions:
+    - type: Ready
+      status: "True"
+    - type: Synced
+      status: "True"

@@ -1,6 +1,7 @@
-# Example: `vela dry-run` Test
+# Example: KubeVela Offline Rendering Test
 
-This example demonstrates how Sawchain can be used to do offline render testing for [KubeVela](https://kubevela.io/docs/) components and traits
+This example demonstrates how Sawchain can be used to test rendering of [KubeVela](https://kubevela.io/docs/) components and traits
+offline (without a K8s cluster)
 
 ## How To Run
 

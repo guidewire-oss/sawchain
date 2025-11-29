@@ -1,0 +1,80 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: iamusers.example.com
+spec:
+  scope: Namespaced
+  group: example.com
+  names:
+    kind: IAMUser
+    plural: iamusers
+  defaultCompositionRef:
+    name: iamuser.example.com
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: The IAM username to create
+                createAccessKey:
+                  type: boolean
+                  description: Whether to create an access key for this user
+                  default: false
+                policyArns:
+                  type: array
+                  description: List of IAM policy ARNs to attach to the user
+                  items:
+                    type: string
+                team:
+                  type: string
+                  description: Team name for tagging
+                  default: platform
+              required:
+                - username
+            status:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    ready:
+                      type: boolean
+                    synced:
+                      type: boolean
+                    arn:
+                      type: string
+                    id:
+                      type: string
+                accessKey:
+                  type: object
+                  properties:
+                    ready:
+                      type: boolean
+                    synced:
+                      type: boolean
+                    id:
+                      type: string
+                    secretRef:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                policyAttachments:
+                  type: object
+                  properties:
+                    total:
+                      type: integer
+                    ready:
+                      type: integer
+                    synced:
+                      type: integer
