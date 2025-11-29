@@ -1006,7 +1006,7 @@ The returned function performs the same operations as Get, but is particularly u
 For details on arguments, examples, and behavior, see the documentation for Get.
 
 <a name="Sawchain.HaveStatusCondition"></a>
-### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L120>)
+### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L128>)
 
 ```go
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher
@@ -1026,7 +1026,7 @@ HaveStatusCondition returns a Gomega matcher that uses Chainsaw matching to chec
 
 - When dealing with typed objects, the client scheme will be used for internal conversions.
 
-- For optimal failure output with collection matchers \(e.g., ContainElement, ConsistOf\), enable Gomega's format.UseStringerRepresentation.
+- For optimal failure output, use individual assertions in a for\-loop rather than collection matchers \(e.g., HaveEach, ContainElement\). Collection matchers work correctly but provide limited error details due to Gomega limitations. If collection matchers are necessary, enable format.UseStringerRepresentation for slightly better output.
 
 #### Examples
 
@@ -1036,20 +1036,22 @@ Check if a Deployment has condition Available=True:
 Expect(deployment).To(sc.HaveStatusCondition("Available", "True"))
 ```
 
-Check if a Pod has condition Initialized=False:
+Check if a Pod has condition Ready=True:
 
 ```go
-Expect(pod).To(sc.HaveStatusCondition("Initialized", "False"))
+Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
 ```
 
-Check if a custom resource has condition Ready=True:
+Check if multiple resources have condition Ready=True:
 
 ```go
-Expect(myCustomResource).To(sc.HaveStatusCondition("Ready", "True"))
+for _, obj := range objs {
+    Expect(obj).To(sc.HaveStatusCondition("Ready", "True"))
+}
 ```
 
 <a name="Sawchain.MatchYAML"></a>
-### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L70>)
+### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L74>)
 
 ```go
 func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.GomegaMatcher
@@ -1075,15 +1077,9 @@ MatchYAML returns a Gomega matcher that checks if a client.Object matches YAML e
 
 - Because Chainsaw performs partial/subset matching on resource fields \(expected fields must exist, extras are allowed\), template expectations only have to include fields of interest, not necessarily complete resource definitions.
 
-- For optimal failure output with collection matchers \(e.g., ContainElement, ConsistOf\), enable Gomega's format.UseStringerRepresentation.
+- For optimal failure output, use individual assertions in a for\-loop rather than collection matchers \(e.g., HaveEach, ContainElement\). Collection matchers work correctly but provide limited error details due to Gomega limitations. If collection matchers are necessary, enable format.UseStringerRepresentation for slightly better output.
 
 #### Examples
-
-Match an object with a file:
-
-```go
-Expect(configMap).To(sc.MatchYAML("path/to/configmap.yaml"))
-```
 
 Match an object with a template and bindings:
 
@@ -1106,6 +1102,14 @@ Expect(deployment).To(sc.MatchYAML(`
   spec:
     (replicas > `1` && replicas < `4`): true
 `))
+```
+
+Match multiple objects with a multi\-document template file:
+
+```go
+for _, obj := range objs {
+    Expect(obj).To(sc.MatchYAML("path/to/expected-outputs.yaml"))
+}
 ```
 
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.

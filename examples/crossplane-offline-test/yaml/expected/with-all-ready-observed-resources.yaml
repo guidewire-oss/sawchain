@@ -1,0 +1,124 @@
+# Expected output of:
+#   crossplane render --include-full-xr yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+#     --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/ready
+apiVersion: example.com/v1alpha1
+kind: IAMUser
+metadata:
+  name: developer-alice
+  namespace: default
+spec:
+  createAccessKey: true
+  policyArns:
+    - arn:aws:iam::aws:policy/ReadOnlyAccess
+    - arn:aws:iam::aws:policy/PowerUserAccess
+  team: engineering
+  username: alice-developer
+status:
+  accessKey:
+    id: AKIAIOSFODNN7EXAMPLE
+    synced: true
+    ready: true
+    secretRef:
+      name: alice-developer-credentials
+      namespace: default
+  conditions:
+    - type: Ready
+      status: "True"
+      reason: Available
+  policyAttachments:
+    total: 2
+    synced: 2
+    ready: 2
+  user:
+    id: alice-developer
+    arn: arn:aws:iam::000000000000:user/alice-developer
+    synced: true
+    ready: true
+---
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: User
+metadata:
+  name: alice-developer
+  namespace: default
+  annotations:
+    crossplane.io/composition-resource-name: iam-user
+  ownerReferences:
+    - apiVersion: example.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: IAMUser
+      name: developer-alice
+spec:
+  forProvider:
+    tags:
+      Environment: dev
+      ManagedBy: crossplane
+      Name: alice-developer
+      Team: engineering
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+---
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: AccessKey
+metadata:
+  name: alice-developer-key
+  namespace: default
+  annotations:
+    crossplane.io/composition-resource-name: access-key
+  ownerReferences:
+    - apiVersion: example.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: IAMUser
+      name: developer-alice
+spec:
+  forProvider:
+    user: alice-developer
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+  writeConnectionSecretToRef:
+    name: alice-developer-credentials
+---
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: UserPolicyAttachment
+metadata:
+  name: alice-developer-policy-0
+  namespace: default
+  annotations:
+    crossplane.io/composition-resource-name: policy-attachment-0
+  ownerReferences:
+    - apiVersion: example.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: IAMUser
+      name: developer-alice
+spec:
+  forProvider:
+    policyArn: arn:aws:iam::aws:policy/ReadOnlyAccess
+    user: alice-developer
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+---
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: UserPolicyAttachment
+metadata:
+  name: alice-developer-policy-1
+  namespace: default
+  annotations:
+    crossplane.io/composition-resource-name: policy-attachment-1
+  ownerReferences:
+    - apiVersion: example.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: IAMUser
+      name: developer-alice
+spec:
+  forProvider:
+    policyArn: arn:aws:iam::aws:policy/PowerUserAccess
+    user: alice-developer
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default

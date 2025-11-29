@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-var _ = Describe("webservice component", func() {
+var _ = Describe("Webservice Component", func() {
 	var (
 		deployment *appsv1.Deployment
 		service    *corev1.Service
@@ -31,7 +31,7 @@ var _ = Describe("webservice component", func() {
 	})
 
 	// Example using static YAML files for input and expectations
-	It("renders Deployment", func() {
+	It("Renders Deployment", func() {
 		// Run vela dry-run
 		appPath := filepath.Join("yaml", "webservice", "application.yaml")
 		output, err := runVelaDryRun(appPath, "cue")
@@ -49,7 +49,7 @@ var _ = Describe("webservice component", func() {
 	})
 
 	// Example using Chainsaw templates inline and from a file
-	DescribeTable("with annotations trait",
+	DescribeTable("With Annotations Trait",
 		func(annotations map[string]string) {
 			// Define bindings
 			bindings := map[string]any{"annotations": annotations}
@@ -81,12 +81,12 @@ var _ = Describe("webservice component", func() {
 				      annotations: ($annotations)
 				`, bindings))
 		},
-		Entry("renders single annotation", map[string]string{"foo": "bar"}),
-		Entry("renders multiple annotations", map[string]string{"foo": "bar", "bar": "baz"}),
+		Entry("Renders single annotation", map[string]string{"foo": "bar"}),
+		Entry("Renders multiple annotations", map[string]string{"foo": "bar", "bar": "baz"}),
 	)
 
 	// Example using Chainsaw templates from files only
-	DescribeTable("with gateway trait",
+	DescribeTable("With Gateway Trait",
 		func(port int) {
 			// Define bindings
 			bindings := map[string]any{"port": port}
@@ -115,8 +115,8 @@ var _ = Describe("webservice component", func() {
 			Expect(ingress).To(sc.MatchYAML(
 				filepath.Join("yaml", "gateway", "ingress.tpl.yaml"), bindings))
 		},
-		Entry("renders Service and Ingress with port 80", 80),
-		Entry("renders Service and Ingress with port 443", 443),
+		Entry("Renders Service and Ingress with port 80", 80),
+		Entry("Renders Service and Ingress with port 443", 443),
 	)
 })
 

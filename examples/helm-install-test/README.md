@@ -6,7 +6,7 @@ This example demonstrates how Sawchain can be used to test the install and upgra
 
 1. Ensure you have the [Helm CLI](https://helm.sh/docs/intro/install/) installed
 1. Create or log into a K8s cluster (e.g., `k3d cluster create example`)
-1. Run `go test -v`
+1. Run `ginkgo -v` or `go test -v`
 
 ## References
 

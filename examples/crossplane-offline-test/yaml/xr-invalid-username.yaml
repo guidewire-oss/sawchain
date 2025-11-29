@@ -1,0 +1,7 @@
+apiVersion: example.com/v1alpha1
+kind: IAMUser
+metadata:
+  name: developer-alice
+  namespace: default
+spec:
+  username: 123

@@ -4,7 +4,8 @@ This example demonstrates how Sawchain can be used to do offline render testing 
 
 ## How To Run
 
-Ensure you have the [Helm CLI](https://helm.sh/docs/intro/install/) installed, then run `go test -v`
+1. Ensure you have the [Helm CLI](https://helm.sh/docs/intro/install/) installed
+1. Run `ginkgo -v` or `go test -v`
 
 ## References
 

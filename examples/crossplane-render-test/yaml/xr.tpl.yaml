@@ -1,6 +1,0 @@
-apiVersion: example.crossplane.io/v1beta1
-kind: XR
-metadata:
-  name: example
-spec:
-  yamlBlob: ($yamlBlob) # Templated for reuse between test cases

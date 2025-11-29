@@ -38,14 +38,12 @@ import (
 //     extras are allowed), template expectations only have to include fields of interest, not necessarily
 //     complete resource definitions.
 //
-//   - For optimal failure output with collection matchers (e.g., ContainElement, ConsistOf),
-//     enable Gomega's format.UseStringerRepresentation.
+//   - For optimal failure output, use individual assertions in a for-loop rather than collection
+//     matchers (e.g., HaveEach, ContainElement). Collection matchers work correctly but provide
+//     limited error details due to Gomega limitations. If collection matchers are necessary,
+//     enable format.UseStringerRepresentation for slightly better output.
 //
 // # Examples
-//
-// Match an object with a file:
-//
-//	Expect(configMap).To(sc.MatchYAML("path/to/configmap.yaml"))
 //
 // Match an object with a template and bindings:
 //
@@ -65,6 +63,12 @@ import (
 //	  spec:
 //	    (replicas > `1` && replicas < `4`): true
 //	`))
+//
+// Match multiple objects with a multi-document template file:
+//
+//	for _, obj := range objs {
+//	    Expect(obj).To(sc.MatchYAML("path/to/expected-outputs.yaml"))
+//	}
 //
 // For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.GomegaMatcher {
@@ -101,8 +105,10 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 //   - When dealing with typed objects, the client scheme will be used for internal conversions.
 //
-//   - For optimal failure output with collection matchers (e.g., ContainElement, ConsistOf),
-//     enable Gomega's format.UseStringerRepresentation.
+//   - For optimal failure output, use individual assertions in a for-loop rather than collection
+//     matchers (e.g., HaveEach, ContainElement). Collection matchers work correctly but provide
+//     limited error details due to Gomega limitations. If collection matchers are necessary,
+//     enable format.UseStringerRepresentation for slightly better output.
 //
 // # Examples
 //
@@ -110,13 +116,15 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 //	Expect(deployment).To(sc.HaveStatusCondition("Available", "True"))
 //
-// Check if a Pod has condition Initialized=False:
+// Check if a Pod has condition Ready=True:
 //
-//	Expect(pod).To(sc.HaveStatusCondition("Initialized", "False"))
+//	Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
 //
-// Check if a custom resource has condition Ready=True:
+// Check if multiple resources have condition Ready=True:
 //
-//	Expect(myCustomResource).To(sc.HaveStatusCondition("Ready", "True"))
+//	for _, obj := range objs {
+//	    Expect(obj).To(sc.HaveStatusCondition("Ready", "True"))
+//	}
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher {
 	s.t.Helper()
 	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus)
