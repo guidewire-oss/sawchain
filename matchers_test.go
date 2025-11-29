@@ -295,6 +295,8 @@ var _ = Describe("MatchYAML", func() {
 				  key1: expected-value
 			`,
 			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
 				"data.key1: Invalid value: \"wrong-value\": Expected value: \"expected-value\"",
 			},
 		}),
@@ -313,6 +315,8 @@ var _ = Describe("MatchYAML", func() {
 				  key1: value1
 			`,
 			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
 				"data.key1: Required value: field not found in the input object",
 			},
 		}),
@@ -619,6 +623,8 @@ var _ = Describe("HaveStatusCondition", func() {
 			conditionType:  "Ready",
 			expectedStatus: "True",
 			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
 				"status.(conditions[?type == 'Ready'])[0].status: Invalid value: \"False\": Expected value: \"True\"",
 			},
 		}),
@@ -634,6 +640,8 @@ var _ = Describe("HaveStatusCondition", func() {
 			conditionType:  "Ready",
 			expectedStatus: "True",
 			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
 				"status.(conditions[?type == 'Ready']): Invalid value: []interface {}{}: lengths of slices don't match",
 			},
 		}),
@@ -645,6 +653,8 @@ var _ = Describe("HaveStatusCondition", func() {
 			conditionType:  "Ready",
 			expectedStatus: "True",
 			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
 				"status.(conditions[?type == 'Ready']): Invalid value: \"null\": value is null",
 			},
 		}),
@@ -662,6 +672,8 @@ var _ = Describe("HaveStatusCondition", func() {
 			conditionType:  "Ready",
 			expectedStatus: "True",
 			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
 				"status: Required value: field not found in the input object",
 			},
 		}),
