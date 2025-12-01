@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCrossplaneRender(t *testing.T) {
+func TestKubeVelaOfflineRendering(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "crossplane render suite")
+	RunSpecs(t, "KubeVela Offline Rendering Suite")
 }

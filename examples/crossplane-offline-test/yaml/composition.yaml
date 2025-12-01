@@ -1,0 +1,218 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: iamuser.example.com
+  labels:
+    provider: aws
+spec:
+  compositeTypeRef:
+    apiVersion: example.com/v1alpha1
+    kind: IAMUser
+
+  mode: Pipeline
+
+  pipeline:
+    # Step 0: Load environment configuration
+    - step: load-environment-config
+      functionRef:
+        name: function-environment-configs
+      input:
+        apiVersion: environmentconfigs.fn.crossplane.io/v1beta1
+        kind: Input
+        spec:
+          environmentConfigs:
+            - type: Reference
+              ref:
+                name: example-environment
+
+    # Step 1: Create IAM User
+    - step: create-iam-user
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $envContext := index .context "apiextensions.crossplane.io/environment" -}}
+            {{- if not (hasKey $envContext "environment") }}{{ fail "EnvironmentConfig must contain 'environment' key in data" }}{{ end -}}
+            {{- $environment := index $envContext "environment" -}}
+            {{- if not (typeIs "string" $environment) }}{{ fail "EnvironmentConfig 'environment' value must be a string" }}{{ end -}}
+            ---
+            apiVersion: iam.aws.m.upbound.io/v1beta1
+            kind: User
+            metadata:
+              name: {{ .observed.composite.resource.spec.username }}
+              namespace: {{ .observed.composite.resource.metadata.namespace }}
+              annotations:
+                gotemplating.fn.crossplane.io/composition-resource-name: iam-user
+            spec:
+              forProvider:
+                tags:
+                  Name: {{ .observed.composite.resource.spec.username }}
+                  ManagedBy: crossplane
+                  Team: {{ .observed.composite.resource.spec.team | default "platform" }}
+                  Environment: {{ $environment }}
+              providerConfigRef:
+                kind: ClusterProviderConfig
+                name: default
+
+    # Step 2: Create Access Key (if enabled and user ID is available)
+    - step: create-access-key
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $user := index (.observed.resources | default dict) "iam-user" -}}
+            {{- /* Only create access key if spec says so AND user ID is available */ -}}
+            {{- if and .observed.composite.resource.spec.createAccessKey (and $user $user.resource.status.atProvider.id) }}
+            ---
+            apiVersion: iam.aws.m.upbound.io/v1beta1
+            kind: AccessKey
+            metadata:
+              name: {{ .observed.composite.resource.spec.username }}-key
+              namespace: {{ .observed.composite.resource.metadata.namespace }}
+              annotations:
+                gotemplating.fn.crossplane.io/composition-resource-name: access-key
+            spec:
+              forProvider:
+                user: {{ $user.resource.status.atProvider.id }}
+              writeConnectionSecretToRef:
+                name: {{ .observed.composite.resource.spec.username }}-credentials
+              providerConfigRef:
+                kind: ClusterProviderConfig
+                name: default
+            {{- end }}
+
+    # Step 3: Attach IAM Policies (if specified and user ID is available)
+    - step: attach-policies
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $user := index (.observed.resources | default dict) "iam-user" -}}
+            {{- /* Only create policy attachments if user ID is available */ -}}
+            {{- if and $user $user.resource.status.atProvider.id }}
+            {{- range $index, $policyArn := $.observed.composite.resource.spec.policyArns }}
+            ---
+            apiVersion: iam.aws.m.upbound.io/v1beta1
+            kind: UserPolicyAttachment
+            metadata:
+              name: {{ $.observed.composite.resource.spec.username }}-policy-{{ $index }}
+              namespace: {{ $.observed.composite.resource.metadata.namespace }}
+              annotations:
+                gotemplating.fn.crossplane.io/composition-resource-name: policy-attachment-{{ $index }}
+            spec:
+              forProvider:
+                policyArn: {{ $policyArn }}
+                user: {{ $user.resource.status.atProvider.id }}
+              providerConfigRef:
+                kind: ClusterProviderConfig
+                name: default
+            {{- end }}
+            {{- end }}
+
+    # Step 4: Propagate composed resource status properties to XR
+    - step: propagate-status
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $user := index (.observed.resources | default dict) "iam-user" -}}
+            {{- $accessKey := index (.observed.resources | default dict) "access-key" -}}
+
+            {{- /* Check if IAM User is Ready and Synced */ -}}
+            {{- $userReady := false -}}
+            {{- $userSynced := false -}}
+            {{- if $user -}}
+              {{- range $condition := $user.resource.status.conditions -}}
+                {{- if eq $condition.type "Ready" -}}
+                  {{- if eq $condition.status "True" -}}
+                    {{- $userReady = true -}}
+                  {{- end -}}
+                {{- end -}}
+                {{- if eq $condition.type "Synced" -}}
+                  {{- if eq $condition.status "True" -}}
+                    {{- $userSynced = true -}}
+                  {{- end -}}
+                {{- end -}}
+              {{- end -}}
+            {{- end -}}
+
+            {{- /* Check if Access Key is Ready and Synced (if it exists) */ -}}
+            {{- $accessKeyReady := false -}}
+            {{- $accessKeySynced := false -}}
+            {{- if $accessKey -}}
+              {{- range $condition := $accessKey.resource.status.conditions -}}
+                {{- if eq $condition.type "Ready" -}}
+                  {{- if eq $condition.status "True" -}}
+                    {{- $accessKeyReady = true -}}
+                  {{- end -}}
+                {{- end -}}
+                {{- if eq $condition.type "Synced" -}}
+                  {{- if eq $condition.status "True" -}}
+                    {{- $accessKeySynced = true -}}
+                  {{- end -}}
+                {{- end -}}
+              {{- end -}}
+            {{- end -}}
+
+            {{- /* Count policy attachments and check their status */ -}}
+            {{- $totalPolicies := len (.observed.composite.resource.spec.policyArns | default list) -}}
+            {{- $readyPolicies := 0 -}}
+            {{- $syncedPolicies := 0 -}}
+            {{- range $index, $_ := .observed.composite.resource.spec.policyArns -}}
+              {{- $policyKey := printf "policy-attachment-%d" $index -}}
+              {{- $policy := index ($.observed.resources | default dict) $policyKey -}}
+              {{- if $policy -}}
+                {{- range $condition := $policy.resource.status.conditions -}}
+                  {{- if and (eq $condition.type "Ready") (eq $condition.status "True") -}}
+                    {{- $readyPolicies = add1 $readyPolicies -}}
+                  {{- end -}}
+                  {{- if and (eq $condition.type "Synced") (eq $condition.status "True") -}}
+                    {{- $syncedPolicies = add1 $syncedPolicies -}}
+                  {{- end -}}
+                {{- end -}}
+              {{- end -}}
+            {{- end -}}
+
+            ---
+            apiVersion: example.com/v1alpha1
+            kind: IAMUser
+            status:
+              user:
+                ready: {{ $userReady }}
+                synced: {{ $userSynced }}
+                arn: {{ dig "resource" "status" "atProvider" "arn" "pending" ($user | default dict) }}
+                id: {{ dig "resource" "status" "atProvider" "id" "pending" ($user | default dict) }}
+              {{ if .observed.composite.resource.spec.createAccessKey -}}
+              accessKey:
+                ready: {{ $accessKeyReady }}
+                synced: {{ $accessKeySynced }}
+                id: {{ dig "resource" "status" "atProvider" "id" "pending" ($accessKey | default dict) }}
+                secretRef:
+                  name: {{ .observed.composite.resource.spec.username }}-credentials
+                  namespace: {{ .observed.composite.resource.metadata.namespace }}
+              {{ end -}}
+              policyAttachments:
+                total: {{ $totalPolicies }}
+                ready: {{ $readyPolicies }}
+                synced: {{ $syncedPolicies }}
+
+    # Step 5: Automatically set XR conditions based on composed resources
+    - step: auto-ready
+      functionRef:
+        name: function-auto-ready

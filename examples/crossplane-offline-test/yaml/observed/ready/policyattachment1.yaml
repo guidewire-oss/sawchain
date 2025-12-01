@@ -1,0 +1,15 @@
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: UserPolicyAttachment
+metadata:
+  # Required metadata for composition to recognize resource
+  name: alice-developer-policy-1
+  namespace: default
+  annotations:
+    crossplane.io/composition-resource-name: policy-attachment-1
+status:
+  # Mock status properties used by composition
+  conditions:
+    - type: Ready
+      status: "True"
+    - type: Synced
+      status: "True"
