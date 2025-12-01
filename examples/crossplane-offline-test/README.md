@@ -1,12 +1,12 @@
 # Example: Crossplane Offline Verification Test
 
 This example demonstrates how Sawchain can be used to test rendering and schema validation of
-Crossplane function-based [compositions](https://docs.crossplane.io/latest/concepts/compositions/)
+Crossplane v2 function-based [compositions](https://docs.crossplane.io/latest/concepts/compositions/)
 offline (without a K8s cluster)
 
 ## How To Run
 
-1. Ensure you have Docker running and the [Crossplane CLI](https://docs.crossplane.io/latest/cli/) installed
+1. Ensure you have Docker running and the [Crossplane v2 CLI](https://docs.crossplane.io/latest/cli/) installed
 1. Run `ginkgo -v` or `go test -v`
 
 ## Composition Details
