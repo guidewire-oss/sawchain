@@ -80,9 +80,7 @@ func runCrossplaneValidate(args crossplaneValidateArgs) (stdout, stderr string, 
 
 	// If resourcesYaml is not provided, add resource paths as arguments
 	if args.resourcesYaml == "" {
-		for _, path := range args.resourcesPaths {
-			cmdArgs = append(cmdArgs, path)
-		}
+		cmdArgs = append(cmdArgs, args.resourcesPaths...)
 	} else {
 		// Add stdin flag when YAML content is provided
 		cmdArgs = append(cmdArgs, "-")

@@ -36,6 +36,7 @@ type testCase struct {
 	expectedRenderingErrs  []string // Expected error substrings from composition rendering; if provided, rendering is expected to fail
 }
 
+// Example using static YAML files for input and expectations
 var _ = DescribeTable("IAMUser Composition",
 	func(tc testCase) {
 		By("Validating XR using `crossplane beta validate`")
