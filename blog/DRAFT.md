@@ -9,34 +9,49 @@ If you've written Kubernetes tests, you know the problem. Tests start simple—v
 At Guidewire, as we built and scaled [Atmos](https://medium.com/guidewire-engineering-blog/cni-migration-made-simple-ed5f80783537) (our Kubernetes platform-as-a-service), we hit this wall repeatedly. Our tests were:
 
 * **Too imperative**: Verbose boilerplate for every resource operation
-* **Brittle**: Race conditions from async updates and client caching
-* **Inconsistent**: Each team building their own quirky helpers with no standard patterns
 * **Hard to read**: Assertions that don't resemble the actual user experience
+* **Brittle**: Race conditions from async updates and client caching
+* **Hard to debug**: Unhelpful failure messages that don't explain what went wrong
+* **Inconsistent**: Lack of common tooling across teams and gaps in test coverage
 
-Without standard testing tools, every team ends up building their own quirky test helpers. We'd reinvent custom waiters for resource readiness, build bespoke matchers for field assertions, and create one-off utilities for handling async operations. Error reporting was inconsistent across projects, and patterns for testing async behavior varied wildly. Each project's test helpers were slightly different, making it harder for developers to switch contexts or share knowledge.
+### The Verbosity Problem
 
-Writing Kubernetes tests with Go structs is painful. For a simple ConfigMap with a few fields, you're writing 20 lines of struct initialization with nested metadata, typed fields, and pointer conversions. Compare that to the 5-line YAML you'd actually deploy. And it gets worse—when testing third-party operators (like Crossplane, Argo, or custom CRDs), you often don't have struct definitions readily available. You're forced to use `unstructured.Unstructured` and lose all type safety, or vendor entire API packages just to write basic tests.
+Writing Kubernetes tests with Go structs is painful. For a simple Deployment with one container, you're writing 50 lines of struct initialization with nested metadata, typed fields, and pointer conversions. Compare that to the 30-line YAML you'd actually deploy. And it gets worse with third-party operators and CRDs. Struct definitions are often poorly organized—types spread across various packages and repos with unclear naming and descriptions. Dependencies can be messy, or struct definitions may not be available at all. You're forced to use `unstructured.Unstructured` and lose all type safety, or implement strenuous custom struct definitions just to write basic tests.
 
-Tests written in YAML mirror the actual user experience. When you run `kubectl apply -f manifest.yaml`, you're working with YAML. When you write tests with YAML assertions, there's no cognitive overhead switching between how you deploy resources and how you test them. This aligns perfectly with Behavior-Driven Development (BDD)—your tests describe the system's behavior in the same language your users interact with it.
+Not to mention, tests that aren't YAML-driven don't resemble the actual user experience. When you run `kubectl apply -f manifest.yaml`, you're working with YAML—but your test code looks nothing like it. This creates cognitive overhead switching between how you deploy resources and how you test them. It also diverges from the principles of Behavior-Driven Development (BDD), which emphasizes describing system behavior in the same language users interact with it.
 
-And then there are the error messages. Generic failures like "wait timeout exceeded" tell you the test failed, but not *why*. Field-level errors like "expected false to be true" give you a specific value, but no context about which resource or field failed. You're left manually comparing YAML files or adding debug print statements to figure out what went wrong. Without common tooling, it's hard to standardize failure outputs across your test suite.
+### The Debugging Problem
 
-Worse still, our test coverage had gaps. There were entire categories of tests we simply avoided writing because existing tools made them too painful. Offline rendering tests for Helm charts, Crossplane compositions, and KubeVela components? Too cumbersome. Schema validation tests to catch CRD mismatches before deployment? Too difficult to set up. We knew these tests would add value, but the friction was too high.
+Tests are brittle. Race conditions from async updates and client caching make debugging a nightmare. You might see a test pass locally but fail in CI, or flake intermittently based on timing. Without reliable helpers for async operations and client cache synchronization, tests become sources of frustration rather than confidence.
+
+These issues are compounded by unhelpful failure messages. Generic failures like "wait timeout exceeded" tell you the test failed, but not *why*. Field-level errors like "expected false to be true" give you a specific value, but no context about which resource or field failed. You're left manually comparing YAML files or adding debug print statements to figure out what went wrong. Good failure output isn't just nice to have—it's an absolute necessity when dealing with the brittleness inherent in async Kubernetes testing.
+
+### The Consistency Problem
+
+Without standard testing tools, every team ends up building their own idiosyncratic test helpers. Teams reinvent custom waiters for resource readiness, build bespoke matchers for field assertions, and create one-off utilities for handling async operations. Patterns for test setup, cleanup, and assertions are inconsistent across projects, making it harder for developers to switch contexts or share knowledge.
+
+For lack of adequate generic libraries, different types of components or categories of tests end up using completely different frameworks. This leads to sprawl across organizations, hindering cross-team initiatives and organization-wide test reporting and tracing. Each tool solves part of the problem but none provides a cohesive solution across the testing landscape.
+
+### The Coverage Gap
+
+The tooling friction creates blind spots in test suites. Writing comprehensive tests for complex controllers with many outputs is a daunting task. Resources with non-existent or poorly-maintained struct definitions are avoided. The tests that do get written often ignore 80-90% of actual output fields, since asserting every field would make tests far too long and tedious. Offline rendering tests for Helm charts and Crossplane compositions aren't practical without reliable YAML matching tools. Offline schema validation tests require templating for reusable inputs. When the cost of testing exceeds the perceived benefit, coverage suffers.
+
+### The Tooling Landscape
 
 We looked at existing tools, but each had fundamental limitations:
 
 * **[kuttl](https://kuttl.dev/)**: Great for very basic test workflows and simple, static assertions. But anything beyond that—dynamic values, complex logic, conditional checks—is nearly impossible.
 * **[Chainsaw](https://github.com/kyverno/chainsaw)**: A much more powerful iteration on kuttl's concept. It adds scripting capabilities, bindings, and sophisticated assertion capabilities. But it's still fundamentally limited by its YAML test definition API. You can do a lot, but you'll eventually hit a wall that pure YAML can't overcome.
-* **[helm-unittest](https://github.com/helm-unittest/helm-unittest)**: Similarly constrained by its YAML API, and by design only works for Helm charts—not controllers, operators, or other Kubernetes scenarios.
+* **[helm-unittest](https://github.com/helm-unittest/helm-unittest)**: Similarly constrained by its YAML API, and by design only works for Helm charts—not KubeVela components, Crossplane compositions, or other Kubernetes scenarios.
 * **[Terratest](https://terratest.gruntwork.io/)**: A Go wrapper around kubectl. Good for basic apply/delete workflows, but limited utility for advanced assertions, and feels clunky when native Go client interfaces are available.
 
-We needed something different: the simplicity of YAML-driven testing when it makes sense, with the full flexibility of Go code when you need it. A tool that enhances your workflow without ever holding you back.
+We wanted something different: the simplicity of YAML-driven testing when it makes sense, with the full flexibility of Go code when you need it. A tool that enhances your workflow without ever holding you back.
 
-So we built [Sawchain](https://github.com/guidewire-oss/sawchain).
+So we built [Sawchain](https://github.com/guidewire-oss/sawchain)—and it's transforming how we test Kubernetes components. Starting with KubeVela components and Crossplane compositions, then expanding to Helm charts and controllers, it's simplified existing tests and unlocked test types we previously avoided writing. It's become one of the most impactful tools in our testing toolbox. For teams and projects building platforms and abstractions on Kubernetes, we think Sawchain can make comprehensive testing more accessible and help accelerate the development of reliable cloud-native infrastructure.
 
 ## Introducing Sawchain
 
-Sawchain is a Go library for Kubernetes YAML-driven testing, powered by [Chainsaw](https://github.com/kyverno/chainsaw). Think of it as your Swiss Army knife for K8s tests—whether you're testing controllers, validating Helm charts, or running integration tests against a live cluster.
+Sawchain is a Go library for Kubernetes YAML-driven testing, powered by [Chainsaw](https://github.com/kyverno/chainsaw). Think of it as your Swiss Army knife for Kubernetes tests—whether you're validating Helm charts offline, testing controllers with envtest, or running end-to-end tests against a real cluster.
 
 Here's what makes it different:
 
@@ -54,7 +69,7 @@ Offline tests for schema validation, unit tests with fake clients, integration t
 
 ## Before and After Sawchain
 
-Let's look at a real example. Here's a typical Kubernetes controller test before Sawchain:
+Here's a quick comparison. A typical Kubernetes controller test before Sawchain:
 
 ```go
 // The old way: verbose, imperative, error-prone
@@ -144,8 +159,8 @@ It("should create pods", func() {
 
 Notice the difference? The Sawchain version is:
 
-* **60% shorter** (16 lines vs 40 lines)
-* **More readable**: YAML looks like actual K8s manifests
+* **30% shorter** (31 lines vs 45 lines)
+* **More readable**: YAML looks like actual Kubernetes manifests
 * **More maintainable**: Easy to update when specs change
 * **More reliable**: `CreateAndWait` handles client cache syncing automatically
 
@@ -285,72 +300,13 @@ This is particularly powerful for testing complex resources where you need to va
 
 Sawchain excels across the full spectrum of Kubernetes testing scenarios. Different helpers shine in different contexts: render functions and YAML matchers work great for offline tests, while client operations and check functions are perfect for integration tests.
 
-We typically think of K8s tests in two categories:
+We typically think of Kubernetes tests in two categories:
 
 **Offline Tests** validate YAML outputs without touching a cluster. Use these for schema validation (ensuring your resources match their CRDs) and rendering validation (checking that templates, compositions, or charts produce the right outputs). Perfect for testing Helm charts, Crossplane compositions, and KubeVela components—fast feedback with zero infrastructure.
 
 **Integration Tests** run against a live Kubernetes API (whether envtest or a real cluster). Use these for testing controllers, webhooks, operators, and client operations that require actual reconciliation loops. These tests verify runtime behavior—how your code responds to resource changes, handles async operations, and updates status fields.
 
 Let's walk through some common scenarios where Sawchain shines.
-
-### Testing Helm Charts (Offline Rendering)
-
-One of our most common use cases: validating that Helm charts render correctly with different values. No cluster needed—just pure offline testing.
-
-```go
-Describe("nginx chart", func() {
-    var sc *sawchain.Sawchain
-
-    BeforeEach(func() {
-        // Fake client for offline testing
-        sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
-    })
-
-    It("renders core resources with defaults", func() {
-        // Run helm template
-        output, err := exec.Command("helm", "template", "test", "charts/nginx").
-            Output()
-        Expect(err).NotTo(HaveOccurred())
-
-        // Parse all rendered resources
-        objs := sc.RenderMultiple(string(output))
-        Expect(objs).To(HaveLen(4))
-
-        // Assert on specific resources with YAML expectations
-        deployment := findObjectByType[*appsv1.Deployment](objs)
-        Expect(deployment).To(sc.MatchYAML(`
-            apiVersion: apps/v1
-            kind: Deployment
-            spec:
-              replicas: 1
-              template:
-                spec:
-                  containers:
-                  - name: nginx
-                    image: nginx:1.16.0
-        `))
-    })
-
-    It("respects replica overrides", func() {
-        output, err := exec.Command("helm", "template", "test", "charts/nginx",
-            "--values", "values-custom.yaml").Output()
-        Expect(err).NotTo(HaveOccurred())
-
-        deployment := findObjectByType[*appsv1.Deployment](
-            sc.RenderMultiple(string(output)))
-
-        // Only check what changed—partial matching FTW
-        Expect(deployment).To(sc.MatchYAML(`
-            apiVersion: apps/v1
-            kind: Deployment
-            spec:
-              replicas: 3
-        `))
-    })
-})
-```
-
-Notice how we're testing Helm charts without any cluster at all. Sawchain's `MatchYAML` uses partial matching—you only specify the fields you care about, not entire resource definitions.
 
 ### Testing Controllers (Integration Tests)
 
@@ -438,11 +394,70 @@ Describe("PodSet Controller", func() {
 
 This example shows the hybrid approach: use YAML for resource definitions and assertions, but leverage Go's type system and Gomega's matchers for dynamic checks and complex logic.
 
+### Testing Helm Charts (Offline Rendering)
+
+One of our most common use cases: validating that Helm charts render correctly with different values. No cluster needed—just pure offline testing.
+
+```go
+Describe("nginx chart", func() {
+    var sc *sawchain.Sawchain
+
+    BeforeEach(func() {
+        // Fake client for offline testing
+        sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
+    })
+
+    It("renders core resources with defaults", func() {
+        // Run helm template
+        output, err := exec.Command("helm", "template", "test", "charts/nginx").
+            Output()
+        Expect(err).NotTo(HaveOccurred())
+
+        // Parse all rendered resources
+        objs := sc.RenderMultiple(string(output))
+        Expect(objs).To(HaveLen(4))
+
+        // Assert on specific resources with YAML expectations
+        deployment := findObjectByType[*appsv1.Deployment](objs)
+        Expect(deployment).To(sc.MatchYAML(`
+            apiVersion: apps/v1
+            kind: Deployment
+            spec:
+              replicas: 1
+              template:
+                spec:
+                  containers:
+                  - name: nginx
+                    image: nginx:1.16.0
+        `))
+    })
+
+    It("respects replica overrides", func() {
+        output, err := exec.Command("helm", "template", "test", "charts/nginx",
+            "--values", "values-custom.yaml").Output()
+        Expect(err).NotTo(HaveOccurred())
+
+        deployment := findObjectByType[*appsv1.Deployment](
+            sc.RenderMultiple(string(output)))
+
+        // Only check what changed—partial matching FTW
+        Expect(deployment).To(sc.MatchYAML(`
+            apiVersion: apps/v1
+            kind: Deployment
+            spec:
+              replicas: 3
+        `))
+    })
+})
+```
+
+Notice how we're testing Helm charts without any cluster at all. Sawchain's `MatchYAML` uses partial matching—you only specify the fields you care about, not entire resource definitions.
+
 ### Testing Crossplane Compositions (Offline Rendering and Validation)
 
 Crossplane compositions are complex—they transform composite resources (XRs) into managed resources using function pipelines. Testing them thoroughly requires both schema validation and rendering verification. Sawchain makes this straightforward.
 
-Here's a realistic example testing an IAMUser composition that reads configuration from an EnvironmentConfig and creates AWS IAM resources. The composition uses Crossplane functions to load environment configs, create resources, and update XR status based on observed state.
+Here's an example testing an IAMUser composition that reads configuration from an EnvironmentConfig and creates AWS IAM resources. The composition uses Crossplane functions to load environment configs, create resources, and update XR status based on observed state.
 
 ```go
 Describe("IAMUser Composition", func() {
@@ -520,15 +535,15 @@ One of Sawchain's biggest advantages is how it handles test failures. Instead of
 
 **Before Sawchain: Generic Errors**
 
-Traditional K8s tests often produce unhelpful failures:
+Traditional Kubernetes tests often produce unhelpful failures:
 
-```
+```txt
 Error: wait timeout exceeded
 ```
 
 Or:
 
-```
+```txt
 Expected:
     <bool>: false
 to equal
@@ -541,23 +556,26 @@ These tell you *something* failed, but not *what* or *where*. You're left adding
 
 Sawchain leverages Chainsaw's resource error formatting to give you precise, contextual failures. When a YAML assertion doesn't match, you get:
 
-```
-[SAWCHAIN][ERROR] Check failed: 0 of 1 candidates match expectation
+```txt
+Expected success, but got an error:
+    0 of 1 candidates match expectation
 
-Candidate #1 mismatch errors:
-v1/ConfigMap/default/my-config
-  data.replicas: Invalid value: "2": Expected value: "3"
+    Candidate #1 mismatch errors:
+    ------------------------------
+    v1/ConfigMap/default/my-config
+    ------------------------------
+    * data.replicas: Invalid value: "2": Expected value: "3"
 
---- expected
-+++ actual
-   data:
--    replicas: "3"
-+    replicas: "2"
+    --- expected
+    +++ actual
+      data:
+    -    replicas: "3"
+    +    replicas: "2"
 ```
 
 This tells you:
 
-* **Which resource** failed (ConfigMap in namespace default)
+* **Which resource** failed (ConfigMap "my-config" in default namespace)
 * **Which field** didn't match (data.replicas)
 * **What was expected vs actual** ("3" vs "2")
 * **A visual diff** showing the mismatch in context
@@ -566,31 +584,40 @@ This tells you:
 
 Even edge cases produce helpful messages. If a resource doesn't exist:
 
-```
-[SAWCHAIN][ERROR] Check failed: no actual resource found
-apiVersion: v1
-kind: Pod
-metadata:
-  name: missing-pod
-  namespace: default
+```txt
+Expected success, but got an error:
+    actual resource not found
 ```
 
 If multiple candidates exist but none match:
 
-```
-[SAWCHAIN][ERROR] Check failed: 0 of 3 candidates match expectation
+```txt
+Expected success, but got an error:
+    0 of 3 candidates match expectation
 
-Candidate #1 mismatch errors:
-v1/Pod/default/test-pod-0
-  status.phase: Invalid value: "Pending": Expected value: "Running"
+    Candidate #1 mismatch errors:
+    -------------------------
+    v1/Pod/default/test-pod-0
+    -------------------------
+    * status.phase: Invalid value: "Pending": Expected value: "Running"
 
-Candidate #2 mismatch errors:
-v1/Pod/default/test-pod-1
-  status.phase: Invalid value: "Pending": Expected value: "Running"
+    ...
 
-Candidate #3 mismatch errors:
-v1/Pod/default/test-pod-2
-  status.phase: Invalid value: "Failed": Expected value: "Running"
+    Candidate #2 mismatch errors:
+    -------------------------
+    v1/Pod/default/test-pod-1
+    -------------------------
+    * status.phase: Invalid value: "Pending": Expected value: "Running"
+
+    ...
+
+    Candidate #3 mismatch errors:
+    -------------------------
+    v1/Pod/default/test-pod-2
+    -------------------------
+    * status.phase: Invalid value: "Failed": Expected value: "Running"
+
+    ...
 ```
 
 You immediately see *why* each candidate was rejected, making it easy to spot patterns or fix the root issue.
@@ -599,17 +626,18 @@ You immediately see *why* each candidate was rejected, making it easy to spot pa
 
 Sawchain also provides contextual tips for common errors:
 
-```
-[SAWCHAIN][ERROR] failed to marshal binding value; ensure binding values are
-JSON-serializable (no channels, functions, or complex numbers): json: unsupported
-type: chan int
+```txt
+[SAWCHAIN][ERROR] invalid template
+Unexpected error:
+    failed to parse template; if using a file, ensure the file exists and the path is correct: ...
 ```
 
 Or:
 
-```
-[SAWCHAIN][ERROR] failed to parse template; if using a file, ensure the file
-exists and the path is correct: open test-manifest.yaml: no such file or directory
+```txt
+[SAWCHAIN][ERROR] invalid arguments
+Unexpected error:
+    failed to sanitize template content; ensure leading whitespace is consistent and YAML is indented with spaces (not tabs): ...
 ```
 
 These errors guide you toward the solution instead of leaving you guessing.
@@ -638,7 +666,7 @@ var _ = Describe("My Tests", func() {
         // Initialize with your client and optional global settings
         sc = sawchain.New(
             GinkgoTB(),           // Test instance
-            k8sClient,            // Your K8s client
+            k8sClient,            // Your Kubernetes client
             map[string]any{       // Global template bindings (optional)
                 "namespace": "test-ns",
             },
@@ -718,31 +746,6 @@ All of these functions accept variadic arguments (like Gomega utilities), making
 
 You can mix and match these as needed. Sawchain automatically detects whether a string is a file path or inline YAML.
 
-## Why This Matters
-
-When we built Atmos, our Kubernetes platform-as-a-service for Guidewire Cloud, we knew testing would be critical. Atmos abstracts EKS to provide a robust foundation for our SaaS offerings, and it's built on a complex stack of custom controllers, Crossplane compositions, Helm charts, and operators. Each component needs comprehensive test coverage—but writing those tests was becoming a bottleneck.
-
-Our engineering teams were spending more time debugging flaky tests than writing features. Test code was verbose and hard to maintain. When resource schemas changed, we'd need to update dozens of struct initializations. When tests failed, the error messages rarely pointed us to the actual problem. We needed a better way.
-
-We started experimenting with Sawchain in our controller test suites. The early results were promising—tests became shorter and more readable. But adoption wasn't instant. We iterated on the API, learned from early adopters, and gradually refined our patterns. Word spread across teams as engineers saw the benefits firsthand. What made it stick was how it removed friction without dictating workflow. Developers could write readable YAML assertions when they made sense, and drop into Go code when they needed more power. The hybrid approach gave teams flexibility.
-
-Sawchain isn't a silver bullet—it's a tool that works well for specific problems. If you're writing YAML-driven tests for Kubernetes resources, dealing with complex compositions, or struggling with verbose test code, it might help. At Guidewire, it's improved how we test Kubernetes components across Atmos and beyond. Our tests are:
-
-* **Easier to write**: Less time fighting boilerplate, more time testing behavior
-* **Easier to read**: YAML assertions make test intent clearer—reviewers can understand tests more quickly
-* **More reliable**: Built-in helpers reduce race conditions from client caching and async operations
-* **Faster to maintain**: Changes to resource specs require fewer updates
-
-We've adopted Sawchain across our Kubernetes testing stack:
-
-* **Controller integration tests** with envtest—validating reconciliation logic and status updates
-* **Helm chart validation** (offline rendering)—ensuring charts render correctly across different value files
-* **Crossplane composition testing**—verifying compositions produce the right managed resources
-* **KubeVela component testing**—validating application definitions and workflows
-* **Custom operator testing**—checking CRD schemas and operator behavior
-
-We're excited about Sawchain's potential and hope it helps other teams facing similar challenges. As an open-source project, we welcome feedback, contributions, and ideas from the community.
-
 ## Try It Yourself
 
 Ready to level up your Kubernetes testing? Sawchain is open source and ready to use.
@@ -764,8 +767,10 @@ go get github.com/guidewire-oss/sawchain
 **Check Out Examples:**
 
 * [Controller Integration Test](https://github.com/guidewire-oss/sawchain/tree/main/examples/controller-integration-test)
-* [Helm Template Test](https://github.com/guidewire-oss/sawchain/tree/main/examples/helm-template-test)
 * [Crossplane Offline Test](https://github.com/guidewire-oss/sawchain/tree/main/examples/crossplane-offline-test)
+* [Helm Install Test](https://github.com/guidewire-oss/sawchain/tree/main/examples/helm-install-test)
+* [Helm Template Test](https://github.com/guidewire-oss/sawchain/tree/main/examples/helm-template-test)
 * [KubeVela Integration Test](https://github.com/guidewire-oss/sawchain/tree/main/examples/kubevela-integration-test)
+* [KubeVela Offline Test](https://github.com/guidewire-oss/sawchain/tree/main/examples/kubevela-offline-test)
 
 We'd love to hear how you use Sawchain. Found a bug? Have a feature request? [Open an issue](https://github.com/guidewire-oss/sawchain/issues) or contribute to the project—we welcome pull requests!
