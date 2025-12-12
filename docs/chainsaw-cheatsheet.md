@@ -81,6 +81,21 @@ spec:
   (replicas > `1` && replicas < `4`): true
 ```
 
+JMESPath considers empty strings, arrays, and maps as falsy values, so `!` can be used to check emptiness:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example
+  namespace: default
+spec:
+  template:
+    spec:
+      # Assert containers is not empty
+      (!containers): false
+```
+
 ### Matching Without Identity
 
 Omit `metadata.name` to match any resource in the namespace satisfying the expectations.

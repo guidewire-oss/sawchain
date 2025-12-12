@@ -74,49 +74,51 @@ Here's a quick comparison. A typical Kubernetes controller test before Sawchain:
 ```go
 // The old way: verbose, imperative, error-prone
 It("should create pods", func() {
-    podSet := &v1.PodSet{
-        ObjectMeta: metav1.ObjectMeta{
-            Name:      "test-podset",
-            Namespace: "default",
+  podSet := &v1.PodSet{
+    ObjectMeta: metav1.ObjectMeta{
+      Name:      "test-podset",
+      Namespace: "default",
+    },
+    Spec: v1.PodSetSpec{
+      Replicas: ptr.To(2),
+      Template: v1.Template{
+        Name: "test-pod",
+        Containers: []v1.Container{
+          {
+            Name:  "test-app",
+            Image: "test/app:v1",
+          },
         },
-        Spec: v1.PodSetSpec{
-            Replicas: ptr.To(2),
-            Template: v1.PodTemplate{
-                Name: "test-pod",
-                Containers: []corev1.Container{
-                    {Name: "test-app", Image: "test/app:v1"},
-                },
-            },
-        },
+      },
+    },
+  }
+
+  Expect(k8sClient.Create(ctx, podSet)).To(Succeed())
+
+  // Wait for controller to update status...
+  Eventually(func() error {
+    if err := k8sClient.Get(ctx,
+      client.ObjectKeyFromObject(podSet), podSet); err != nil {
+      return err
     }
-
-    Expect(k8sClient.Create(ctx, podSet)).To(Succeed())
-
-    // Wait for controller to create pods...
-    Eventually(func() error {
-        podList := &corev1.PodList{}
-        if err := k8sClient.List(ctx, podList,
-            client.InNamespace("default"),
-            client.MatchingLabels{"podset": "test-podset"}); err != nil {
-            return err
-        }
-        if len(podList.Items) != 2 {
-            return fmt.Errorf("expected 2 pods, got %d", len(podList.Items))
-        }
-        return nil
-    }, "10s", "1s").Should(Succeed())
-
-    // Check pod specs manually...
-    podList := &corev1.PodList{}
-    Expect(k8sClient.List(ctx, podList,
-        client.InNamespace("default"),
-        client.MatchingLabels{"podset": "test-podset"})).To(Succeed())
-
-    for _, pod := range podList.Items {
-        Expect(pod.Spec.Containers).To(HaveLen(1))
-        Expect(pod.Spec.Containers[0].Name).To(Equal("test-app"))
-        Expect(pod.Spec.Containers[0].Image).To(Equal("test/app:v1"))
+    if len(podSet.Status.Pods) != 2 {
+      return fmt.Errorf("expected 2 pods in status, got %d",
+        len(podSet.Status.Pods))
     }
+    return nil
+  }).Should(Succeed())
+
+  // Check each pod manually...
+  for _, podName := range podSet.Status.Pods {
+    pod := &corev1.Pod{}
+    Expect(k8sClient.Get(ctx,
+      client.ObjectKey{Name: podName, Namespace: "default"},
+      pod)).To(Succeed())
+
+    Expect(pod.Spec.Containers).To(HaveLen(1))
+    Expect(pod.Spec.Containers[0].Name).To(Equal("test-app"))
+    Expect(pod.Spec.Containers[0].Image).To(Equal("test/app:v1"))
+  }
 })
 ```
 
@@ -125,41 +127,49 @@ Here's the same test with Sawchain:
 ```go
 // The Sawchain way: clean, declarative, powerful
 It("should create pods", func() {
-    podSet := &v1.PodSet{}
-    sc.CreateAndWait(ctx, podSet, `
-        apiVersion: apps.example.com/v1
-        kind: PodSet
-        metadata:
-          name: test-podset
-          namespace: ($namespace)
-        spec:
-          replicas: 2
-          template:
-            name: test-pod
-            containers:
-            - name: test-app
-              image: test/app:v1
-    `)
+  podSet := &v1.PodSet{}
+  sc.CreateAndWait(ctx, podSet, `
+    apiVersion: apps.example.com/v1
+    kind: PodSet
+    metadata:
+      name: test-podset
+      namespace: ($namespace)
+    spec:
+      replicas: 2
+      template:
+        name: test-pod
+        containers:
+        - name: test-app
+          image: test/app:v1
+  `)
 
-    // Wait for pods with a simple YAML assertion
+  // Wait for controller to update status
+  Eventually(sc.FetchSingleFunc(ctx, podSet)).
+    Should(HaveField("Status.Pods", ConsistOf(
+      "test-pod-0",
+      "test-pod-1",
+    )))
+
+  // Verify actual pods exist with correct specs
+  for _, podName := range podSet.Status.Pods {
     Eventually(sc.CheckFunc(ctx, `
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          namespace: ($namespace)
-          labels:
-            podset: test-podset
-        spec:
-          containers:
-          - name: test-app
-            image: test/app:v1
-    `)).Should(Succeed())
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: ($name)
+        namespace: ($namespace)
+      spec:
+        containers:
+        - name: test-app
+          image: test/app:v1
+    `, map[string]any{"name": podName})).Should(Succeed())
+  }
 })
 ```
 
 Notice the difference? The Sawchain version is:
 
-* **30% shorter** (31 lines vs 45 lines)
+* **15% shorter** (39 lines vs 47 lines)
 * **More readable**: YAML looks like actual Kubernetes manifests
 * **More maintainable**: Easy to update when specs change
 * **More reliable**: `CreateAndWait` handles client cache syncing automatically
@@ -175,11 +185,11 @@ When you pass a typed or unstructured `client.Object` without a template, Sawcha
 ```go
 // Create a ConfigMap using a typed object
 configMap := &corev1.ConfigMap{
-    ObjectMeta: metav1.ObjectMeta{
-        Name:      "my-config",
-        Namespace: "default",
-    },
-    Data: map[string]string{"key": "value"},
+  ObjectMeta: metav1.ObjectMeta{
+    Name:      "my-config",
+    Namespace: "default",
+  },
+  Data: map[string]string{"key": "value"},
 }
 sc.CreateAndWait(ctx, configMap)
 
@@ -193,19 +203,22 @@ This approach works great when you need type safety and want to manipulate objec
 
 **Using Templates Only**
 
-When you pass a YAML template without an object, Sawchain renders the template and operates on the resulting unstructured resources:
+When you pass a YAML template without an object, Sawchain renders the template and operates on the resulting unstructured resources. Templates can be provided as inline strings or file paths:
 
 ```go
-// Create resources directly from YAML
+// Create resources directly from inline YAML
 sc.CreateAndWait(ctx, `
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: my-config
-      namespace: default
-    data:
-      key: value
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: my-config
+    namespace: default
+  data:
+    key: value
 `)
+
+// Or use a template file
+sc.CreateAndWait(ctx, "path/to/configmap.yaml")
 ```
 
 This is perfect for quick tests where you don't need to capture or manipulate the resource afterward.
@@ -218,13 +231,18 @@ This is where Sawchain really shines. Pass both a template and an object—the t
 // Create from template, capture state in object
 podSet := &v1.PodSet{}
 sc.CreateAndWait(ctx, podSet, `
-    apiVersion: apps.example.com/v1
-    kind: PodSet
-    metadata:
-      name: test-podset
-      namespace: default
-    spec:
-      replicas: 2
+  apiVersion: apps.example.com/v1
+  kind: PodSet
+  metadata:
+    name: test-podset
+    namespace: default
+  spec:
+    replicas: 2
+    template:
+      name: test-pod
+      containers:
+      - name: test-app
+        image: test/app:v1
 `)
 
 // Now podSet contains the created resource's state
@@ -234,7 +252,7 @@ sc.UpdateAndWait(ctx, podSet)
 
 // Use Go matchers to check the updated state
 Eventually(sc.FetchSingleFunc(ctx, podSet)).
-    Should(HaveField("Status.Pods", HaveLen(3)))
+  Should(HaveField("Status.Pods", HaveLen(3)))
 ```
 
 This hybrid approach gives you the best of both worlds: clean YAML for initial resource definition, and type-safe Go code for dynamic test logic.
@@ -244,21 +262,22 @@ This hybrid approach gives you the best of both worlds: clean YAML for initial r
 Templates become even more powerful with bindings—variables you can inject into your YAML. Sawchain uses [Chainsaw](https://github.com/kyverno/chainsaw)'s templating engine, which supports [JMESPath](https://jmespath.site/) expressions:
 
 ```go
+bindings := map[string]any{
+  "prefix":    "myapp",
+  "namespace": "production",
+  "env":       "prod",
+  "replicas":  3,
+}
 sc.CreateAndWait(ctx, `
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: (concat($prefix, '-config'))
-      namespace: ($namespace)
-    data:
-      environment: ($env)
-      replicas: (to_string($replicas))
-`, map[string]any{
-    "prefix":   "myapp",
-    "namespace": "production",
-    "env":      "prod",
-    "replicas": 3,
-})
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: (concat($prefix, '-config'))
+    namespace: ($namespace)
+  data:
+    environment: ($env)
+    replicas: (to_string($replicas))
+`, bindings)
 ```
 
 Bindings let you parameterize tests, making them reusable across different scenarios. You can set global bindings when initializing Sawchain, or pass them per-operation.
@@ -268,29 +287,31 @@ Bindings let you parameterize tests, making them reusable across different scena
 JMESPath isn't just for templating—it enables sophisticated assertions that go beyond simple equality:
 
 ```go
-// Check replica count is between 1 and 5
+// Check annotations contain a specific key
+Expect(service).To(sc.MatchYAML(`
+  apiVersion: v1
+  kind: Service
+  metadata:
+    (contains(keys(annotations), 'prometheus.io/scrape')): true
+`))
+
+// Assert containers is not empty
 Expect(deployment).To(sc.MatchYAML(`
-    apiVersion: apps/v1
-    kind: Deployment
-    spec:
-      (replicas >= `1` && replicas <= `5`): true
+  apiVersion: apps/v1
+  kind: Deployment
+  spec:
+    template:
+      spec:
+        (!containers): false
 `))
 
 // Verify the 'web' container uses a specific image
 Expect(pod).To(sc.MatchYAML(`
-    apiVersion: v1
-    kind: Pod
-    spec:
-      (containers[?name == 'web']):
-      - image: nginx:1.21
-`))
-
-// Check annotations contain a specific key
-Expect(service).To(sc.MatchYAML(`
-    apiVersion: v1
-    kind: Service
-    metadata:
-      (contains(keys(annotations), 'prometheus.io/scrape')): true
+  apiVersion: v1
+  kind: Pod
+  spec:
+    (containers[?name == 'web']):
+    - image: nginx:1.21
 `))
 ```
 
@@ -310,85 +331,89 @@ Let's walk through some common scenarios where Sawchain shines.
 
 ### Testing Controllers (Integration Tests)
 
+*[Full example →](https://github.com/guidewire-oss/sawchain/tree/main/examples/controller-integration-test)*
+
 For controller integration tests, you need to create resources, wait for reconciliation, and verify the controller did the right thing. Sawchain makes this straightforward:
 
 ```go
 Describe("PodSet Controller", func() {
-    var (
-        sc     *sawchain.Sawchain
-        podSet *v1.PodSet
-    )
+  var (
+    sc     *sawchain.Sawchain
+    podSet *v1.PodSet
+  )
 
-    BeforeAll(func() {
-        // Initialize with real test cluster client
-        sc = sawchain.New(GinkgoTB(), k8sClient,
-            map[string]any{"namespace": "default"})
+  BeforeAll(func() {
+    // Initialize with real test cluster client
+    sc = sawchain.New(GinkgoTB(), k8sClient,
+      map[string]any{"namespace": "default"})
 
-        // Create custom resource
-        podSet = &v1.PodSet{}
-        sc.CreateAndWait(ctx, podSet, `
-            apiVersion: apps.example.com/v1
-            kind: PodSet
-            metadata:
-              name: test-podset
-              namespace: ($namespace)
-            spec:
-              replicas: 2
-              template:
-                containers:
-                - name: test-app
-                  image: test/app:v1
-        `)
-    })
+    // Create custom resource
+    podSet = &v1.PodSet{}
+    sc.CreateAndWait(ctx, podSet, `
+      apiVersion: apps.example.com/v1
+      kind: PodSet
+      metadata:
+        name: test-podset
+        namespace: ($namespace)
+      spec:
+        replicas: 2
+        template:
+          name: test-pod
+          containers:
+          - name: test-app
+            image: test/app:v1
+    `)
+  })
 
-    It("creates the right number of pods", func() {
-        // Wait for controller to update status
-        Eventually(sc.FetchSingleFunc(ctx, podSet)).
-            Should(HaveField("Status.Pods", ConsistOf(
-                "test-pod-0",
-                "test-pod-1",
-            )))
+  // (This test was previewed in the "Before and After" comparison above)
+  It("creates the right number of pods", func() {
+    // Wait for controller to update status
+    Eventually(sc.FetchSingleFunc(ctx, podSet)).
+      Should(HaveField("Status.Pods", ConsistOf(
+        "test-pod-0",
+        "test-pod-1",
+      )))
 
-        // Verify actual pods exist with correct specs
-        for _, podName := range podSet.Status.Pods {
-            Eventually(sc.CheckFunc(ctx, `
-                apiVersion: v1
-                kind: Pod
-                metadata:
-                  name: ($name)
-                  namespace: ($namespace)
-                spec:
-                  containers:
-                  - name: test-app
-                    image: test/app:v1
-            `, map[string]any{"name": podName})).Should(Succeed())
-        }
-    })
+    // Verify actual pods exist with correct specs
+    for _, podName := range podSet.Status.Pods {
+      Eventually(sc.CheckFunc(ctx, `
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: ($name)
+          namespace: ($namespace)
+        spec:
+          containers:
+          - name: test-app
+            image: test/app:v1
+      `, map[string]any{"name": podName})).Should(Succeed())
+    }
+  })
 
-    It("scales pods up and down", func() {
-        // Scale up
-        podSet.Spec.Replicas = ptr.To(3)
-        sc.UpdateAndWait(ctx, podSet)
+  It("scales pods up and down", func() {
+    // Scale up
+    podSet.Spec.Replicas = ptr.To(3)
+    sc.UpdateAndWait(ctx, podSet)
 
-        Eventually(sc.FetchSingleFunc(ctx, podSet)).
-            Should(HaveField("Status.Pods", HaveLen(3)))
+    Eventually(sc.FetchSingleFunc(ctx, podSet)).
+      Should(HaveField("Status.Pods", HaveLen(3)))
 
-        // Scale down
-        podSet.Spec.Replicas = ptr.To(1)
-        sc.UpdateAndWait(ctx, podSet)
+    // Scale down
+    podSet.Spec.Replicas = ptr.To(1)
+    sc.UpdateAndWait(ctx, podSet)
 
-        Eventually(sc.FetchSingleFunc(ctx, podSet)).
-            Should(HaveField("Status.Pods", HaveLen(1)))
+    Eventually(sc.FetchSingleFunc(ctx, podSet)).
+      Should(HaveField("Status.Pods", HaveLen(1)))
 
-        // Verify extra pods are gone
-        Eventually(sc.GetFunc(ctx, `
-            apiVersion: v1
-            kind: Pod
-            metadata:
-              name: test-pod-1
-              namespace: ($namespace)
-        `)).ShouldNot(Succeed())
-    })
+    // Verify extra pods are gone
+    Eventually(sc.GetFunc(ctx, `
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: test-pod-1
+        namespace: ($namespace)
+    `)).ShouldNot(Succeed())
+  })
 })
 ```
 
@@ -396,64 +421,68 @@ This example shows the hybrid approach: use YAML for resource definitions and as
 
 ### Testing Helm Charts (Offline Rendering)
 
+*[Full example →](https://github.com/guidewire-oss/sawchain/tree/main/examples/helm-template-test)*
+
 One of our most common use cases: validating that Helm charts render correctly with different values. No cluster needed—just pure offline testing.
 
 ```go
 Describe("nginx chart", func() {
-    var sc *sawchain.Sawchain
+  var sc *sawchain.Sawchain
 
-    BeforeEach(func() {
-        // Fake client for offline testing
-        sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
-    })
+  BeforeEach(func() {
+    // Fake client for offline testing
+    sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
+  })
 
-    It("renders core resources with defaults", func() {
-        // Run helm template
-        output, err := exec.Command("helm", "template", "test", "charts/nginx").
-            Output()
-        Expect(err).NotTo(HaveOccurred())
+  It("renders core resources with defaults", func() {
+    // Run helm template
+    output, err := exec.Command("helm", "template", "test", "charts/nginx").
+      Output()
+    Expect(err).NotTo(HaveOccurred())
 
-        // Parse all rendered resources
-        objs := sc.RenderMultiple(string(output))
-        Expect(objs).To(HaveLen(4))
+    // Parse all rendered resources
+    objs := sc.RenderMultiple(string(output))
+    Expect(objs).To(HaveLen(4))
 
-        // Assert on specific resources with YAML expectations
-        deployment := findObjectByType[*appsv1.Deployment](objs)
-        Expect(deployment).To(sc.MatchYAML(`
-            apiVersion: apps/v1
-            kind: Deployment
-            spec:
-              replicas: 1
-              template:
-                spec:
-                  containers:
-                  - name: nginx
-                    image: nginx:1.16.0
-        `))
-    })
+    // Assert on specific resources with YAML expectations
+    deployment := findObjectByType[*appsv1.Deployment](objs)
+    Expect(deployment).To(sc.MatchYAML(`
+      apiVersion: apps/v1
+      kind: Deployment
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+            - name: nginx
+              image: nginx:1.16.0
+    `))
+  })
 
-    It("respects replica overrides", func() {
-        output, err := exec.Command("helm", "template", "test", "charts/nginx",
-            "--values", "values-custom.yaml").Output()
-        Expect(err).NotTo(HaveOccurred())
+  It("respects replica overrides", func() {
+    output, err := exec.Command("helm", "template", "test", "charts/nginx",
+      "--values", "values-custom.yaml").Output()
+    Expect(err).NotTo(HaveOccurred())
 
-        deployment := findObjectByType[*appsv1.Deployment](
-            sc.RenderMultiple(string(output)))
+    deployment := findObjectByType[*appsv1.Deployment](
+      sc.RenderMultiple(string(output)))
 
-        // Only check what changed—partial matching FTW
-        Expect(deployment).To(sc.MatchYAML(`
-            apiVersion: apps/v1
-            kind: Deployment
-            spec:
-              replicas: 3
-        `))
-    })
+    // Only check what changed—partial matching FTW
+    Expect(deployment).To(sc.MatchYAML(`
+      apiVersion: apps/v1
+      kind: Deployment
+      spec:
+        replicas: 3
+    `))
+  })
 })
 ```
 
-Notice how we're testing Helm charts without any cluster at all. Sawchain's `MatchYAML` uses partial matching—you only specify the fields you care about, not entire resource definitions.
+Notice how we're testing Helm charts without any cluster at all. Sawchain's `RenderMultiple` parses multi-document YAML (like `helm template` output) into a slice of objects, while `MatchYAML` uses partial matching—you only specify the fields you care about, not entire resource definitions.
 
 ### Testing Crossplane Compositions (Offline Rendering and Validation)
+
+*[Full example →](https://github.com/guidewire-oss/sawchain/tree/main/examples/crossplane-offline-test)*
 
 Crossplane compositions are complex—they transform composite resources (XRs) into managed resources using function pipelines. Testing them thoroughly requires both schema validation and rendering verification. Sawchain makes this straightforward.
 
@@ -461,62 +490,62 @@ Here's an example testing an IAMUser composition that reads configuration from a
 
 ```go
 Describe("IAMUser Composition", func() {
-    var sc *sawchain.Sawchain
+  var sc *sawchain.Sawchain
 
-    BeforeEach(func() {
-        sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
-    })
+  BeforeEach(func() {
+    sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
+  })
 
-    It("validates XR schema and renders correct outputs", func() {
-        By("Validating XR against XRD schema")
-        validationStdout, _, err := exec.Command("crossplane", "beta", "validate",
-            "xrd.yaml", "xr-valid.yaml").Output()
-        Expect(err).NotTo(HaveOccurred())
-        Expect(validationStdout).To(ContainSubstring("0 failure cases"))
+  It("validates XR schema and renders correct outputs", func() {
+    By("Validating XR against XRD schema")
+    validationStdout, _, err := exec.Command("crossplane", "beta", "validate",
+      "xrd.yaml", "xr-valid.yaml").Output()
+    Expect(err).NotTo(HaveOccurred())
+    Expect(validationStdout).To(ContainSubstring("0 failure cases"))
 
-        By("Rendering composition with required EnvironmentConfig")
-        renderStdout, _, err := exec.Command("crossplane", "render",
-            "xr-valid.yaml",
-            "composition.yaml",
-            "functions.yaml",
-            "--required-resources=required/envcfg-valid.yaml",
-            "--observed-resources=observed/ready").Output()
-        Expect(err).NotTo(HaveOccurred())
+    By("Rendering composition with required EnvironmentConfig")
+    renderStdout, _, err := exec.Command("crossplane", "render",
+      "xr-valid.yaml",
+      "composition.yaml",
+      "functions.yaml",
+      "--required-resources=required/envcfg-valid.yaml",
+      "--observed-resources=observed/ready").Output()
+    Expect(err).NotTo(HaveOccurred())
 
-        By("Validating rendered outputs match schemas")
-        validationStdout, _, err = exec.Command("crossplane", "beta", "validate",
-            "xrd.yaml", "providers.yaml", "--resources=-").
-            Input(bytes.NewReader(renderStdout)).Output()
-        Expect(err).NotTo(HaveOccurred())
-        Expect(validationStdout).To(ContainSubstring("0 failure cases"))
+    By("Validating rendered outputs match schemas")
+    validationStdout, _, err = exec.Command("crossplane", "beta", "validate",
+      "xrd.yaml", "providers.yaml", "--resources=-").
+      Input(bytes.NewReader(renderStdout)).Output()
+    Expect(err).NotTo(HaveOccurred())
+    Expect(validationStdout).To(ContainSubstring("0 failure cases"))
 
-        By("Asserting rendered resources match expectations")
-        objs := sc.RenderMultiple(string(renderStdout))
-        expectedObjs := sc.RenderMultiple("expected/with-all-ready-observed-resources.yaml")
-        Expect(objs).To(HaveLen(len(expectedObjs)))
+    By("Asserting rendered resources match expectations")
+    objs := sc.RenderMultiple(string(renderStdout))
+    expectedObjs := sc.RenderMultiple("expected/with-all-ready-observed-resources.yaml")
+    Expect(objs).To(HaveLen(len(expectedObjs)))
 
-        // Verify each rendered resource matches expected YAML
-        for _, obj := range objs {
-            Expect(obj).To(sc.MatchYAML("expected/with-all-ready-observed-resources.yaml"),
-                "Rendered resource does not match expected output")
-        }
-    })
+    // Verify each rendered resource matches expected YAML
+    for _, obj := range objs {
+      Expect(obj).To(sc.MatchYAML("expected/with-all-ready-observed-resources.yaml"),
+        "Rendered resource does not match expected output")
+    }
+  })
 
-    It("rejects XRs with schema violations", func() {
-        validationStdout, _, err := exec.Command("crossplane", "beta", "validate",
-            "xrd.yaml", "xr-unknown-property.yaml").Output()
-        Expect(err).To(HaveOccurred())
-        Expect(validationStdout).To(ContainSubstring("1 failure cases"))
-        Expect(validationStdout).To(ContainSubstring("unknown field"))
-    })
+  It("rejects XRs with schema violations", func() {
+    validationStdout, _, err := exec.Command("crossplane", "beta", "validate",
+      "xrd.yaml", "xr-unknown-property.yaml").Output()
+    Expect(err).To(HaveOccurred())
+    Expect(validationStdout).To(ContainSubstring("1 failure cases"))
+    Expect(validationStdout).To(ContainSubstring("unknown field"))
+  })
 
-    It("fails to render when required resources are missing", func() {
-        _, renderStderr, err := exec.Command("crossplane", "render",
-            "xr-valid.yaml", "composition.yaml", "functions.yaml").CombinedOutput()
-        Expect(err).To(HaveOccurred())
-        Expect(string(renderStderr)).To(ContainSubstring("Required environment config"))
-        Expect(string(renderStderr)).To(ContainSubstring("not found"))
-    })
+  It("fails to render when required resources are missing", func() {
+    _, renderStderr, err := exec.Command("crossplane", "render",
+      "xr-valid.yaml", "composition.yaml", "functions.yaml").CombinedOutput()
+    Expect(err).To(HaveOccurred())
+    Expect(string(renderStderr)).To(ContainSubstring("Required environment config"))
+    Expect(string(renderStderr)).To(ContainSubstring("not found"))
+  })
 })
 ```
 
@@ -527,7 +556,7 @@ This example shows comprehensive Crossplane testing:
 * **Output validation** checks rendered resources match provider schemas
 * **Negative testing** validates error handling for missing configs and schema violations
 
-Sawchain's `RenderMultiple` parses multi-document YAML (like `crossplane render` output) into a slice of objects, while `MatchYAML` supports partial matching against expected output files. This makes it easy to verify specific fields without maintaining complete resource definitions in your test code.
+This example takes advantage of `MatchYAML`'s multi-document template support with "match any document" semantics—the matcher succeeds if the object matches at least one of the documents in the template. This allows all expected managed resources to be defined in a single template file per test case, making it easy to maintain and update test expectations.
 
 ## Clear, Actionable Test Failures
 
@@ -557,20 +586,19 @@ These tell you *something* failed, but not *what* or *where*. You're left adding
 Sawchain leverages Chainsaw's resource error formatting to give you precise, contextual failures. When a YAML assertion doesn't match, you get:
 
 ```txt
-Expected success, but got an error:
-    0 of 1 candidates match expectation
+0 of 1 candidates match expectation
 
-    Candidate #1 mismatch errors:
-    ------------------------------
-    v1/ConfigMap/default/my-config
-    ------------------------------
-    * data.replicas: Invalid value: "2": Expected value: "3"
+Candidate #1 mismatch errors:
+------------------------------
+v1/ConfigMap/default/my-config
+------------------------------
+* data.replicas: Invalid value: "2": Expected value: "3"
 
-    --- expected
-    +++ actual
-      data:
-    -    replicas: "3"
-    +    replicas: "2"
+--- expected
++++ actual
+  data:
+-    replicas: "3"
++    replicas: "2"
 ```
 
 This tells you:
@@ -585,39 +613,37 @@ This tells you:
 Even edge cases produce helpful messages. If a resource doesn't exist:
 
 ```txt
-Expected success, but got an error:
-    actual resource not found
+actual resource not found
 ```
 
 If multiple candidates exist but none match:
 
 ```txt
-Expected success, but got an error:
-    0 of 3 candidates match expectation
+0 of 3 candidates match expectation
 
-    Candidate #1 mismatch errors:
-    -------------------------
-    v1/Pod/default/test-pod-0
-    -------------------------
-    * status.phase: Invalid value: "Pending": Expected value: "Running"
+Candidate #1 mismatch errors:
+-------------------------
+v1/Pod/default/test-pod-0
+-------------------------
+* status.phase: Invalid value: "Pending": Expected value: "Running"
 
-    ...
+...
 
-    Candidate #2 mismatch errors:
-    -------------------------
-    v1/Pod/default/test-pod-1
-    -------------------------
-    * status.phase: Invalid value: "Pending": Expected value: "Running"
+Candidate #2 mismatch errors:
+-------------------------
+v1/Pod/default/test-pod-1
+-------------------------
+* status.phase: Invalid value: "Pending": Expected value: "Running"
 
-    ...
+...
 
-    Candidate #3 mismatch errors:
-    -------------------------
-    v1/Pod/default/test-pod-2
-    -------------------------
-    * status.phase: Invalid value: "Failed": Expected value: "Running"
+Candidate #3 mismatch errors:
+-------------------------
+v1/Pod/default/test-pod-2
+-------------------------
+* status.phase: Invalid value: "Failed": Expected value: "Running"
 
-    ...
+...
 ```
 
 You immediately see *why* each candidate was rejected, making it easy to spot patterns or fix the root issue.
@@ -654,35 +680,35 @@ Sawchain plugs into your existing Go test infrastructure:
 
 ```go
 import (
-    "github.com/guidewire-oss/sawchain"
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
+  "github.com/guidewire-oss/sawchain"
+  . "github.com/onsi/ginkgo/v2"
+  . "github.com/onsi/gomega"
 )
 
 var _ = Describe("My Tests", func() {
-    var sc *sawchain.Sawchain
+  var sc *sawchain.Sawchain
 
-    BeforeEach(func() {
-        // Initialize with your client and optional global settings
-        sc = sawchain.New(
-            GinkgoTB(),           // Test instance
-            k8sClient,            // Your Kubernetes client
-            map[string]any{       // Global template bindings (optional)
-                "namespace": "test-ns",
-            },
-            "10s",                // Default timeout for Eventually (optional)
-            "1s",                 // Default polling interval (optional)
-        )
-    })
+  BeforeEach(func() {
+    // Initialize with your client and optional global settings
+    sc = sawchain.New(
+      GinkgoTB(),           // Test instance
+      k8sClient,            // Your Kubernetes client
+      map[string]any{       // Global template bindings (optional)
+        "namespace": "test-ns",
+      },
+      "10s",                // Default timeout for Eventually (optional)
+      "1s",                 // Default polling interval (optional)
+    )
+  })
 
-    It("works with Eventually", func() {
-        // Check functions work great with Eventually
-        Eventually(sc.CheckFunc(ctx, `...`)).Should(Succeed())
+  It("works with Eventually", func() {
+    // Check functions work great with Eventually
+    Eventually(sc.CheckFunc(ctx, `...`)).Should(Succeed())
 
-        // Fetch functions let you assert on resource state
-        Eventually(sc.FetchSingleFunc(ctx, pod)).
-            Should(HaveField("Status.Phase", "Running"))
-    })
+    // Fetch functions let you assert on resource state
+    Eventually(sc.FetchSingleFunc(ctx, pod)).
+      Should(HaveField("Status.Phase", "Running"))
+  })
 })
 ```
 
@@ -692,51 +718,51 @@ Sawchain's API is designed to be intuitive and consistent. Every operation comes
 
 **Creating Resources**
 
-* `Create(ctx, yaml)` - Returns error (for testing failures like webhook validation)
-* `CreateAndWait(ctx, yaml)` - Creates and waits for resource to be available in client
+* `Create(ctx, args...)` - Returns error (for testing failures like webhook validation)
+* `CreateAndWait(ctx, args...)` - Creates and waits for resource to be available in client
 
 **Getting Resources**
 
-* `Get(ctx, yaml)` - Returns error (for testing existence)
-* `GetFunc(ctx, yaml)` - Returns function for use with `Eventually`
+* `Get(ctx, args...)` - Returns error (for testing existence)
+* `GetFunc(ctx, args...)` - Returns function for use with `Eventually`
 
-**Fetching Resources (retrieve state)**
+**Fetching Resources (retrieving state)**
 
-* `FetchSingle(ctx, yaml)` - Returns single `client.Object` for immediate assertions
-* `FetchSingleFunc(ctx, yaml)` - Returns function for eventual state checks
-* `FetchMultiple(ctx, yaml)` - Returns `[]client.Object` for immediate assertions
-* `FetchMultipleFunc(ctx, yaml)` - Returns function for eventual state checks
+* `FetchSingle(ctx, args...)` - Returns single `client.Object` for immediate assertions
+* `FetchSingleFunc(ctx, args...)` - Returns function for eventual state checks
+* `FetchMultiple(ctx, args...)` - Returns `[]client.Object` for immediate assertions
+* `FetchMultipleFunc(ctx, args...)` - Returns function for eventual state checks
 
 **Checking Resources (YAML matching)**
 
-* `Check(ctx, yaml)` - Returns error if YAML expectations don't match
-* `CheckFunc(ctx, yaml)` - Returns function for eventual consistency checks
+* `Check(ctx, args...)` - Returns error if YAML expectations don't match
+* `CheckFunc(ctx, args...)` - Returns function for eventual consistency checks
 
 **Updating Resources**
 
-* `Update(ctx, yaml)` - Returns error (uses JSON merge patch semantics)
-* `UpdateAndWait(ctx, yaml)` - Updates and waits for changes to be reflected in client
+* `Update(ctx, args...)` - Returns error (uses JSON merge patch semantics)
+* `UpdateAndWait(ctx, args...)` - Updates and waits for changes to be reflected in client
 
 **Deleting Resources**
 
-* `Delete(ctx, yaml)` - Returns error (for testing deletion failures)
-* `DeleteAndWait(ctx, yaml)` - Deletes and waits for removal to be reflected in client
+* `Delete(ctx, args...)` - Returns error (for testing deletion failures)
+* `DeleteAndWait(ctx, args...)` - Deletes and waits for removal to be reflected in client
 
 **Rendering Templates**
 
-* `RenderSingle(yaml, bindings)` - Renders YAML template into single `client.Object`
-* `RenderMultiple(yaml, bindings)` - Renders YAML template into `[]client.Object`
-* `RenderToString(yaml, bindings)` - Renders template and returns as YAML string
-* `RenderToFile(path, yaml, bindings)` - Renders template and writes to file
+* `RenderSingle(args...)` - Renders YAML template into single `client.Object`
+* `RenderMultiple(args...)` - Renders YAML template into `[]client.Object`
+* `RenderToString(template, bindings...)` - Renders template and returns as YAML string
+* `RenderToFile(filepath, template, bindings...)` - Renders template and writes to file
 
 **Custom Matchers**
 
-* `MatchYAML(yaml)` - Gomega matcher for partial YAML matching with JMESPath
-* `HaveStatusCondition(type, status)` - Gomega matcher for checking status conditions
+* `MatchYAML(template, bindings...)` - Gomega matcher for partial YAML matching with JMESPath
+* `HaveStatusCondition(conditionType, expectedStatus)` - Gomega matcher for checking status conditions
 
 **Flexible Input Handling**
 
-All of these functions accept variadic arguments (like Gomega utilities), making it easy to pass optional parameters in any order. Sawchain intelligently distinguishes between:
+Many of these functions accept variadic arguments (like Gomega utilities), making it easy to pass optional parameters in any order. Sawchain intelligently distinguishes between:
 
 * **YAML strings** - Inline templates for quick, readable tests
 * **File paths** - External YAML files for reusable fixtures
@@ -744,7 +770,7 @@ All of these functions accept variadic arguments (like Gomega utilities), making
 * **Template bindings** - Variable substitution maps
 * **Timeouts and intervals** - Custom polling durations
 
-You can mix and match these as needed. Sawchain automatically detects whether a string is a file path or inline YAML.
+You can mix and match these as needed.
 
 ## Try It Yourself
 
