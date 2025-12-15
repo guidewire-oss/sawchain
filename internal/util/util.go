@@ -371,8 +371,11 @@ func DeindentYAML(yamlStr string) string {
 	return strings.Join(result, "\n")
 }
 
-// PruneYAML removes documents that are empty or contain only comments.
-func PruneYAML(yamlStr string) (string, error) {
+// SplitYAML splits a multi-document YAML string into individual document strings.
+// Unlike string-based splitting on "---", this function properly parses YAML
+// and handles document separators within content (e.g., in string values).
+// Empty documents and comment-only documents are excluded from the result.
+func SplitYAML(yamlStr string) ([]string, error) {
 	decoder := yaml.NewDecoder(strings.NewReader(yamlStr))
 	var docs []string
 
@@ -383,7 +386,7 @@ func PruneYAML(yamlStr string) (string, error) {
 			if err.Error() == "EOF" {
 				break
 			}
-			return "", err
+			return nil, err
 		}
 
 		// Skip uninitialized documents
@@ -408,12 +411,21 @@ func PruneYAML(yamlStr string) (string, error) {
 		enc := yaml.NewEncoder(&b)
 		enc.SetIndent(2)
 		if err := enc.Encode(&docNode); err != nil {
-			return "", err
+			return nil, err
 		}
 		enc.Close()
 
 		docs = append(docs, strings.TrimSpace(b.String()))
 	}
 
+	return docs, nil
+}
+
+// PruneYAML removes documents that are empty or contain only comments.
+func PruneYAML(yamlStr string) (string, error) {
+	docs, err := SplitYAML(yamlStr)
+	if err != nil {
+		return "", err
+	}
 	return strings.Join(docs, "\n---\n"), nil
 }

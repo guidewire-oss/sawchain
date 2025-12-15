@@ -45,6 +45,7 @@ const (
 
 	errNilOpts             = prefixErrInternal + "parsed options is nil"
 	errFailedMarshalObject = prefixErrInternal + "failed to marshal object"
+	errFailedSplitYAML     = prefixErrInternal + "failed to split YAML documents"
 	errCreatedMatcherIsNil = prefixErrInternal + "created matcher is nil"
 
 	infoFailedConvert = prefixInfo + "failed to convert return object to typed; returning unstructured instead"
