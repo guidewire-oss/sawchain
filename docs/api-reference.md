@@ -33,7 +33,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...any\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L59-L64>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L60-L65>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -48,7 +48,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L107>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L108>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -97,7 +97,7 @@ sc := sawchain.New(t, k8sClient, "10s", "2s")
 ```
 
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L175>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L176>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -153,7 +153,7 @@ sc := sawchain.NewWithGomega(t, g, k8sClient, "10s", "2s")
 ```
 
 <a name="Sawchain.Check"></a>
-### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L106>)
+### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L105>)
 
 ```go
 func (s *Sawchain) Check(ctx context.Context, args ...any) error

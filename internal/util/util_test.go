@@ -3,6 +3,7 @@ package util_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -1394,21 +1395,31 @@ var _ = Describe("Util", func() {
 		)
 	})
 
-	Describe("PruneYAML", func() {
+	Describe("SplitYAML and PruneYAML", func() {
 		type testCase struct {
 			input       string
-			expected    string
+			expected    []string // Expected split documents
 			expectError bool
 		}
 
-		DescribeTable("sanitizing YAML",
+		DescribeTable("splitting and pruning YAML documents",
 			func(tc testCase) {
-				result, err := util.PruneYAML(tc.input)
+				// Test SplitYAML
+				splitResult, err := util.SplitYAML(tc.input)
 				if tc.expectError {
 					Expect(err).To(HaveOccurred())
 				} else {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(result).To(Equal(tc.expected))
+					Expect(splitResult).To(Equal(tc.expected))
+				}
+
+				// Test PruneYAML (same logic, just joined)
+				pruneResult, err := util.PruneYAML(tc.input)
+				if tc.expectError {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(pruneResult).To(Equal(strings.Join(tc.expected, "\n---\n")))
 				}
 			},
 			Entry("single valid document", testCase{
@@ -1420,12 +1431,14 @@ metadata:
 data:
   key1: value1
 `,
-				expected: `apiVersion: v1
+				expected: []string{
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-cm
 data:
   key1: value1`,
+				},
 				expectError: false,
 			}),
 			Entry("multiple valid documents", testCase{
@@ -1440,15 +1453,60 @@ kind: ConfigMap
 metadata:
   name: test-cm2
 `,
-				expected: `apiVersion: v1
+				expected: []string{
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-cm1
----
-apiVersion: v1
+  name: test-cm1`,
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-cm2`,
+				},
+				expectError: false,
+			}),
+			Entry("document separator in quoted string value", testCase{
+				input: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+data:
+  key1: "value---with-dashes"
+`,
+				expected: []string{
+					`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+data:
+  key1: "value---with-dashes"`,
+				},
+				expectError: false,
+			}),
+			Entry("document separator in literal block scalar", testCase{
+				input: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+data:
+  key1: |
+    line1
+    ---
+    line2
+`,
+				expected: []string{
+					`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+data:
+  key1: |
+    line1
+    ---
+    line2`,
+				},
 				expectError: false,
 			}),
 			Entry("empty documents among valid ones", testCase{
@@ -1468,15 +1526,16 @@ metadata:
 ---
 ---
 `,
-				expected: `apiVersion: v1
+				expected: []string{
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-cm1
----
-apiVersion: v1
+  name: test-cm1`,
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-cm2`,
+				},
 				expectError: false,
 			}),
 			Entry("comments-only documents among valid ones", testCase{
@@ -1502,15 +1561,16 @@ metadata:
 # Another comment
 ---
 `,
-				expected: `apiVersion: v1
+				expected: []string{
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-cm1
----
-apiVersion: v1
+  name: test-cm1`,
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-cm2`,
+				},
 				expectError: false,
 			}),
 			Entry("whitespace-only documents among valid ones", testCase{
@@ -1535,15 +1595,16 @@ metadata:
 ---
 
 `,
-				expected: `apiVersion: v1
+				expected: []string{
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-cm1
----
-apiVersion: v1
+  name: test-cm1`,
+					`apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-cm2`,
+				},
 				expectError: false,
 			}),
 			Entry("all documents empty or comments-only", testCase{
@@ -1554,12 +1615,12 @@ metadata:
 ---
 # Another comment
 `,
-				expected:    ``,
+				expected:    nil,
 				expectError: false,
 			}),
 			Entry("completely empty input", testCase{
 				input:       ``,
-				expected:    ``,
+				expected:    nil,
 				expectError: false,
 			}),
 			Entry("invalid YAML syntax", testCase{
@@ -1573,7 +1634,7 @@ data:
   key2: value2
  badindent: fail
 `,
-				expected:    ``,
+				expected:    nil,
 				expectError: true,
 			}),
 		)

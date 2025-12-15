@@ -2,7 +2,6 @@ package sawchain
 
 import (
 	"context"
-	"strings"
 
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -115,7 +114,8 @@ func (s *Sawchain) Check(ctx context.Context, args ...any) error {
 	s.g.Expect(options.RequireTemplate(opts)).To(gomega.Succeed(), errInvalidArgs)
 
 	// Split documents
-	documents := strings.Split(opts.Template, "---")
+	documents, err := util.SplitYAML(opts.Template)
+	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedSplitYAML)
 
 	// Validate objects length
 	if opts.Object != nil {
@@ -167,7 +167,8 @@ func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error {
 	s.g.Expect(options.RequireTemplate(opts)).To(gomega.Succeed(), errInvalidArgs)
 
 	// Split documents
-	documents := strings.Split(opts.Template, "---")
+	documents, err := util.SplitYAML(opts.Template)
+	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errFailedSplitYAML)
 
 	// Validate objects length
 	if opts.Object != nil {
