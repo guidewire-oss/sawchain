@@ -23,9 +23,9 @@ var _ = Describe("Delete", func() {
 	}
 	DescribeTable("deleting test resources",
 		func(tc testCase) {
-			// Create objects
+			// Create resources
 			for _, obj := range tc.objs {
-				Expect(tc.client.Create(ctx, obj)).To(Succeed(), "failed to create object")
+				Expect(tc.client.Create(ctx, obj)).To(Succeed(), "failed to create resource")
 			}
 
 			// Initialize Sawchain
@@ -490,9 +490,9 @@ var _ = Describe("DeleteAndWait", func() {
 	}
 	DescribeTable("deleting test resources and waiting",
 		func(tc testCase) {
-			// Create objects
+			// Create resources
 			for _, obj := range tc.objs {
-				Expect(tc.client.Create(ctx, obj)).To(Succeed(), "failed to create object")
+				Expect(tc.client.Create(ctx, obj)).To(Succeed(), "failed to create resource")
 			}
 
 			// Initialize Sawchain

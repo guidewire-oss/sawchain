@@ -42,6 +42,8 @@ const (
 	errFailedUpdateWithObject   = prefixErr + "failed to update with object"
 	errFailedUpdateWithTemplate = prefixErr + "failed to update with template"
 	errFailedMergePatch         = prefixErr + "failed to merge patch from template"
+	errFailedList               = prefixErr + "failed to list candidates"
+	errFailedMatch              = prefixErr + "failed to match candidates"
 
 	errNilOpts             = prefixErrInternal + "parsed options is nil"
 	errFailedMarshalObject = prefixErrInternal + "failed to marshal object"

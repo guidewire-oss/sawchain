@@ -24,6 +24,8 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) Get\(ctx context.Context, args ...any\) error](<#Sawchain.Get>)
   - [func \(s \*Sawchain\) GetFunc\(ctx context.Context, args ...any\) func\(\) error](<#Sawchain.GetFunc>)
   - [func \(s \*Sawchain\) HaveStatusCondition\(conditionType, expectedStatus string\) types.GomegaMatcher](<#Sawchain.HaveStatusCondition>)
+  - [func \(s \*Sawchain\) List\(ctx context.Context, template string, bindings ...map\[string\]any\) \[\]client.Object](<#Sawchain.List>)
+  - [func \(s \*Sawchain\) ListFunc\(ctx context.Context, template string, bindings ...map\[string\]any\) func\(\) \[\]client.Object](<#Sawchain.ListFunc>)
   - [func \(s \*Sawchain\) MatchYAML\(template string, bindings ...map\[string\]any\) types.GomegaMatcher](<#Sawchain.MatchYAML>)
   - [func \(s \*Sawchain\) RenderMultiple\(args ...any\) \[\]client.Object](<#Sawchain.RenderMultiple>)
   - [func \(s \*Sawchain\) RenderSingle\(args ...any\) client.Object](<#Sawchain.RenderSingle>)
@@ -33,7 +35,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...any\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L60-L65>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L62-L67>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -48,7 +50,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L108>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L110>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -97,7 +99,7 @@ sc := sawchain.New(t, k8sClient, "10s", "2s")
 ```
 
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L176>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L178>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -1049,6 +1051,86 @@ for _, obj := range objs {
     Expect(obj).To(sc.HaveStatusCondition("Ready", "True"))
 }
 ```
+
+<a name="Sawchain.List"></a>
+### func \(\*Sawchain\) [List](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L72>)
+
+```go
+func (s *Sawchain) List(ctx context.Context, template string, bindings ...map[string]any) []client.Object
+```
+
+List retrieves all resources matching YAML expectations defined in a template, enabling assertions on counts and collective properties. Returns an empty slice \(not an error\) when no matches are found.
+
+#### Arguments
+
+- Template \(string\): Required. File path or content of a static manifest or Chainsaw template containing type metadata and expectations of resources to list. Must contain exactly one resource expectation document.
+
+- Bindings \(map\[string\]any\): Bindings to be applied to the Chainsaw template \(if provided\) in addition to \(or overriding\) Sawchain's global bindings. If multiple maps are provided, they will be merged in natural order.
+
+#### Notes
+
+- Invalid input will result in immediate test failure.
+
+- Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When the scheme supports the resource type, typed objects are returned. Otherwise, unstructured objects are returned.
+
+- Use ListFunc if you need to create a List function for polling.
+
+#### Examples
+
+List all ConfigMaps cluster\-wide:
+
+```go
+matches := sc.List(ctx, `
+  apiVersion: v1
+  kind: ConfigMap
+`)
+```
+
+List ConfigMaps with specific labels and data fields:
+
+```go
+matches := sc.List(ctx, `
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    labels:
+      app: myapp
+  data:
+    environment: ($env)
+  `, map[string]any{"env": "production"})
+```
+
+Assert on count with a file:
+
+```go
+Expect(sc.List(ctx, "path/to/expectation.yaml")).To(HaveLen(3))
+```
+
+Wait for all Pods in a namespace to be Ready:
+
+```go
+Eventually(sc.ListFunc(ctx, `
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    namespace: default
+`)).Should(HaveEach(sc.HaveStatusCondition("Ready", "True")))
+```
+
+<a name="Sawchain.ListFunc"></a>
+### func \(\*Sawchain\) [ListFunc](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L120>)
+
+```go
+func (s *Sawchain) ListFunc(ctx context.Context, template string, bindings ...map[string]any) func() []client.Object
+```
+
+ListFunc returns a function that retrieves all resources matching YAML expectations defined in a template.
+
+The returned function performs the same operations as List, but is particularly useful for polling scenarios where resources might not be immediately available.
+
+For details on arguments, examples, and behavior, see the documentation for List.
 
 <a name="Sawchain.MatchYAML"></a>
 ### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L74>)

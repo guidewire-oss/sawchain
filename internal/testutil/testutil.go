@@ -125,6 +125,27 @@ func NewConfigMap(
 	}
 }
 
+// NewConfigMapWithLabels returns a typed ConfigMap
+// with the given name, namespace, labels, and data.
+func NewConfigMapWithLabels(
+	name, namespace string,
+	labels map[string]string,
+	data map[string]string,
+) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Data: data,
+	}
+}
+
 // NewUnstructuredConfigMap returns an unstructured ConfigMap
 // with the given name, namespace, and data.
 func NewUnstructuredConfigMap(

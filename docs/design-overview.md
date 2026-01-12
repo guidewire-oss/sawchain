@@ -91,11 +91,28 @@ fetchedObjs = sc.FetchMultiple(ctx, objs, template)  // Fetch resources using mu
 
 // Assert state immediately
 Expect(sc.FetchSingle(ctx, template)).To(HaveField("Foo", "Bar"))
-Expect(sc.FetchMultiple(ctx, template)).To(ConsistOf(HaveField("Foo", "Bar")))
+Expect(sc.FetchMultiple(ctx, template)).To(HaveEach(HaveField("Foo", "Bar")))
 
 // Assert state eventually
 Eventually(sc.FetchSingleFunc(ctx, template)).Should(HaveField("Foo", "Bar"))
-Eventually(sc.FetchMultipleFunc(ctx, template)).Should(ConsistOf(HaveField("Foo", "Bar")))
+Eventually(sc.FetchMultipleFunc(ctx, template)).Should(HaveEach(HaveField("Foo", "Bar")))
+```
+
+### List Resources
+
+```go
+// List all resources matching a template
+var matches []client.Object
+matches = sc.List(ctx, template)             // List matching resources using template
+matches = sc.List(ctx, template, bindings)   // List matching resources using template with bindings
+
+// Assert state of all matches immediately
+Expect(sc.List(ctx, template)).To(HaveLen(3))
+Expect(sc.List(ctx, template)).To(HaveEach(HaveField("Foo", "Bar")))
+
+// Assert state of all matches eventually
+Eventually(sc.ListFunc(ctx, template)).Should(HaveLen(3))
+Eventually(sc.ListFunc(ctx, template)).Should(HaveEach(HaveField("Foo", "Bar")))
 ```
 
 ### Create Resources

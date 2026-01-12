@@ -1,6 +1,8 @@
 package sawchain_test
 
 import (
+	"reflect"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,16 +34,16 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 				t = &MockT{TB: GinkgoTB()}
 				sc = sawchain.New(t, tc.client, tc.globalBindings)
 
-				// Create objects
+				// Create resources
 				for _, obj := range tc.objs {
-					Expect(tc.client.Create(ctx, copy(obj))).To(Succeed(), "failed to create object")
+					Expect(tc.client.Create(ctx, copy(obj))).To(Succeed(), "failed to create resource")
 				}
 			})
 
 			AfterEach(func() {
 				// Delete resources
 				for _, obj := range tc.objs {
-					Expect(tc.client.Delete(ctx, copy(obj))).To(Succeed(), "failed to delete object")
+					Expect(tc.client.Delete(ctx, copy(obj))).To(Succeed(), "failed to delete resource")
 				}
 			})
 
@@ -60,6 +62,7 @@ var _ = Describe("FetchSingle and FetchSingleFunc", func() {
 
 				// Verify single object
 				if tc.expectedObj != nil {
+					Expect(reflect.TypeOf(result).String()).To(Equal(reflect.TypeOf(tc.expectedObj).String()), "unexpected object type")
 					Expect(intent(tc.client, result)).To(Equal(intent(tc.client, tc.expectedObj)), "resource not saved to provided object")
 				}
 			}
@@ -353,16 +356,16 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				t = &MockT{TB: GinkgoTB()}
 				sc = sawchain.New(t, tc.client, tc.globalBindings)
 
-				// Create objects
+				// Create resources
 				for _, obj := range tc.objs {
-					Expect(tc.client.Create(ctx, copy(obj))).To(Succeed(), "failed to create object")
+					Expect(tc.client.Create(ctx, copy(obj))).To(Succeed(), "failed to create resource")
 				}
 			})
 
 			AfterEach(func() {
 				// Delete resources
 				for _, obj := range tc.objs {
-					Expect(tc.client.Delete(ctx, copy(obj))).To(Succeed(), "failed to delete object")
+					Expect(tc.client.Delete(ctx, copy(obj))).To(Succeed(), "failed to delete resource")
 				}
 			})
 
@@ -383,6 +386,7 @@ var _ = Describe("FetchMultiple and FetchMultipleFunc", func() {
 				if tc.expectedObjs != nil {
 					Expect(result).To(HaveLen(len(tc.expectedObjs)), "unexpected objects length")
 					for i, obj := range result {
+						Expect(reflect.TypeOf(obj).String()).To(Equal(reflect.TypeOf(tc.expectedObjs[i]).String()), "unexpected object type")
 						Expect(intent(tc.client, obj)).To(Equal(intent(tc.client, tc.expectedObjs[i])), "resource not saved to provided object")
 					}
 				}

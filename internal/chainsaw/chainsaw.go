@@ -164,9 +164,32 @@ func Match(
 	return unstructured.Unstructured{}, err
 }
 
-// listCandidates lists resources in the cluster that might match the expectation.
+// MatchAll compares candidates with the expectation and returns all matches
+// or nil if no matches are found. Does not handle non-resource matching.
+// Based on github.com/kyverno/chainsaw/pkg/engine/operations/assert.Exec.
+func MatchAll(
+	ctx context.Context,
+	candidates []unstructured.Unstructured,
+	expected unstructured.Unstructured,
+	bindings Bindings,
+) ([]unstructured.Unstructured, error) {
+	var matches []unstructured.Unstructured
+	for _, candidate := range candidates {
+		fieldErrs, err := checks.Check(ctx, compilers, candidate.UnstructuredContent(), bindings,
+			ptr.To(v1alpha1.NewCheck(expected.UnstructuredContent())))
+		if err != nil {
+			return nil, fmt.Errorf("failed to check candidate: %w", err)
+		}
+		if len(fieldErrs) == 0 {
+			matches = append(matches, candidate)
+		}
+	}
+	return matches, nil
+}
+
+// ListCandidates lists resources in the cluster that might match the expectation.
 // Based on github.com/kyverno/chainsaw/pkg/engine/operations/internal.Read.
-func listCandidates(
+func ListCandidates(
 	c client.Client,
 	ctx context.Context,
 	expected client.Object,
@@ -215,7 +238,7 @@ func Check(
 	}
 
 	// List candidates
-	candidates, err := listCandidates(c, ctx, &expected)
+	candidates, err := ListCandidates(c, ctx, &expected)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return unstructured.Unstructured{}, errors.New("actual resource not found")

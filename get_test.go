@@ -34,16 +34,16 @@ var _ = Describe("Get and GetFunc", func() {
 				t = &MockT{TB: GinkgoTB()}
 				sc = sawchain.New(t, tc.client, tc.globalBindings)
 
-				// Create objects
+				// Create resources
 				for _, obj := range tc.objs {
-					Expect(tc.client.Create(ctx, copy(obj))).To(Succeed(), "failed to create object")
+					Expect(tc.client.Create(ctx, copy(obj))).To(Succeed(), "failed to create resource")
 				}
 			})
 
 			AfterEach(func() {
 				// Delete resources
 				for _, obj := range tc.objs {
-					Expect(tc.client.Delete(ctx, copy(obj))).To(Succeed(), "failed to delete object")
+					Expect(tc.client.Delete(ctx, copy(obj))).To(Succeed(), "failed to delete resource")
 				}
 			})
 
