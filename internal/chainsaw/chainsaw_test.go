@@ -1442,7 +1442,7 @@ data:
 				},
 			}),
 			// No match tests
-			Entry("should return empty slice when no candidates match", testCase{
+			Entry("should return nil when no candidates match", testCase{
 				candidates: []unstructured.Unstructured{
 					{
 						Object: map[string]any{
@@ -1487,7 +1487,7 @@ data:
 				expectedMatches: nil,
 			}),
 			// Empty candidates tests
-			Entry("should return empty slice when candidates list is empty", testCase{
+			Entry("should return nil when candidates list is empty", testCase{
 				candidates: []unstructured.Unstructured{},
 				expected: unstructured.Unstructured{
 					Object: map[string]any{
