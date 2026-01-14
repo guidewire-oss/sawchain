@@ -414,6 +414,17 @@ var _ = Describe("List and ListFunc", func() {
 			expectedObjs: []client.Object{},
 		}),
 
+		Entry("returns empty slice when List returns no items", testCase{
+			client: testutil.NewStandardFakeClient(),
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  namespace: default
+				`,
+			expectedObjs: []client.Object{},
+		}),
+
 		Entry("single match returns slice with one element", testCase{
 			resourcesYaml: `
 				apiVersion: v1
@@ -716,6 +727,23 @@ metadata:
 				"[SAWCHAIN][ERROR] invalid template",
 				"failed to render template",
 				"variable not defined: $undefined",
+			},
+		}),
+
+		Entry("failure - list API error", testCase{
+			client: &MockClient{
+				Client:         testutil.NewStandardFakeClient(),
+				listFailFirstN: -1, // Fail all list attempts
+			},
+			template: `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  namespace: default
+				`,
+			expectedFailureLogs: []string{
+				"[SAWCHAIN][ERROR] failed to list candidates",
+				"simulated list failure",
 			},
 		}),
 	)

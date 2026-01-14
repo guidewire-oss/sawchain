@@ -1705,6 +1705,39 @@ data:
 					},
 				},
 			}),
+			// Error cases
+			Entry("should fail with undefined binding in assertion", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"namespace": "($undefined)",
+						},
+					},
+				},
+				bindings:        map[string]any{},
+				expectedMatches: nil,
+				expectedErrs: []string{
+					"failed to check candidate",
+					"variable not defined: $undefined",
+				},
+			}),
 		)
 	})
 
