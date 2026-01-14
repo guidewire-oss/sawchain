@@ -184,6 +184,23 @@ var _ = Describe("Testutil", func() {
 		Entry("with nil data", "test-cm", "default", nil),
 	)
 
+	DescribeTable("NewConfigMapWithLabels",
+		func(name, namespace string, labels, data map[string]string) {
+			cm := testutil.NewConfigMapWithLabels(name, namespace, labels, data)
+			Expect(cm.APIVersion).To(Equal("v1"))
+			Expect(cm.Kind).To(Equal("ConfigMap"))
+			Expect(cm.Name).To(Equal(name))
+			Expect(cm.Namespace).To(Equal(namespace))
+			Expect(cm.Labels).To(Equal(labels))
+			Expect(cm.Data).To(Equal(data))
+		},
+		Entry("with non-empty labels and data", "test-cm", "default", map[string]string{"app": "myapp"}, map[string]string{"key": "value"}),
+		Entry("with empty labels and data", "test-cm", "default", map[string]string{}, map[string]string{}),
+		Entry("with nil labels and data", "test-cm", "default", nil, nil),
+		Entry("with labels only", "test-cm", "default", map[string]string{"app": "myapp"}, nil),
+		Entry("with data only", "test-cm", "default", nil, map[string]string{"key": "value"}),
+	)
+
 	DescribeTable("NewUnstructuredConfigMap",
 		func(name, namespace string, data map[string]string) {
 			unstructuredCm := testutil.NewUnstructuredConfigMap(name, namespace, data)

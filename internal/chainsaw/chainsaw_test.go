@@ -1256,6 +1256,491 @@ data:
 		)
 	})
 
+	Describe("MatchAll", func() {
+		type testCase struct {
+			candidates      []unstructured.Unstructured
+			expected        unstructured.Unstructured
+			bindings        map[string]any
+			expectedMatches []unstructured.Unstructured
+			expectedErrs    []string
+		}
+
+		DescribeTable("matching all resources against expectations",
+			func(tc testCase) {
+				// Create bindings from map
+				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
+				Expect(err).NotTo(HaveOccurred())
+				// Test MatchAll
+				matches, err := chainsaw.MatchAll(context.Background(), tc.candidates, tc.expected, bindings)
+				// Check error
+				if len(tc.expectedErrs) > 0 {
+					Expect(err).To(HaveOccurred())
+					for _, expectedErr := range tc.expectedErrs {
+						Expect(err.Error()).To(ContainSubstring(expectedErr))
+					}
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
+				// Check matches
+				Expect(matches).To(ConsistOf(tc.expectedMatches))
+			},
+			// All match tests
+			Entry("should return all matching resources when all match", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"namespace": "default",
+						},
+						"data": map[string]any{
+							"key1": "value1",
+						},
+					},
+				},
+				bindings: map[string]any{},
+				expectedMatches: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+			}),
+			// Partial match tests
+			Entry("should return only matching resources when some match", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "wrong-value",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-3",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"namespace": "default",
+						},
+						"data": map[string]any{
+							"key1": "value1",
+						},
+					},
+				},
+				bindings: map[string]any{},
+				expectedMatches: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-3",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+			}),
+			// No match tests
+			Entry("should return nil when no candidates match", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "wrong-value-1",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "wrong-value-2",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"namespace": "default",
+						},
+						"data": map[string]any{
+							"key1": "expected-value",
+						},
+					},
+				},
+				bindings:        map[string]any{},
+				expectedMatches: nil,
+			}),
+			// Empty candidates tests
+			Entry("should return nil when candidates list is empty", testCase{
+				candidates: []unstructured.Unstructured{},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"name": "test-config",
+						},
+					},
+				},
+				bindings:        map[string]any{},
+				expectedMatches: nil,
+			}),
+			// Single match tests
+			Entry("should return single match when only one candidate matches", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"name":      "test-config-1",
+							"namespace": "default",
+						},
+						"data": map[string]any{
+							"key1": "value1",
+						},
+					},
+				},
+				bindings: map[string]any{},
+				expectedMatches: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+			}),
+			// Binding tests
+			Entry("should match with binding substitution", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "test-namespace",
+							},
+							"data": map[string]any{
+								"key1": "actual-value",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "test-namespace",
+							},
+							"data": map[string]any{
+								"key1": "actual-value",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"namespace": "($namespace)",
+						},
+						"data": map[string]any{
+							"key1": "($value)",
+						},
+					},
+				},
+				bindings: map[string]any{
+					"namespace": "test-namespace",
+					"value":     "actual-value",
+				},
+				expectedMatches: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "test-namespace",
+							},
+							"data": map[string]any{
+								"key1": "actual-value",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "test-namespace",
+							},
+							"data": map[string]any{
+								"key1": "actual-value",
+							},
+						},
+					},
+				},
+			}),
+			// Partial expectation tests
+			Entry("should match when expected is a subset of candidates", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+								"labels": map[string]any{
+									"app": "test",
+								},
+							},
+							"data": map[string]any{
+								"key1": "value1",
+								"key2": "value2",
+								"key3": "value3",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"namespace": "default",
+						},
+						"data": map[string]any{
+							"key1": "value1",
+						},
+					},
+				},
+				bindings: map[string]any{},
+				expectedMatches: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-1",
+								"namespace": "default",
+								"labels": map[string]any{
+									"app": "test",
+								},
+							},
+							"data": map[string]any{
+								"key1": "value1",
+								"key2": "value2",
+								"key3": "value3",
+							},
+						},
+					},
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config-2",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+			}),
+			// Error cases
+			Entry("should fail with undefined binding in assertion", testCase{
+				candidates: []unstructured.Unstructured{
+					{
+						Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]any{
+								"name":      "test-config",
+								"namespace": "default",
+							},
+							"data": map[string]any{
+								"key1": "value1",
+							},
+						},
+					},
+				},
+				expected: unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"metadata": map[string]any{
+							"namespace": "($undefined)",
+						},
+					},
+				},
+				bindings:        map[string]any{},
+				expectedMatches: nil,
+				expectedErrs: []string{
+					"failed to check candidate",
+					"variable not defined: $undefined",
+				},
+			}),
+		)
+	})
+
 	Describe("Check", func() {
 		type testCase struct {
 			resourcesYaml   string

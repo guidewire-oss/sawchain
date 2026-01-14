@@ -122,6 +122,9 @@ stringData:
   password: secret
 ```
 
+Note that `List` and `ListFunc` only support single-document templates, since each document would
+represent different matching criteria and mixing results would be confusing.
+
 ### Input
 
 Sawchain conveniently reads templates from files or strings.

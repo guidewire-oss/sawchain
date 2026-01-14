@@ -97,6 +97,9 @@ type MockClient struct {
 	getFailFirstN int
 	getCallCount  int
 
+	listFailFirstN int
+	listCallCount  int
+
 	updateFailFirstN int
 	updateCallCount  int
 }
@@ -123,6 +126,14 @@ func (m *MockClient) Get(ctx context.Context, key client.ObjectKey, obj client.O
 		return fmt.Errorf("simulated get failure")
 	}
 	return m.Client.Get(ctx, key, obj, opts...)
+}
+
+func (m *MockClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	m.listCallCount++
+	if m.listFailFirstN < 0 || m.listCallCount <= m.listFailFirstN {
+		return fmt.Errorf("simulated list failure")
+	}
+	return m.Client.List(ctx, list, opts...)
 }
 
 func (m *MockClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
