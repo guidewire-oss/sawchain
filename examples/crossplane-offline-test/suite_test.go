@@ -18,31 +18,37 @@ func TestCrossplaneOfflineVerification(t *testing.T) {
 
 // HELPERS
 
-type crossplaneRenderArgs struct {
-	xrPath                string
-	compositionPath       string
-	functionsPath         string
-	requiredResourcesPath string // optional
-	observedResourcesPath string // optional
+// CrossplaneRenderArgs includes argument values to be passed to RunCrossplaneRender.
+type CrossplaneRenderArgs struct {
+	XrPath                string
+	CompositionPath       string
+	FunctionsPath         string
+	XrdPath               string // optional
+	RequiredResourcesPath string // optional
+	ObservedResourcesPath string // optional
 }
 
-// runCrossplaneRender runs `crossplane render --include-full-xr` with the given arguments
+// RunCrossplaneRender runs `crossplane render --include-full-xr` with the given arguments
 // and returns stdout, stderr, and an error if the command fails.
-func runCrossplaneRender(args crossplaneRenderArgs) (stdout, stderr string, err error) {
+func RunCrossplaneRender(args CrossplaneRenderArgs) (stdout, stderr string, err error) {
 	cmdArgs := []string{
 		"render",
 		"--include-full-xr",
-		args.xrPath,
-		args.compositionPath,
-		args.functionsPath,
+		args.XrPath,
+		args.CompositionPath,
+		args.FunctionsPath,
 	}
 
-	if args.requiredResourcesPath != "" {
-		cmdArgs = append(cmdArgs, "--required-resources="+args.requiredResourcesPath)
+	if args.XrdPath != "" {
+		cmdArgs = append(cmdArgs, "--xrd="+args.XrdPath)
 	}
 
-	if args.observedResourcesPath != "" {
-		cmdArgs = append(cmdArgs, "--observed-resources="+args.observedResourcesPath)
+	if args.RequiredResourcesPath != "" {
+		cmdArgs = append(cmdArgs, "--required-resources="+args.RequiredResourcesPath)
+	}
+
+	if args.ObservedResourcesPath != "" {
+		cmdArgs = append(cmdArgs, "--observed-resources="+args.ObservedResourcesPath)
 	}
 
 	var stdoutBuf, stderrBuf bytes.Buffer
@@ -53,20 +59,22 @@ func runCrossplaneRender(args crossplaneRenderArgs) (stdout, stderr string, err 
 	fmt.Fprintf(GinkgoWriter, "Running command: %s\n", cmd.String())
 
 	if err = cmd.Run(); err != nil {
-		err = fmt.Errorf("command failed: %s\nerror: %w", cmd.String(), err)
+		err = fmt.Errorf("command failed: %s\nstdout: %s\nstderr: %s\nerror: %w",
+			cmd.String(), stdoutBuf.String(), stderrBuf.String(), err)
 	}
 	return stdoutBuf.String(), stderrBuf.String(), err
 }
 
-type crossplaneValidateArgs struct {
-	extensionsPaths []string
-	resourcesPaths  []string
-	resourcesYaml   string // optional - when provided, takes precedence over resourcesPaths and is fed via stdin
+// CrossplaneValidateArgs includes argument values to be passed to RunCrossplaneValidate.
+type CrossplaneValidateArgs struct {
+	ExtensionsPaths []string
+	ResourcesPaths  []string
+	ResourcesYaml   string // optional - when provided, takes precedence over resourcesPaths and is fed via stdin
 }
 
-// runCrossplaneValidate runs `crossplane beta validate --error-on-missing-schemas` with the
+// RunCrossplaneValidate runs `crossplane beta validate --error-on-missing-schemas` with the
 // given arguments and returns stdout, stderr, and an error if the command fails.
-func runCrossplaneValidate(args crossplaneValidateArgs) (stdout, stderr string, err error) {
+func RunCrossplaneValidate(args CrossplaneValidateArgs) (stdout, stderr string, err error) {
 	cmdArgs := []string{
 		"beta",
 		"validate",
@@ -74,13 +82,13 @@ func runCrossplaneValidate(args crossplaneValidateArgs) (stdout, stderr string, 
 	}
 
 	// Join extension paths with commas as a single argument
-	if len(args.extensionsPaths) > 0 {
-		cmdArgs = append(cmdArgs, strings.Join(args.extensionsPaths, ","))
+	if len(args.ExtensionsPaths) > 0 {
+		cmdArgs = append(cmdArgs, strings.Join(args.ExtensionsPaths, ","))
 	}
 
 	// If resourcesYaml is not provided, add resource paths as arguments
-	if args.resourcesYaml == "" {
-		cmdArgs = append(cmdArgs, args.resourcesPaths...)
+	if args.ResourcesYaml == "" {
+		cmdArgs = append(cmdArgs, args.ResourcesPaths...)
 	} else {
 		// Add stdin flag when YAML content is provided
 		cmdArgs = append(cmdArgs, "-")
@@ -92,14 +100,15 @@ func runCrossplaneValidate(args crossplaneValidateArgs) (stdout, stderr string, 
 	cmd.Stderr = &stderrBuf
 
 	// If resourcesYaml is provided, feed it via stdin
-	if args.resourcesYaml != "" {
-		cmd.Stdin = bytes.NewBufferString(args.resourcesYaml)
+	if args.ResourcesYaml != "" {
+		cmd.Stdin = bytes.NewBufferString(args.ResourcesYaml)
 	}
 
 	fmt.Fprintf(GinkgoWriter, "Running command: %s\n", cmd.String())
 
 	if err = cmd.Run(); err != nil {
-		err = fmt.Errorf("command failed: %s\nerror: %w", cmd.String(), err)
+		err = fmt.Errorf("command failed: %s\nstdout: %s\nstderr: %s\nerror: %w",
+			cmd.String(), stdoutBuf.String(), stderrBuf.String(), err)
 	}
 	return stdoutBuf.String(), stderrBuf.String(), err
 }
