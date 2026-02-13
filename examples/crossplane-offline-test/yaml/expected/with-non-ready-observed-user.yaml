@@ -1,6 +1,7 @@
 # Expected output of:
 #   crossplane render --include-full-xr yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
-#     --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/non-ready
+#     --xrd=yaml/xrd.yaml --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/non-ready
+---
 apiVersion: example.com/v1alpha1
 kind: IAMUser
 metadata:
@@ -16,32 +17,59 @@ spec:
 status:
   accessKey:
     id: pending
-    synced: false
     ready: false
     secretRef:
       name: alice-developer-credentials
       namespace: default
-  conditions:
-    - type: Ready
-      status: "False"
-      reason: Creating
-  policyAttachments:
-    total: 2
-    synced: 0
-    ready: 0
-  user:
-    id: alice-developer
-    arn: arn:aws:iam::000000000000:user/alice-developer
     synced: false
+  conditions:
+    - reason: Creating
+      status: "False"
+      type: Ready
+  policyAttachments:
+    ready: 0
+    synced: 0
+    total: 2
+  user:
+    arn: arn:aws:iam::000000000000:user/alice-developer
+    id: alice-developer
     ready: false
+    synced: false
+---
+apiVersion: iam.aws.m.upbound.io/v1beta1
+kind: AccessKey
+metadata:
+  annotations:
+    crossplane.io/composition-resource-name: access-key
+  labels:
+    crossplane.io/composite: developer-alice
+  name: alice-developer-key
+  namespace: default
+  ownerReferences:
+    - apiVersion: example.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: IAMUser
+      name: developer-alice
+      uid: ""
+spec:
+  forProvider:
+    user: alice-developer
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+  writeConnectionSecretToRef:
+    name: alice-developer-credentials
 ---
 apiVersion: iam.aws.m.upbound.io/v1beta1
 kind: User
 metadata:
-  name: alice-developer
-  namespace: default
   annotations:
     crossplane.io/composition-resource-name: iam-user
+  labels:
+    crossplane.io/composite: developer-alice
+  name: alice-developer
+  namespace: default
   ownerReferences:
     - apiVersion: example.com/v1alpha1
       blockOwnerDeletion: true
@@ -60,34 +88,14 @@ spec:
     name: default
 ---
 apiVersion: iam.aws.m.upbound.io/v1beta1
-kind: AccessKey
-metadata:
-  name: alice-developer-key
-  namespace: default
-  annotations:
-    crossplane.io/composition-resource-name: access-key
-  ownerReferences:
-    - apiVersion: example.com/v1alpha1
-      blockOwnerDeletion: true
-      controller: true
-      kind: IAMUser
-      name: developer-alice
-spec:
-  forProvider:
-    user: alice-developer
-  providerConfigRef:
-    kind: ClusterProviderConfig
-    name: default
-  writeConnectionSecretToRef:
-    name: alice-developer-credentials
----
-apiVersion: iam.aws.m.upbound.io/v1beta1
 kind: UserPolicyAttachment
 metadata:
-  name: alice-developer-policy-0
-  namespace: default
   annotations:
     crossplane.io/composition-resource-name: policy-attachment-0
+  labels:
+    crossplane.io/composite: developer-alice
+  name: alice-developer-policy-0
+  namespace: default
   ownerReferences:
     - apiVersion: example.com/v1alpha1
       blockOwnerDeletion: true
@@ -105,10 +113,12 @@ spec:
 apiVersion: iam.aws.m.upbound.io/v1beta1
 kind: UserPolicyAttachment
 metadata:
-  name: alice-developer-policy-1
-  namespace: default
   annotations:
     crossplane.io/composition-resource-name: policy-attachment-1
+  labels:
+    crossplane.io/composite: developer-alice
+  name: alice-developer-policy-1
+  namespace: default
   ownerReferences:
     - apiVersion: example.com/v1alpha1
       blockOwnerDeletion: true

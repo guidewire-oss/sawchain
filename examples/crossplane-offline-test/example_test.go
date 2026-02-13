@@ -40,9 +40,9 @@ type testCase struct {
 var _ = DescribeTable("IAMUser Composition",
 	func(tc testCase) {
 		By("Validating XR using `crossplane beta validate`")
-		validationStdout, _, err := runCrossplaneValidate(crossplaneValidateArgs{
-			extensionsPaths: []string{xrdPath},
-			resourcesPaths:  []string{tc.xrPath},
+		validationStdout, _, err := RunCrossplaneValidate(CrossplaneValidateArgs{
+			ExtensionsPaths: []string{xrdPath},
+			ResourcesPaths:  []string{tc.xrPath},
 		})
 		if len(tc.expectedValidationErrs) > 0 {
 			Expect(err).To(HaveOccurred(), "Expected validation to fail")
@@ -56,12 +56,13 @@ var _ = DescribeTable("IAMUser Composition",
 		}
 
 		By("Rendering composition using `crossplane render`")
-		renderStdout, renderStderr, err := runCrossplaneRender(crossplaneRenderArgs{
-			xrPath:                tc.xrPath,
-			compositionPath:       compositionPath,
-			functionsPath:         functionsPath,
-			requiredResourcesPath: tc.requiredResourcesPath,
-			observedResourcesPath: tc.observedResourcesPath,
+		renderStdout, renderStderr, err := RunCrossplaneRender(CrossplaneRenderArgs{
+			XrPath:                tc.xrPath,
+			CompositionPath:       compositionPath,
+			FunctionsPath:         functionsPath,
+			XrdPath:               xrdPath,
+			RequiredResourcesPath: tc.requiredResourcesPath,
+			ObservedResourcesPath: tc.observedResourcesPath,
 		})
 		if len(tc.expectedRenderingErrs) > 0 {
 			Expect(err).To(HaveOccurred(), "Expected render to fail")
@@ -75,9 +76,9 @@ var _ = DescribeTable("IAMUser Composition",
 		}
 
 		By("Validating composition outputs using `crossplane beta validate`")
-		validationStdout, _, err = runCrossplaneValidate(crossplaneValidateArgs{
-			extensionsPaths: []string{xrdPath, providersPath},
-			resourcesYaml:   renderStdout,
+		validationStdout, _, err = RunCrossplaneValidate(CrossplaneValidateArgs{
+			ExtensionsPaths: []string{xrdPath, providersPath},
+			ResourcesYaml:   renderStdout,
 		})
 		Expect(err).NotTo(HaveOccurred(), "Expected validation to succeed")
 		Expect(validationStdout).To(ContainSubstring("0 failure cases"), "Unexpected validation output")
@@ -127,7 +128,7 @@ var _ = DescribeTable("IAMUser Composition",
 
 	// NEGATIVE RENDERING CASES
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml
+	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml
 	Entry("Missing EnvironmentConfig -> should fail to render", testCase{
 		xrPath: filepath.Join(yamlPath, "xr-valid.yaml"),
 		expectedRenderingErrs: []string{
@@ -136,7 +137,7 @@ var _ = DescribeTable("IAMUser Composition",
 		},
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-missing-value.yaml
 	Entry("With EnvironmentConfig missing 'environment' value -> should fail to render", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
@@ -147,7 +148,7 @@ var _ = DescribeTable("IAMUser Composition",
 		},
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-invalid-value.yaml
 	Entry("With EnvironmentConfig with invalid 'environment' value -> should fail to render", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
@@ -160,7 +161,7 @@ var _ = DescribeTable("IAMUser Composition",
 
 	// POSITIVE RENDERING CASES
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-valid.yaml
 	Entry("With no observed resources -> should only render User, non-ready/empty XR status", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
@@ -168,7 +169,7 @@ var _ = DescribeTable("IAMUser Composition",
 		expectedOutputsPath:   filepath.Join(expectedPath, "with-no-observed-resources.yaml"),
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/non-ready
 	Entry("With non-ready observed User -> should render everything, non-ready/partial XR status", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
@@ -177,7 +178,7 @@ var _ = DescribeTable("IAMUser Composition",
 		expectedOutputsPath:   filepath.Join(expectedPath, "with-non-ready-observed-user.yaml"),
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/ready
 	Entry("With all ready observed resources -> should render everything, ready/complete XR status", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
