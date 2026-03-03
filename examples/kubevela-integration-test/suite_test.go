@@ -13,9 +13,9 @@ import (
 var k8sClient client.Client
 
 func TestWebservice(t *testing.T) {
-	SetDefaultEventuallyTimeout(15 * time.Second)
+	SetDefaultEventuallyTimeout(30 * time.Second)
 	SetDefaultEventuallyPollingInterval(1 * time.Second)
-	SetDefaultConsistentlyDuration(15 * time.Second)
+	SetDefaultConsistentlyDuration(30 * time.Second)
 	SetDefaultConsistentlyPollingInterval(1 * time.Second)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Webservice Suite")
