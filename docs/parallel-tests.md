@@ -2,19 +2,19 @@
 
 This document attempts to frame Sawchain in the context of parallel test execution. Running Go tests in this manner distributes specs across multiple processes, cutting total suite time proportionally and giving faster feedback in CI.
 
-Parallelism introduces two distinct challenges. The first is in-process safety: test frameworks that use goroutines require careful handling of shared objects like `Sawchain` instances, `gomega.Gomega`, and `testing.TB`. The second--and the more tricky one--is external resource isolation: even with full memory separation between processes, all tests share the same Kubernetes API server. If two tests create, update, or read the same resource concurrently, they interfere with each other in ways that produce flaky, non-deterministic failures.
+Parallelism introduces two distinct challenges. The first is in-process safety: test frameworks that use goroutines require careful handling of shared components like `Sawchain` instances, `gomega.Gomega`, and `testing.TB`. The second--and the more tricky one--is external resource isolation: even with full memory separation between processes, all tests share the same K8s API server. If two tests create, update, or read the same resource concurrently, they interfere with each other in ways that produce flaky, non-deterministic failures.
 
-This guide explains how Sawchain behaves in parallel scenarios, which operations require isolation, and how to structure your test suite to run safely in parallel. It focuses on [Ginkgo](https://onsi.github.io/ginkgo/#spec-parallelization) because it is the most common parallel test runner in the Kubernetes ecosystem. However, the thread-safety analysis and resource isolation principles apply to any framework that accepts a [`testing.TB`](https://pkg.go.dev/testing#TB).
+This guide explains how Sawchain behaves in parallel scenarios, which operations require isolation, and how to structure your test suite to run safely in parallel. It focuses on [Ginkgo](https://onsi.github.io/ginkgo/#spec-parallelization) because it is the most common parallel test runner in the K8s ecosystem. However, the thread-safety analysis and resource isolation principles apply to any framework that accepts a [`testing.TB`](https://pkg.go.dev/testing#TB).
 
 ## Ginkgo: Process-Based Parallelism
 
 When you run tests with `ginkgo -p` or `ginkgo --procs=N`, Ginkgo launches multiple OS processes. Each process runs a subset of the suite's specs. Because these are separate processes--not goroutines--they share nothing in memory. All coordination happens through the Ginkgo CLI, which acts as a [centralized server](https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-runs-parallel-specs) for spec distribution and output aggregation.
 
-This distinction matters: because each process has its own memory space, there is [no risk of shared-variable data races](https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-runs-parallel-specs) across Ginkgo parallel processes. The real challenges are resource contention on shared external state, such as the [Kubernetes](https://kubernetes.io/) API server, namespaces, and cluster-scoped resources. Test isolation--making sure one process's resources don't collide with another's--requires deliberate namespace or naming strategies.
+This distinction matters: because each process has its own memory space, there is [no risk of shared-variable data races](https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-runs-parallel-specs) across Ginkgo parallel processes. The real challenges are resource contention on shared external state, such as the K8s API server, namespaces, and cluster-scoped resources. Test isolation--making sure one process's resources don't collide with another's--requires deliberate namespace or naming strategies.
 
 ## Thread-Safety Analysis
 
-The following table summarizes the thread-safety characteristics of Sawchain's components. "Thread-safe" here means safe for concurrent use from multiple goroutines within a single process.
+The following table summarizes the thread-safety characteristics of Sawchain's components. "Thread-safe" here means safe for concurrent use from multiple goroutines within a single process. The table includes internal implementation details (unexported fields, `chainsaw` functions) for completeness; users interact only with the public `Sawchain` methods covered in the [Component Reference](#component-reference).
 
 | Component | Thread-safe | Notes |
 |-----------|-------------|-------|
@@ -27,16 +27,16 @@ The following table summarizes the thread-safety characteristics of Sawchain's c
 | `chainsaw.RenderTemplateSingle()` | Yes | Uses only local variables |
 | `chainsaw.compilers` (package-level) | Yes | Read-only after initialization |
 | [`gomega.Gomega`](https://onsi.github.io/gomega/) instance (`s.g`) | **No** | Not safe for concurrent `Expect` calls from multiple goroutines |
-| `testing.TB` | **No** | Standard library `testing.T` is not safe for concurrent use across goroutines that call `FailNow` |
+| `testing.TB` | **No** | `testing.TB` is a superset of `testing.T`; `testing.T` is not safe for concurrent use across goroutines that call `FailNow` |
 | `opts.Bindings` map | Yes | Immutable after construction; never written to during operations |
 
 ### What This Means in Practice
 
-Sawchain's internal computation is fully thread-safe. This includes template rendering, [Chainsaw](https://github.com/kyverno/chainsaw) matching, and Kubernetes API calls through `client.Client`. The two components that are not safe for concurrent use are `gomega.Gomega` and `testing.TB`, both of which Sawchain uses for assertions and failure reporting.
+Sawchain's internal computation is fully thread-safe. This includes template rendering, [Chainsaw](https://github.com/kyverno/chainsaw) matching, and K8s API calls through `client.Client`. The two components that are not safe for concurrent use are `gomega.Gomega` and `testing.TB`, both of which Sawchain uses for assertions and failure reporting.
 
 Ginkgo's parallel-process model eliminates this concern: each process has its own `Sawchain` instance with its own `gomega.Gomega` and `testing.TB`. Concurrency concerns arise only if you spawn goroutines within a single spec that share a `Sawchain` instance.
 
-Thread-safety is a separate concern from resource ownership. Even with separate `Sawchain` instances, `Create`, `Update`, `Get`, and `Fetch*` all operate on external Kubernetes resources. If two parallel tests touch the same resource, the results are unpredictable:
+Thread-safety is a separate concern from resource ownership. Even with separate `Sawchain` instances, `Create`, `Update`, `Get`, and `Fetch*` all operate on external K8s resources. If two parallel tests touch the same resource, the results are unpredictable:
 
 - `Create` / `CreateAndWait`: Both tests attempt to create the same-named resource; the second fails with `AlreadyExists`.
 - `Update` / `UpdateAndWait`: Both tests read, then write, the same resource; the second write fails with a `Conflict` error because the `resourceVersion` changed between the read and the write.
@@ -46,7 +46,7 @@ The solution is exclusive ownership: each parallel test must operate only on res
 
 ## Ginkgo Parallel Processes vs. Goroutines
 
-Understand the difference between these two forms of concurrency and their implications for Sawchain usage.
+Understand the difference between these two forms of concurrency and their implications for Sawchain usage. In general, you should prefer Ginkgo's process-based parallelism over spawning goroutines within specs. Ginkgo already distributes specs across processes, so manual goroutine management within a spec is rarely necessary and introduces concurrency concerns that Ginkgo's model otherwise eliminates.
 
 ### Ginkgo Parallel Processes (Safe by Default)
 
@@ -54,7 +54,7 @@ Ginkgo parallel processes provide full memory isolation between specs.
 
 - Each process creates its own `Sawchain` instance.
 - No shared in-process state exists between processes.
-- The only shared state is external: the Kubernetes API server.
+- The only shared state is external: the K8s API server.
 
 ### Goroutines Within a Single Spec (Requires Care)
 
@@ -65,6 +65,30 @@ Goroutines within a single spec share process memory.
 - Sawchain methods that call `s.g.Expect` (most of them) must not run concurrently on the same instance.
 
 ## Set Up a Parallel Test Suite
+
+### Basic Structure with a Fake Client
+
+For offline or unit-style tests, each spec can create its own fake client. Because fake clients hold state in memory and Ginkgo parallel processes don't share memory, no isolation concerns exist. This is the simplest setup for parallelization.
+
+```go
+package rendering_test
+
+import (
+    "testing"
+
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
+)
+
+func TestRendering(t *testing.T) {
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Rendering Suite")
+}
+```
+
+### Basic Structure with a Live Cluster
+
+When running integration tests against a real K8s cluster, namespace isolation is critical. Unlike `envtest`, there is no single-process API server guarantee--multiple CI jobs or developers may share the same cluster simultaneously. Use unique namespaces per process (see [Isolate Parallel Specs](#isolate-parallel-specs)) and consider cluster-scoped resource naming carefully.
 
 ### Basic Structure with envtest
 
@@ -118,31 +142,11 @@ var _ = AfterSuite(func() {
 })
 ```
 
-### Basic Structure with a Fake Client
-
-For offline or unit-style tests, each spec can create its own fake client. Because fake clients hold state in memory and Ginkgo parallel processes don't share memory, no isolation concerns exist.
-
-```go
-package rendering_test
-
-import (
-    "testing"
-
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
-)
-
-func TestRendering(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "Rendering Suite")
-}
-```
-
 ## Isolate Parallel Specs
 
 ### Use Unique Namespaces per Process
 
-The most reliable way to prevent resource collisions across Ginkgo parallel processes is to give each process its own namespace. Use `GinkgoParallelProcess()` to generate a unique namespace name.
+The most reliable way to prevent resource collisions across Ginkgo parallel processes is to give each process its own namespace. Use `GinkgoParallelProcess()` to generate a unique namespace name. The `($namespace)` syntax below is a Sawchain binding expression--see the [Bindings](./usage-notes.md#bindings) section and the [Chainsaw cheatsheet](./chainsaw-cheatsheet.md) for details on templating.
 
 ```go
 var _ = Describe("MyController", func() {
@@ -159,22 +163,22 @@ var _ = Describe("MyController", func() {
         sc = sawchain.New(GinkgoTB(), k8sClient, map[string]any{
             "namespace": namespace,
         })
-        sc.CreateAndWait(ctx, fmt.Sprintf(`
+        sc.CreateAndWait(ctx, `
             apiVersion: v1
             kind: Namespace
             metadata:
-              name: %s
-        `, namespace))
+              name: ($namespace)
+        `)
     })
 
     AfterEach(func() {
         // Clean up the namespace and all resources in it
-        sc.DeleteAndWait(ctx, fmt.Sprintf(`
+        sc.DeleteAndWait(ctx, `
             apiVersion: v1
             kind: Namespace
             metadata:
-              name: %s
-        `, namespace))
+              name: ($namespace)
+        `)
     })
 
     It("creates resources in the correct namespace", func() {
@@ -316,6 +320,55 @@ var _ = Describe("PodSet lifecycle", Ordered, func() {
 
 Each `Ordered` container [runs within a single Ginkgo process](https://onsi.github.io/ginkgo/#ordered-containers). Different `Ordered` containers can still run in parallel across processes, so namespace isolation remains important.
 
+## Use SynchronizedBeforeSuite for Shared Setup
+
+Ginkgo's [`SynchronizedBeforeSuite`](https://onsi.github.io/ginkgo/#parallel-suite-setup-and-cleanup-synchronizedbeforesuite-and-synchronizedaftersuite) / `SynchronizedAfterSuite` run expensive shared setup exactly once across all parallel processes. This is useful when multiple processes need common read-only resources (ConfigMaps, Secrets, CRDs) without duplicating the setup cost.
+
+```go
+var _ = SynchronizedBeforeSuite(func() []byte {
+    // Process 1 only: create shared namespace with common resources
+    namespace := fmt.Sprintf("shared-%d", time.Now().UnixNano())
+
+    sc := sawchain.New(GinkgoTB(), k8sClient)
+    sc.CreateAndWait(ctx, `
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: `+namespace+`
+    `)
+    sc.CreateAndWait(ctx, `
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: shared-config
+          namespace: `+namespace+`
+        data:
+          cluster-name: test-cluster
+    `)
+
+    // Broadcast the namespace name to all processes
+    return []byte(namespace)
+}, func(data []byte) {
+    // All processes: receive the shared namespace name
+    sharedNamespace = string(data)
+})
+
+var _ = SynchronizedAfterSuite(func() {
+    // All processes: per-process cleanup (if any)
+}, func() {
+    // Process 1 only: delete the shared namespace
+    sc := sawchain.New(GinkgoTB(), k8sClient)
+    sc.DeleteAndWait(ctx, `
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: `+sharedNamespace+`
+    `)
+})
+```
+
+Each parallel process can then create uniquely-named writable resources within the shared namespace. They can then read from the common resources without duplicating expensive setup.
+
 ## Use Sawchain With Offline Tests
 
 Offline tests are the simplest case for parallelization. These tests use `fake.NewClientBuilder().Build()` or assert rendered output without a cluster. Each spec creates its own `Sawchain` instance with its own fake client, and no shared external state exists.
@@ -375,7 +428,7 @@ var _ = It("checks resources concurrently", func() {
 })
 ```
 
-If you need concurrent checks within a single spec, create separate `Sawchain` instances with `NewWithGomega` and a goroutine-safe fail handler. Alternatively, restructure the checks as separate specs that Ginkgo parallelizes for you.
+If you need concurrent checks, restructure them as separate Ginkgo specs--this is simpler and avoids concurrency concerns entirely, since Ginkgo parallelizes specs across processes for you. As a last resort, if the work truly must happen within a single spec, create separate `Sawchain` instances with `NewWithGomega` and a goroutine-safe fail handler.
 
 ### Shared Resources Without Namespace Isolation
 
@@ -405,15 +458,22 @@ sc.CreateAndWait(ctx, `
 
 ### Package-Level Sawchain Instances
 
-Do not initialize `Sawchain` at the package level. The `testing.TB` and `gomega.Gomega` instances must correspond to the currently running spec.
+Avoid initializing `Sawchain` at the package level with a raw `testing.T`, which is not available at init time.
 
 ```go
-// WRONG: package-level initialization
-var sc = sawchain.New(???, k8sClient) // No valid testing.TB at package init time
+// WRONG: no valid testing.T at package init time
+var sc = sawchain.New(???, k8sClient)
+```
+
+`GinkgoTB()` at the package level is acceptable for certain patterns--especially offline tests with fake clients--because it returns a dynamic wrapper that delegates to the current spec's context. In Ginkgo parallel mode, package-level vars are re-initialized per process (separate OS processes), so there is no cross-process sharing concern. However, failure attribution may be less precise per-spec compared to initializing in `BeforeEach`.
+
+```go
+// OK: GinkgoTB() works at package level (offline tests with fake clients)
+var sc = sawchain.New(GinkgoTB(), fake.NewClientBuilder().Build())
 ```
 
 ```go
-// RIGHT: initialize in BeforeEach or BeforeAll
+// BEST: initialize in BeforeEach or BeforeAll for precise per-spec attribution
 var _ = BeforeEach(func() {
     sc = sawchain.New(GinkgoTB(), k8sClient)
 })
