@@ -35,7 +35,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) UpdateAndWait\(ctx context.Context, args ...any\)](<#Sawchain.UpdateAndWait>)
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain.git//blob/main/sawchain.go#L62-L67>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L62-L67>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -50,7 +50,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain.git//blob/main/sawchain.go#L110>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L110>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -99,7 +99,7 @@ sc := sawchain.New(t, k8sClient, "10s", "2s")
 ```
 
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain.git//blob/main/sawchain.go#L178>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L178>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -155,7 +155,7 @@ sc := sawchain.NewWithGomega(t, g, k8sClient, "10s", "2s")
 ```
 
 <a name="Sawchain.Check"></a>
-### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain.git//blob/main/check.go#L105>)
+### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L105>)
 
 ```go
 func (s *Sawchain) Check(ctx context.Context, args ...any) error
@@ -249,7 +249,7 @@ err := sc.Check(ctx, []client.Object{configMap, secret}, `
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 
 <a name="Sawchain.CheckFunc"></a>
-### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain.git//blob/main/check.go#L158>)
+### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L158>)
 
 ```go
 func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error
@@ -262,7 +262,7 @@ The returned function performs the same operations as Check, but is particularly
 For details on arguments, examples, and behavior, see the documentation for Check.
 
 <a name="Sawchain.Create"></a>
-### func \(\*Sawchain\) [Create](<https://github.com/guidewire-oss/sawchain.git//blob/main/create.go#L140>)
+### func \(\*Sawchain\) [Create](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L140>)
 
 ```go
 func (s *Sawchain) Create(ctx context.Context, args ...any) error
@@ -396,7 +396,7 @@ err := sc.Create(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.CreateAndWait"></a>
-### func \(\*Sawchain\) [CreateAndWait](<https://github.com/guidewire-oss/sawchain.git//blob/main/create.go#L332>)
+### func \(\*Sawchain\) [CreateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L332>)
 
 ```go
 func (s *Sawchain) CreateAndWait(ctx context.Context, args ...any)
@@ -534,7 +534,7 @@ sc.CreateAndWait(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.Delete"></a>
-### func \(\*Sawchain\) [Delete](<https://github.com/guidewire-oss/sawchain.git//blob/main/delete.go#L88>)
+### func \(\*Sawchain\) [Delete](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L88>)
 
 ```go
 func (s *Sawchain) Delete(ctx context.Context, args ...any) error
@@ -617,7 +617,7 @@ err := sc.Delete(ctx, `
 ```
 
 <a name="Sawchain.DeleteAndWait"></a>
-### func \(\*Sawchain\) [DeleteAndWait](<https://github.com/guidewire-oss/sawchain.git//blob/main/delete.go#L213>)
+### func \(\*Sawchain\) [DeleteAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L213>)
 
 ```go
 func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...any)
@@ -704,7 +704,7 @@ sc.DeleteAndWait(ctx, `
 ```
 
 <a name="Sawchain.FetchMultiple"></a>
-### func \(\*Sawchain\) [FetchMultiple](<https://github.com/guidewire-oss/sawchain.git//blob/main/fetch.go#L199>)
+### func \(\*Sawchain\) [FetchMultiple](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L199>)
 
 ```go
 func (s *Sawchain) FetchMultiple(ctx context.Context, args ...any) []client.Object
@@ -789,7 +789,7 @@ fetchedObjs := sc.FetchMultiple(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.FetchMultipleFunc"></a>
-### func \(\*Sawchain\) [FetchMultipleFunc](<https://github.com/guidewire-oss/sawchain.git//blob/main/fetch.go#L304>)
+### func \(\*Sawchain\) [FetchMultipleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L304>)
 
 ```go
 func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...any) func() []client.Object
@@ -802,7 +802,7 @@ The returned function performs the same operations as FetchMultiple, but is part
 For details on arguments, examples, and behavior, see the documentation for FetchMultiple.
 
 <a name="Sawchain.FetchSingle"></a>
-### func \(\*Sawchain\) [FetchSingle](<https://github.com/guidewire-oss/sawchain.git//blob/main/fetch.go#L82>)
+### func \(\*Sawchain\) [FetchSingle](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L82>)
 
 ```go
 func (s *Sawchain) FetchSingle(ctx context.Context, args ...any) client.Object
@@ -874,7 +874,7 @@ fetched := sc.FetchSingle(ctx, configMap, `
 ```
 
 <a name="Sawchain.FetchSingleFunc"></a>
-### func \(\*Sawchain\) [FetchSingleFunc](<https://github.com/guidewire-oss/sawchain.git//blob/main/fetch.go#L258>)
+### func \(\*Sawchain\) [FetchSingleFunc](<https://github.com/guidewire-oss/sawchain/blob/main/fetch.go#L258>)
 
 ```go
 func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...any) func() client.Object
@@ -887,7 +887,7 @@ The returned function performs the same operations as FetchSingle, but is partic
 For details on arguments, examples, and behavior, see the documentation for FetchSingle.
 
 <a name="Sawchain.Get"></a>
-### func \(\*Sawchain\) [Get](<https://github.com/guidewire-oss/sawchain.git//blob/main/get.go#L122>)
+### func \(\*Sawchain\) [Get](<https://github.com/guidewire-oss/sawchain/blob/main/get.go#L122>)
 
 ```go
 func (s *Sawchain) Get(ctx context.Context, args ...any) error
@@ -1003,7 +1003,7 @@ err := sc.Get(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.GetFunc"></a>
-### func \(\*Sawchain\) [GetFunc](<https://github.com/guidewire-oss/sawchain.git//blob/main/get.go#L187>)
+### func \(\*Sawchain\) [GetFunc](<https://github.com/guidewire-oss/sawchain/blob/main/get.go#L187>)
 
 ```go
 func (s *Sawchain) GetFunc(ctx context.Context, args ...any) func() error
@@ -1016,7 +1016,7 @@ The returned function performs the same operations as Get, but is particularly u
 For details on arguments, examples, and behavior, see the documentation for Get.
 
 <a name="Sawchain.HaveStatusCondition"></a>
-### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain.git//blob/main/matchers.go#L128>)
+### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L128>)
 
 ```go
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher
@@ -1061,7 +1061,7 @@ for _, obj := range objs {
 ```
 
 <a name="Sawchain.List"></a>
-### func \(\*Sawchain\) [List](<https://github.com/guidewire-oss/sawchain.git//blob/main/list.go#L72>)
+### func \(\*Sawchain\) [List](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L72>)
 
 ```go
 func (s *Sawchain) List(ctx context.Context, template string, bindings ...map[string]any) []client.Object
@@ -1128,7 +1128,7 @@ Eventually(sc.ListFunc(ctx, `
 ```
 
 <a name="Sawchain.ListFunc"></a>
-### func \(\*Sawchain\) [ListFunc](<https://github.com/guidewire-oss/sawchain.git//blob/main/list.go#L120>)
+### func \(\*Sawchain\) [ListFunc](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L120>)
 
 ```go
 func (s *Sawchain) ListFunc(ctx context.Context, template string, bindings ...map[string]any) func() []client.Object
@@ -1141,7 +1141,7 @@ The returned function performs the same operations as List, but is particularly 
 For details on arguments, examples, and behavior, see the documentation for List.
 
 <a name="Sawchain.MatchYAML"></a>
-### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain.git//blob/main/matchers.go#L74>)
+### func \(\*Sawchain\) [MatchYAML](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L74>)
 
 ```go
 func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.GomegaMatcher
@@ -1205,7 +1205,7 @@ for _, obj := range objs {
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 
 <a name="Sawchain.RenderMultiple"></a>
-### func \(\*Sawchain\) [RenderMultiple](<https://github.com/guidewire-oss/sawchain.git//blob/main/render.go#L197>)
+### func \(\*Sawchain\) [RenderMultiple](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L197>)
 
 ```go
 func (s *Sawchain) RenderMultiple(args ...any) []client.Object
@@ -1298,7 +1298,7 @@ sc.RenderMultiple([]client.Object{configMap, secret}, "path/to/resources.yaml")
 ```
 
 <a name="Sawchain.RenderSingle"></a>
-### func \(\*Sawchain\) [RenderSingle](<https://github.com/guidewire-oss/sawchain.git//blob/main/render.go#L82>)
+### func \(\*Sawchain\) [RenderSingle](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L82>)
 
 ```go
 func (s *Sawchain) RenderSingle(args ...any) client.Object
@@ -1369,7 +1369,7 @@ sc.RenderSingle(configMap, "path/to/configmap.yaml")
 ```
 
 <a name="Sawchain.RenderToFile"></a>
-### func \(\*Sawchain\) [RenderToFile](<https://github.com/guidewire-oss/sawchain.git//blob/main/render.go#L356>)
+### func \(\*Sawchain\) [RenderToFile](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L356>)
 
 ```go
 func (s *Sawchain) RenderToFile(filepath, template string, bindings ...map[string]any)
@@ -1427,7 +1427,7 @@ sc.RenderToFile("output.yaml", "path/to/template.yaml",
 ```
 
 <a name="Sawchain.RenderToString"></a>
-### func \(\*Sawchain\) [RenderToString](<https://github.com/guidewire-oss/sawchain.git//blob/main/render.go#L278>)
+### func \(\*Sawchain\) [RenderToString](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L278>)
 
 ```go
 func (s *Sawchain) RenderToString(template string, bindings ...map[string]any) string
@@ -1481,7 +1481,7 @@ yaml := sc.RenderToString("path/to/template.yaml",
 ```
 
 <a name="Sawchain.Update"></a>
-### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain.git//blob/main/update.go#L155>)
+### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L155>)
 
 ```go
 func (s *Sawchain) Update(ctx context.Context, args ...any) error
@@ -1628,7 +1628,7 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.UpdateAndWait"></a>
-### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain.git//blob/main/update.go#L374>)
+### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L374>)
 
 ```go
 func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...any)
