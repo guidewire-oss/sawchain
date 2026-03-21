@@ -14,6 +14,7 @@ Go library for K8s YAML-driven testing—powered by [Chainsaw](https://github.co
 * **[Design Overview](./docs/design-overview.md)**
 * **[Usage Notes](./docs/usage-notes.md)**
 * **[Chainsaw Cheatsheet](./docs/chainsaw-cheatsheet.md)**
+* **[Parallel Testing](./docs/parallel-tests.md)**
 
 ## Examples
 

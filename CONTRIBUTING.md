@@ -53,7 +53,7 @@ Following [Conventional Commits](https://www.conventionalcommits.org/) is recomm
 - Include relevant tests and/or documentation updates.
 - Ensure your PR is scoped to a single fix or feature.
 - When updating public function documentation, regenerate [`api-reference.md`](./docs/api-reference.md) using `make docs`.
-- When adding or modifying public methods that interact with the K8s API or filesystem, review and update [`parallel-tests.md`](./docs/parallel-tests.md)--both the thread-safety analysis table and the component reference table--if the method's parallel-safety characteristics differ from existing patterns.
+- When adding or modifying public methods that interact with the K8s API or filesystem, review and update [`parallel-tests.md`](./docs/parallel-tests.md) (both the thread-safety analysis table and the component reference table) if the method's parallel-safety characteristics differ from existing patterns.
 
 ## Code of Conduct
 

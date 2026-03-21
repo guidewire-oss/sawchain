@@ -1,16 +1,16 @@
 # Use Sawchain with Parallel Tests
 
-This document attempts to frame Sawchain in the context of parallel test execution. Running Go tests in this manner distributes specs across multiple processes, cutting total suite time proportionally and giving faster feedback in CI.
+This document covers Sawchain in the context of parallel test execution. Running Go tests in this manner distributes specs across multiple processes, cutting total suite time proportionally and giving faster feedback in CI.
 
-Parallelism introduces two distinct challenges. The first is in-process safety: test frameworks that use goroutines require careful handling of shared components like `Sawchain` instances, `gomega.Gomega`, and `testing.TB`. The second--and the more tricky one--is external resource isolation: even with full memory separation between processes, all tests share the same K8s API server. If two tests create, update, or read the same resource concurrently, they interfere with each other in ways that produce flaky, non-deterministic failures.
+Parallelism introduces two distinct challenges. The first is in-process safety: test frameworks that use goroutines require careful handling of shared components like `Sawchain` instances, `gomega.Gomega`, and `testing.TB`. The second (and the trickier one) is external resource isolation: even with full memory separation between processes, all tests share the same K8s API server. If two tests create, update, or read the same resource concurrently, they interfere with each other in ways that produce flaky, non-deterministic failures.
 
 This guide explains how Sawchain behaves in parallel scenarios, which operations require isolation, and how to structure your test suite to run safely in parallel. It focuses on [Ginkgo](https://onsi.github.io/ginkgo/#spec-parallelization) because it is the most common parallel test runner in the K8s ecosystem. However, the thread-safety analysis and resource isolation principles apply to any framework that accepts a [`testing.TB`](https://pkg.go.dev/testing#TB).
 
 ## Ginkgo: Process-Based Parallelism
 
-When you run tests with `ginkgo -p` or `ginkgo --procs=N`, Ginkgo launches multiple OS processes. Each process runs a subset of the suite's specs. Because these are separate processes--not goroutines--they share nothing in memory. All coordination happens through the Ginkgo CLI, which acts as a [centralized server](https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-runs-parallel-specs) for spec distribution and output aggregation.
+When you run tests with `ginkgo -p` or `ginkgo --procs=N`, Ginkgo launches multiple OS processes. Each process runs a subset of the suite's specs. Because these are separate processes (not goroutines), they share nothing in memory. All coordination happens through the Ginkgo CLI, which acts as a [centralized server](https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-runs-parallel-specs) for spec distribution and output aggregation.
 
-This distinction matters: because each process has its own memory space, there is [no risk of shared-variable data races](https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-runs-parallel-specs) across Ginkgo parallel processes. The real challenges are resource contention on shared external state, such as the K8s API server, namespaces, and cluster-scoped resources. Test isolation--making sure one process's resources don't collide with another's--requires deliberate namespace or naming strategies.
+This distinction matters: because each process has its own memory space, there is [no risk of shared-variable data races](https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-runs-parallel-specs) across Ginkgo parallel processes. The real challenges are resource contention on shared external state, such as the K8s API server, namespaces, and cluster-scoped resources. Test isolation (making sure one process's resources don't collide with another's) requires deliberate namespace or naming strategies.
 
 ## Thread-Safety Analysis
 
@@ -88,7 +88,7 @@ func TestRendering(t *testing.T) {
 
 ### Basic Structure with a Live Cluster
 
-When running integration tests against a real K8s cluster, namespace isolation is critical. Unlike `envtest`, there is no single-process API server guarantee--multiple CI jobs or developers may share the same cluster simultaneously. Use unique namespaces per process (see [Isolate Parallel Specs](#isolate-parallel-specs)) and consider cluster-scoped resource naming carefully.
+When running integration tests against a real K8s cluster, namespace isolation is critical. Unlike `envtest`, there is no single-process API server guarantee; multiple CI jobs or developers may share the same cluster simultaneously. Use unique namespaces per process (see [Isolate Parallel Specs](#isolate-parallel-specs)) and consider cluster-scoped resource naming carefully.
 
 ### Basic Structure with envtest
 
@@ -99,7 +99,6 @@ package controllers_test
 
 import (
     "context"
-    "fmt"
     "testing"
 
     . "github.com/onsi/ginkgo/v2"
@@ -138,7 +137,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
     cancel()
-    Eventually(testEnv.Stop()).Should(Succeed())
+    Eventually(testEnv.Stop).Should(Succeed())
 })
 ```
 
@@ -146,7 +145,7 @@ var _ = AfterSuite(func() {
 
 ### Use Unique Namespaces per Process
 
-The most reliable way to prevent resource collisions across Ginkgo parallel processes is to give each process its own namespace. Use `GinkgoParallelProcess()` to generate a unique namespace name. The `($namespace)` syntax below is a Sawchain binding expression--see the [Bindings](./usage-notes.md#bindings) section and the [Chainsaw cheatsheet](./chainsaw-cheatsheet.md) for details on templating.
+The most reliable way to prevent resource collisions across Ginkgo parallel processes is to give each process its own namespace. `GinkgoParallelProcess()` returns a unique integer per process within a suite run, making it ideal for this purpose. The `($namespace)` syntax below is a Sawchain binding expression—see the [Bindings](./usage-notes.md#bindings) section and the [Chainsaw cheatsheet](./chainsaw-cheatsheet.md) for details on templating.
 
 ```go
 var _ = Describe("MyController", func() {
@@ -191,23 +190,13 @@ var _ = Describe("MyController", func() {
             data:
               key: value
         `)
-
-        Eventually(sc.CheckFunc(ctx, `
-            apiVersion: v1
-            kind: ConfigMap
-            metadata:
-              name: my-config
-              namespace: ($namespace)
-            data:
-              key: value
-        `)).Should(Succeed())
     })
 })
 ```
 
-### Use Unique Resource Names per Spec
+### Use Unique Resource Names per Process
 
-When namespace-per-process isolation isn't practical (for example, with cluster-scoped resources), use unique names derived from the process ID or a random suffix.
+When namespace-per-process isolation isn't practical (for example, with cluster-scoped resources), use unique names derived from the process ID.
 
 ```go
 var _ = Describe("ClusterRole management", func() {
@@ -217,9 +206,8 @@ var _ = Describe("ClusterRole management", func() {
     )
 
     BeforeEach(func() {
-        roleName = fmt.Sprintf("test-role-%d-%s",
-            GinkgoParallelProcess(),
-            CurrentSpecReport().LeafNodeText[:8])
+        roleName = fmt.Sprintf("test-role-%d",
+            GinkgoParallelProcess())
 
         sc = sawchain.New(GinkgoTB(), k8sClient, map[string]any{
             "roleName": roleName,
@@ -261,6 +249,30 @@ var _ = Describe("ClusterRole management", func() {
     })
 })
 ```
+
+### Handle Multiple Concurrent Suite Runs
+
+The strategies above isolate resources across parallel processes within a single suite run. If multiple suite runs may execute against the same cluster simultaneously (for example, overlapping CI jobs or developers sharing a test cluster), `GinkgoParallelProcess()` alone is not sufficient because each run starts numbering from 1.
+
+Add a run-unique identifier to the namespace or resource name to distinguish between suite runs. A simple random suffix via `rand.Intn` works well:
+
+```go
+namespace = fmt.Sprintf("test-%d-%d", rand.Intn(100000), GinkgoParallelProcess())
+```
+
+Any unique string works here; use whatever fits your project's conventions. If your CI environment guarantees only one suite run per cluster at a time, `GinkgoParallelProcess()` alone is sufficient.
+
+### Use Unique Resource Names per Spec
+
+Within a single Ginkgo process, specs run sequentially, so per-process naming is normally sufficient as long as each spec cleans up after itself in `AfterEach`. If cleanup is intentionally deferred (for example, bulk teardown at suite end instead of per-spec cleanup), multiple specs in the same process can collide when the second tries to create a resource that still exists from the first. In that case, add a random suffix via `rand.Intn` (unique per call):
+
+```go
+roleName = fmt.Sprintf("test-role-%d-%d",
+    GinkgoParallelProcess(),
+    rand.Intn(100000))
+```
+
+Prefer per-spec cleanup over per-spec naming when possible. Cleaning up resources in `AfterEach` keeps names simple, avoids accumulating resources across specs, and makes failures easier to diagnose.
 
 ## Use Sawchain With Ordered Containers
 
@@ -327,21 +339,23 @@ Ginkgo's [`SynchronizedBeforeSuite`](https://onsi.github.io/ginkgo/#parallel-sui
 ```go
 var _ = SynchronizedBeforeSuite(func() []byte {
     // Process 1 only: create shared namespace with common resources
-    namespace := fmt.Sprintf("shared-%d", time.Now().UnixNano())
+    namespace := fmt.Sprintf("shared-%d", rand.Intn(100000))
 
-    sc := sawchain.New(GinkgoTB(), k8sClient)
+    sc := sawchain.New(GinkgoTB(), k8sClient, map[string]any{
+        "namespace": namespace,
+    })
     sc.CreateAndWait(ctx, `
         apiVersion: v1
         kind: Namespace
         metadata:
-          name: `+namespace+`
+          name: ($namespace)
     `)
     sc.CreateAndWait(ctx, `
         apiVersion: v1
         kind: ConfigMap
         metadata:
           name: shared-config
-          namespace: `+namespace+`
+          namespace: ($namespace)
         data:
           cluster-name: test-cluster
     `)
@@ -357,12 +371,14 @@ var _ = SynchronizedAfterSuite(func() {
     // All processes: per-process cleanup (if any)
 }, func() {
     // Process 1 only: delete the shared namespace
-    sc := sawchain.New(GinkgoTB(), k8sClient)
+    sc := sawchain.New(GinkgoTB(), k8sClient, map[string]any{
+        "sharedNamespace": sharedNamespace,
+    })
     sc.DeleteAndWait(ctx, `
         apiVersion: v1
         kind: Namespace
         metadata:
-          name: `+sharedNamespace+`
+          name: ($sharedNamespace)
     `)
 })
 ```
@@ -398,7 +414,7 @@ var _ = Describe("Helm chart rendering", func() {
 })
 ```
 
-Ginkgo distributes individual specs--including [`Entry`](https://onsi.github.io/ginkgo/#table-specs) rows--across parallel processes. Because each process creates its own fake client and `Sawchain` instance, no coordination is needed.
+Ginkgo distributes individual specs, including [`Entry`](https://onsi.github.io/ginkgo/#table-specs) rows, across parallel processes. Because each process creates its own fake client and `Sawchain` instance, no coordination is needed.
 
 ## Patterns to Avoid
 
@@ -428,7 +444,7 @@ var _ = It("checks resources concurrently", func() {
 })
 ```
 
-If you need concurrent checks, restructure them as separate Ginkgo specs--this is simpler and avoids concurrency concerns entirely, since Ginkgo parallelizes specs across processes for you. As a last resort, if the work truly must happen within a single spec, create separate `Sawchain` instances with `NewWithGomega` and a goroutine-safe fail handler.
+If you need concurrent checks, restructure them as separate Ginkgo specs—this is simpler and avoids concurrency concerns entirely, since Ginkgo parallelizes specs across processes for you. As a last resort, if the work truly must happen within a single spec, create separate `Sawchain` instances with `NewWithGomega` and a goroutine-safe fail handler.
 
 ### Shared Resources Without Namespace Isolation
 
@@ -465,7 +481,7 @@ Avoid initializing `Sawchain` at the package level with a raw `testing.T`, which
 var sc = sawchain.New(???, k8sClient)
 ```
 
-`GinkgoTB()` at the package level is acceptable for certain patterns--especially offline tests with fake clients--because it returns a dynamic wrapper that delegates to the current spec's context. In Ginkgo parallel mode, package-level vars are re-initialized per process (separate OS processes), so there is no cross-process sharing concern. However, failure attribution may be less precise per-spec compared to initializing in `BeforeEach`.
+`GinkgoTB()` at the package level is acceptable for certain patterns (especially offline tests with fake clients) because it returns a dynamic wrapper that delegates to the current spec's context. In Ginkgo parallel mode, package-level vars are re-initialized per process (separate OS processes), so there is no cross-process sharing concern. However, failure attribution may be less precise per-spec compared to initializing in `BeforeEach`.
 
 ```go
 // OK: GinkgoTB() works at package level (offline tests with fake clients)
