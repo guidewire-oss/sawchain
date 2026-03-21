@@ -322,6 +322,9 @@ func (s *Sawchain) RenderToString(template string, bindings ...map[string]any) s
 //   - Templates will be sanitized before use, including de-indenting (removing any common leading
 //     whitespace prefix from non-empty lines) and pruning empty documents.
 //
+//   - When running tests in parallel, use unique file paths per process to prevent write collisions.
+//     See docs/parallel-tests.md for isolation strategies.
+//
 // # Examples
 //
 // Render a template to a file:

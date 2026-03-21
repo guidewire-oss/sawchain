@@ -40,6 +40,9 @@ import (
 //   - Templates will be sanitized before use, including de-indenting (removing any common leading
 //     whitespace prefix from non-empty lines) and pruning empty documents.
 //
+//   - When running tests in parallel, ensure resource names or namespaces are unique per process to
+//     prevent collisions. See docs/parallel-tests.md for isolation strategies.
+//
 //   - Use DeleteAndWait instead of Delete if you need to ensure deletion is successful and the client
 //     cache is synced.
 //
@@ -162,6 +165,9 @@ func (s *Sawchain) Delete(ctx context.Context, args ...any) error {
 //
 //   - Templates will be sanitized before use, including de-indenting (removing any common leading
 //     whitespace prefix from non-empty lines) and pruning empty documents.
+//
+//   - When running tests in parallel, ensure resource names or namespaces are unique per process to
+//     prevent collisions. See docs/parallel-tests.md for isolation strategies.
 //
 //   - Use Delete instead of DeleteAndWait if you need to delete resources without ensuring success.
 //

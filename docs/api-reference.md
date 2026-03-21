@@ -262,7 +262,7 @@ The returned function performs the same operations as Check, but is particularly
 For details on arguments, examples, and behavior, see the documentation for Check.
 
 <a name="Sawchain.Create"></a>
-### func \(\*Sawchain\) [Create](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L137>)
+### func \(\*Sawchain\) [Create](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L140>)
 
 ```go
 func (s *Sawchain) Create(ctx context.Context, args ...any) error
@@ -291,6 +291,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - When dealing with typed objects, the client scheme will be used for internal conversions.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When running tests in parallel, ensure resource names or namespaces are unique per process to prevent collisions. See docs/parallel\-tests.md for isolation strategies.
 
 - Use CreateAndWait instead of Create if you need to ensure creation is successful and the client cache is synced.
 
@@ -394,7 +396,7 @@ err := sc.Create(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.CreateAndWait"></a>
-### func \(\*Sawchain\) [CreateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L326>)
+### func \(\*Sawchain\) [CreateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/create.go#L332>)
 
 ```go
 func (s *Sawchain) CreateAndWait(ctx context.Context, args ...any)
@@ -427,6 +429,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - When dealing with typed objects, the client scheme will be used for internal conversions.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When running tests in parallel, ensure resource names or namespaces are unique per process to prevent collisions. See docs/parallel\-tests.md for isolation strategies.
 
 - Use Create instead of CreateAndWait if you need to create resources without ensuring success.
 
@@ -530,7 +534,7 @@ sc.CreateAndWait(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.Delete"></a>
-### func \(\*Sawchain\) [Delete](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L85>)
+### func \(\*Sawchain\) [Delete](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L88>)
 
 ```go
 func (s *Sawchain) Delete(ctx context.Context, args ...any) error
@@ -557,6 +561,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - Invalid input will result in immediate test failure.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When running tests in parallel, ensure resource names or namespaces are unique per process to prevent collisions. See docs/parallel\-tests.md for isolation strategies.
 
 - Use DeleteAndWait instead of Delete if you need to ensure deletion is successful and the client cache is synced.
 
@@ -611,7 +617,7 @@ err := sc.Delete(ctx, `
 ```
 
 <a name="Sawchain.DeleteAndWait"></a>
-### func \(\*Sawchain\) [DeleteAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L207>)
+### func \(\*Sawchain\) [DeleteAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/delete.go#L213>)
 
 ```go
 func (s *Sawchain) DeleteAndWait(ctx context.Context, args ...any)
@@ -642,6 +648,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - Invalid input, client errors, and timeout errors will result in immediate test failure.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When running tests in parallel, ensure resource names or namespaces are unique per process to prevent collisions. See docs/parallel\-tests.md for isolation strategies.
 
 - Use Delete instead of DeleteAndWait if you need to delete resources without ensuring success.
 
@@ -1361,7 +1369,7 @@ sc.RenderSingle(configMap, "path/to/configmap.yaml")
 ```
 
 <a name="Sawchain.RenderToFile"></a>
-### func \(\*Sawchain\) [RenderToFile](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L353>)
+### func \(\*Sawchain\) [RenderToFile](<https://github.com/guidewire-oss/sawchain/blob/main/render.go#L356>)
 
 ```go
 func (s *Sawchain) RenderToFile(filepath, template string, bindings ...map[string]any)
@@ -1382,6 +1390,8 @@ RenderToFile renders a Chainsaw template with optional bindings and writes it to
 - Invalid input, marshaling errors, and I/O errors will result in immediate test failure.
 
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
+
+- When running tests in parallel, use unique file paths per process to prevent write collisions. See docs/parallel\-tests.md for isolation strategies.
 
 #### Examples
 
@@ -1471,7 +1481,7 @@ yaml := sc.RenderToString("path/to/template.yaml",
 ```
 
 <a name="Sawchain.Update"></a>
-### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L152>)
+### func \(\*Sawchain\) [Update](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L155>)
 
 ```go
 func (s *Sawchain) Update(ctx context.Context, args ...any) error
@@ -1502,6 +1512,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
 
 - When using a template, each document is used as a JSON merge patch \(RFC 7386\) to update the corresponding resource. This means fields not specified in the template are preserved, and explicit null values in the template will delete the corresponding fields in the resource.
+
+- When running tests in parallel, ensure resource names or namespaces are unique per process to prevent collisions. See docs/parallel\-tests.md for isolation strategies.
 
 - Use UpdateAndWait instead of Update if you need to ensure updates are successful and the client cache is synced.
 
@@ -1616,7 +1628,7 @@ err := sc.Update(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Sawchain.UpdateAndWait"></a>
-### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L368>)
+### func \(\*Sawchain\) [UpdateAndWait](<https://github.com/guidewire-oss/sawchain/blob/main/update.go#L374>)
 
 ```go
 func (s *Sawchain) UpdateAndWait(ctx context.Context, args ...any)
@@ -1651,6 +1663,8 @@ A template, an object, or a slice of objects must be provided. However, an objec
 - Templates will be sanitized before use, including de\-indenting \(removing any common leading whitespace prefix from non\-empty lines\) and pruning empty documents.
 
 - When using a template, each document is used as a JSON merge patch \(RFC 7386\) to update the corresponding resource. This means fields not specified in the template are preserved, and explicit null values in the template will delete the corresponding fields in the resource.
+
+- When running tests in parallel, ensure resource names or namespaces are unique per process to prevent collisions. See docs/parallel\-tests.md for isolation strategies.
 
 - Use Update instead of UpdateAndWait if you need to update resources without ensuring success.
 

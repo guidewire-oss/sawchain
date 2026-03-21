@@ -7,6 +7,8 @@ Important details about Sawchain’s terminology, inputs, and recommended usage
 Although Sawchain supports working with multiple resources at a time, single-resource operations/assertions
 should be preferred because they are easier to debug.
 
+For guidance on running Sawchain tests in parallel with Ginkgo, see [Parallel Testing](./parallel-tests.md).
+
 ## Objects
 
 ### Definition

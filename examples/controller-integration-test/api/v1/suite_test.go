@@ -127,7 +127,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	cancel()
-	Eventually(testEnv.Stop()).Should(Succeed())
+	Eventually(testEnv.Stop).Should(Succeed())
 })
 
 // HELPERS

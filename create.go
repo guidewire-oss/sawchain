@@ -47,6 +47,9 @@ import (
 //   - Templates will be sanitized before use, including de-indenting (removing any common leading
 //     whitespace prefix from non-empty lines) and pruning empty documents.
 //
+//   - When running tests in parallel, ensure resource names or namespaces are unique per process to
+//     prevent collisions. See docs/parallel-tests.md for isolation strategies.
+//
 //   - Use CreateAndWait instead of Create if you need to ensure creation is successful and the client
 //     cache is synced.
 //
@@ -236,6 +239,9 @@ func (s *Sawchain) Create(ctx context.Context, args ...any) error {
 //
 //   - Templates will be sanitized before use, including de-indenting (removing any common leading
 //     whitespace prefix from non-empty lines) and pruning empty documents.
+//
+//   - When running tests in parallel, ensure resource names or namespaces are unique per process to
+//     prevent collisions. See docs/parallel-tests.md for isolation strategies.
 //
 //   - Use Create instead of CreateAndWait if you need to create resources without ensuring success.
 //

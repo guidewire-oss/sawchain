@@ -33,6 +33,7 @@ make debug   # Debug tests (requires Delve and VSCode)
 - Keep functions short and focused.
 - Follow existing patterns for structure, naming, and behavior.
 - Avoid over-abstraction unless it improves clarity or testability.
+- Public functions must include structured docstrings with `# Arguments`, `# Notes`, and `# Examples` sections. Follow existing functions for recurring notes (input validation, typed object handling, template sanitization, related method cross-references, and parallel-safety where applicable).
 
 ## Commit Messages
 
@@ -52,6 +53,7 @@ Following [Conventional Commits](https://www.conventionalcommits.org/) is recomm
 - Include relevant tests and/or documentation updates.
 - Ensure your PR is scoped to a single fix or feature.
 - When updating public function documentation, regenerate [`api-reference.md`](./docs/api-reference.md) using `make docs`.
+- When adding or modifying public methods that interact with the K8s API or filesystem, review and update [`parallel-tests.md`](./docs/parallel-tests.md) (both the thread-safety analysis table and the component reference table) if the method's parallel-safety characteristics differ from existing patterns.
 
 ## Code of Conduct
 
