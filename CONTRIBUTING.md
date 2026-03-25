@@ -55,6 +55,25 @@ Following [Conventional Commits](https://www.conventionalcommits.org/) is recomm
 - When updating public function documentation, regenerate [`api-reference.md`](./docs/api-reference.md) using `make docs`.
 - When adding or modifying public methods that interact with the K8s API or filesystem, review and update [`parallel-tests.md`](./docs/parallel-tests.md) (both the thread-safety analysis table and the component reference table) if the method's parallel-safety characteristics differ from existing patterns.
 
+## Security Patches
+
+To bump a dependency across the root module and all examples:
+
+```bash
+make security-patch MOD=<module> VER=<version>
+```
+
+This bumps the dependency, runs `make init` and `make test` at the root, creates a k3d cluster with KubeVela, bumps and tests all examples, then tears down the cluster. The cluster is always cleaned up, even on failure.
+
+Individual targets are also available:
+
+```bash
+make bump-examples MOD=<module> VER=<version>    # Bump dependency in all examples
+make test-examples                               # Test all examples
+make cluster-up                                  # Create k3d cluster with KubeVela
+make cluster-down                                # Delete k3d cluster
+```
+
 ## Code of Conduct
 
 This project follows the [Contributor Covenant](https://www.contributor-covenant.org/) Code of Conduct. Please be respectful, inclusive, and constructive.
