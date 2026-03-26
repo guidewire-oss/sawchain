@@ -20,13 +20,13 @@ The following table summarizes the thread-safety characteristics of Sawchain's c
 | - | - | - |
 | `Sawchain` struct | Yes (read-only) | All fields are set at construction and never mutated |
 | [`client.Client`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Client) instance | Yes | Designed for concurrent use across goroutines |
-| Internal Chainsaw operations | Yes | Template rendering, matching, and binding resolution use only local variables |
+| Internal [Chainsaw](https://github.com/kyverno/chainsaw) operations | Yes | Template rendering, matching, and binding resolution use only local variables |
 | [`gomega.Gomega`](https://onsi.github.io/gomega/) instance | **No** | Not safe for concurrent `Expect` calls from multiple goroutines |
 | [`testing.TB`](https://pkg.go.dev/testing#TB) instance | **No** | Not safe for concurrent use across goroutines that call `FailNow` |
 
 ### What This Means in Practice
 
-Sawchain's internal computation is fully thread-safe. This includes template rendering, [Chainsaw](https://github.com/kyverno/chainsaw) matching, and K8s API calls through `client.Client`. The two components that are not safe for concurrent use are `gomega.Gomega` and `testing.TB`, both of which Sawchain uses for assertions and failure reporting.
+Sawchain's internal computation is fully thread-safe. This includes template rendering, Chainsaw matching, and K8s API calls through `client.Client`. The two components that are not safe for concurrent use are `gomega.Gomega` and `testing.TB`, both of which Sawchain uses for assertions and failure reporting.
 
 Ginkgo's parallel-process model eliminates this concern: each process has its own `Sawchain` instance with its own `gomega.Gomega` and `testing.TB`. Concurrency concerns arise only if you spawn goroutines within a single spec that share a `Sawchain` instance.
 
