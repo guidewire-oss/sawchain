@@ -17,12 +17,12 @@ This distinction matters: because each process has its own memory space, there i
 The following table summarizes the thread-safety characteristics of Sawchain's components. "Thread-safe" here means safe for concurrent use from multiple goroutines within a single process.
 
 | Component | Thread-safe | Notes |
-|-----------|-------------|-------|
+| - | - | - |
 | `Sawchain` struct | Yes (read-only) | All fields are set at construction and never mutated |
-| `client.Client` ([controller-runtime](https://github.com/kubernetes-sigs/controller-runtime)) | Yes | Designed for concurrent use across goroutines |
+| [`client.Client`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Client) instance | Yes | Designed for concurrent use across goroutines |
 | Internal Chainsaw operations | Yes | Template rendering, matching, and binding resolution use only local variables |
 | [`gomega.Gomega`](https://onsi.github.io/gomega/) instance | **No** | Not safe for concurrent `Expect` calls from multiple goroutines |
-| `testing.TB` | **No** | Not safe for concurrent use across goroutines that call `FailNow` |
+| [`testing.TB`](https://pkg.go.dev/testing#TB) instance | **No** | Not safe for concurrent use across goroutines that call `FailNow` |
 
 ### What This Means in Practice
 
@@ -494,7 +494,7 @@ var _ = BeforeEach(func() {
 The following table maps each Sawchain method to its safety characteristics for parallel test usage, assuming separate `Sawchain` instances per process.
 
 | Method | K8s API calls | Cluster state mutation | Notes |
-|--------|--------------|----------------------|-------|
+| - | - | - | - |
 | `Check` / `CheckFunc` | Read (Get/List) | No | Safe across processes with namespace isolation |
 | `Get` / `GetFunc` | Read (Get) | No | Safe across processes with namespace isolation |
 | `FetchSingle` / `FetchSingleFunc` | Read (Get) | No | Safe across processes with namespace isolation |
