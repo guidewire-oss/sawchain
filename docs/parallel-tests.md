@@ -14,21 +14,15 @@ This distinction matters: because each process has its own memory space, there i
 
 ## Thread-Safety Analysis
 
-The following table summarizes the thread-safety characteristics of Sawchain's components. "Thread-safe" here means safe for concurrent use from multiple goroutines within a single process. The table includes internal implementation details (unexported fields, `chainsaw` functions) for completeness; users interact only with the public `Sawchain` methods covered in the [Component Reference](#component-reference).
+The following table summarizes the thread-safety characteristics of Sawchain's components. "Thread-safe" here means safe for concurrent use from multiple goroutines within a single process.
 
 | Component | Thread-safe | Notes |
 |-----------|-------------|-------|
-| `Sawchain` struct fields | Yes (read-only) | All fields (`t`, `g`, `c`, `opts`) are set at construction and never mutated |
+| `Sawchain` struct | Yes (read-only) | All fields are set at construction and never mutated |
 | `client.Client` ([controller-runtime](https://github.com/kubernetes-sigs/controller-runtime)) | Yes | Designed for concurrent use across goroutines |
-| `chainsaw.Check()` | Yes | Uses only local variables; no shared mutable state |
-| `chainsaw.ListCandidates()` | Yes | Uses only local variables; reads from `client.Client` |
-| `chainsaw.Match()` / `chainsaw.MatchAll()` | Yes | Stateless; uses only local variables |
-| `chainsaw.BindingsFromMap()` | Yes | Creates new bindings on each call |
-| `chainsaw.RenderTemplateSingle()` | Yes | Uses only local variables |
-| `chainsaw.compilers` (package-level) | Yes | Read-only after initialization |
-| [`gomega.Gomega`](https://onsi.github.io/gomega/) instance (`s.g`) | **No** | Not safe for concurrent `Expect` calls from multiple goroutines |
-| `testing.TB` | **No** | `testing.TB` is a superset of `testing.T`; `testing.T` is not safe for concurrent use across goroutines that call `FailNow` |
-| `opts.Bindings` map | Yes | Immutable after construction; never written to during operations |
+| Internal Chainsaw operations | Yes | Template rendering, matching, and binding resolution use only local variables |
+| [`gomega.Gomega`](https://onsi.github.io/gomega/) instance | **No** | Not safe for concurrent `Expect` calls from multiple goroutines |
+| `testing.TB` | **No** | Not safe for concurrent use across goroutines that call `FailNow` |
 
 ### What This Means in Practice
 
