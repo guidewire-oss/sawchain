@@ -53,6 +53,9 @@ import (
 //     corresponding resource. This means fields not specified in the template are preserved, and
 //     explicit null values in the template will delete the corresponding fields in the resource.
 //
+//   - When running tests in parallel, ensure resource names or namespaces are unique per process to
+//     prevent collisions. See docs/parallel-tests.md for isolation strategies.
+//
 //   - Use UpdateAndWait instead of Update if you need to ensure updates are successful and the client
 //     cache is synced.
 //
@@ -269,6 +272,9 @@ func (s *Sawchain) Update(ctx context.Context, args ...any) error {
 //   - When using a template, each document is used as a JSON merge patch (RFC 7386) to update the
 //     corresponding resource. This means fields not specified in the template are preserved, and
 //     explicit null values in the template will delete the corresponding fields in the resource.
+//
+//   - When running tests in parallel, ensure resource names or namespaces are unique per process to
+//     prevent collisions. See docs/parallel-tests.md for isolation strategies.
 //
 //   - Use Update instead of UpdateAndWait if you need to update resources without ensuring success.
 //

@@ -13,7 +13,7 @@ debug:
 
 .PHONY: docs
 docs:
-	gomarkdoc ./ \
+	gomarkdoc --repository.url "https://github.com/guidewire-oss/sawchain" ./ \
 	| awk 'BEGIN { RS=""; ORS="\n\n" } { gsub(/```\n/, "```go\n"); print }' \
 	> docs/api-reference.md
 
