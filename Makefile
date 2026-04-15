@@ -37,8 +37,7 @@ bump-all:
 .PHONY: test-all
 test-all:
 	$(MAKE) test
-	$(MAKE) cluster-up
-	$(MAKE) test-examples; result=$$?; $(MAKE) cluster-down; exit $$result
+	$(MAKE) cluster-up && $(MAKE) test-examples; result=$$?; $(MAKE) cluster-down; exit $$result
 
 .PHONY: test-examples
 test-examples:
