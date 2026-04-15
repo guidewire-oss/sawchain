@@ -20,36 +20,34 @@ docs:
 EXAMPLES := $(wildcard examples/*/)
 CLUSTER_NAME := sawchain-test
 
-.PHONY: security-patch
-security-patch:
-	@test -n "$(MOD)" || (echo "Usage: make security-patch MOD=<module> VER=<version>"; exit 1)
-	@test -n "$(VER)" || (echo "Usage: make security-patch MOD=<module> VER=<version>"; exit 1)
-	go get $(MOD)@$(VER)
-	$(MAKE) init test
-	$(MAKE) cluster-up
-	$(MAKE) bump-examples test-examples; result=$$?; $(MAKE) cluster-down; exit $$result
-
-.PHONY: bump-examples
-bump-examples:
-	@test -n "$(MOD)" || (echo "Usage: make bump-examples MOD=<module> VER=<version>"; exit 1)
-	@test -n "$(VER)" || (echo "Usage: make bump-examples MOD=<module> VER=<version>"; exit 1)
+.PHONY: bump-all
+bump-all:
+	@test -n "$(MODS)" || (echo "Usage: make bump-all MODS=\"mod1@v1 mod2@v2 ...\""; exit 1)
+	go get $(MODS)
+	go mod tidy
 	@for dir in $(EXAMPLES); do \
-		echo "==> Bumping $$dir"; \
+		echo "==> Tidying $$dir"; \
 		if [ -f "$$dir/Makefile" ]; then \
-			(cd "$$dir" && go get $(MOD)@$(VER) && $(MAKE) init); \
+			$(MAKE) -C "$$dir" init || exit 1; \
 		else \
-			(cd "$$dir" && go get $(MOD)@$(VER) && go mod tidy); \
+			(cd "$$dir" && go mod tidy) || exit 1; \
 		fi; \
 	done
+
+.PHONY: test-all
+test-all:
+	$(MAKE) test
+	$(MAKE) cluster-up
+	$(MAKE) test-examples; result=$$?; $(MAKE) cluster-down; exit $$result
 
 .PHONY: test-examples
 test-examples:
 	@for dir in $(EXAMPLES); do \
 		echo "==> Testing $$dir"; \
 		if [ -f "$$dir/Makefile" ]; then \
-			$(MAKE) -C "$$dir" test; \
+			$(MAKE) -C "$$dir" test || exit 1; \
 		else \
-			(cd "$$dir" && go test -v ./...); \
+			(cd "$$dir" && go test -v ./...) || exit 1; \
 		fi; \
 	done
 
