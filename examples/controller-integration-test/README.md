@@ -8,7 +8,7 @@ This example demonstrates how Sawchain can be used to test K8s controllers and w
 ## How To Run
 
 ```bash
-make init generate test
+make test
 ```
 
 ## References

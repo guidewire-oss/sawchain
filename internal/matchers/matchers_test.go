@@ -629,7 +629,7 @@ metadata:
 					"[TEMPLATE]",
 					"[BINDINGS]",
 					"[ERROR]",
-					"* status.(conditions[?type == 'Ready']): Invalid value: []interface {}{}: lengths of slices don't match",
+					"* status.(conditions[?type == 'Ready']): Invalid value: []: lengths of slices don't match",
 				},
 			}),
 
@@ -645,7 +645,7 @@ metadata:
 					"[TEMPLATE]",
 					"[BINDINGS]",
 					"[ERROR]",
-					"* status.(conditions[?type == 'Ready']): Invalid value: \"null\": value is null",
+					"* status.(conditions[?type == 'Ready']): Invalid value: null: value is null",
 				},
 			}),
 

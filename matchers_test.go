@@ -642,7 +642,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			expectedFailureLogs: []string{
 				"Expected actual to match Chainsaw template",
 				"[ERROR]",
-				"status.(conditions[?type == 'Ready']): Invalid value: []interface {}{}: lengths of slices don't match",
+				"status.(conditions[?type == 'Ready']): Invalid value: []: lengths of slices don't match",
 			},
 		}),
 
@@ -655,7 +655,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			expectedFailureLogs: []string{
 				"Expected actual to match Chainsaw template",
 				"[ERROR]",
-				"status.(conditions[?type == 'Ready']): Invalid value: \"null\": value is null",
+				"status.(conditions[?type == 'Ready']): Invalid value: null: value is null",
 			},
 		}),
 
