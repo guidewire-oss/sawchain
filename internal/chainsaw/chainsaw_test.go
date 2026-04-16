@@ -1800,7 +1800,6 @@ spec:
 					"strategy": map[string]any{},
 					"template": map[string]any{
 						"metadata": map[string]any{
-							"creationTimestamp": nil,
 							"labels": map[string]any{
 								"app": "example",
 							},

@@ -73,7 +73,7 @@ func BindingsFromMap(m map[string]any) (Bindings, error) {
 
 	b := apis.NewBindings()
 	for k, v := range normalized {
-		b = bindings.RegisterBinding(context.TODO(), b, k, v)
+		b = bindings.RegisterBinding(b, k, v)
 	}
 	return b, nil
 }
