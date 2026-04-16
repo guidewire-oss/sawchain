@@ -16,9 +16,9 @@ Thank you for considering contributing to this project! We welcome contributions
 To get started with local development:
 
 ```bash
-make init    # Install dependencies
-make test    # Run tests
-make debug   # Debug tests (requires Delve and VSCode)
+make init   # Install dependencies
+make test   # Run tests
+make debug  # Debug tests (requires Delve and VSCode)
 ```
 
 ## Test, Lint, Format
@@ -63,7 +63,7 @@ To update one or more dependencies across the root module and all examples:
 make bump-all MODS="mod1@version1 mod2@version2"
 ```
 
-This updates the root module and runs `go mod tidy` on all examples (version changes propagate automatically via Go's minimum version selection).
+This updates the root module and runs `go mod tidy` on all examples (version changes propagate automatically via Go's minimum version selection). For examples with Makefiles, it also runs `init`, `generate`, and `manifests` targets if present.
 
 To verify the changes pass all tests:
 
@@ -76,9 +76,9 @@ This runs `make test` at the root, creates a test cluster, tests all examples, t
 Individual targets are also available:
 
 ```bash
-make test-examples                               # Test all examples (cluster must be running)
-make cluster-up                                  # Create k3d cluster with KubeVela
-make cluster-down                                # Delete k3d cluster
+make test-examples  # Test all examples (cluster must be running)
+make cluster-up     # Create k3d cluster with KubeVela
+make cluster-down   # Delete k3d cluster
 ```
 
 ## Code of Conduct

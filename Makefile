@@ -27,10 +27,11 @@ bump-all:
 	go mod tidy
 	@for dir in $(EXAMPLES); do \
 		echo "==> Tidying $$dir"; \
+		(cd "$$dir" && go mod tidy) || exit 1; \
 		if [ -f "$$dir/Makefile" ]; then \
-			$(MAKE) -C "$$dir" init || exit 1; \
-		else \
-			(cd "$$dir" && go mod tidy) || exit 1; \
+			$(MAKE) -n -C "$$dir" init >/dev/null 2>&1 && { $(MAKE) -C "$$dir" init || exit 1; } || :; \
+			$(MAKE) -n -C "$$dir" generate >/dev/null 2>&1 && { $(MAKE) -C "$$dir" generate || exit 1; } || :; \
+			$(MAKE) -n -C "$$dir" manifests >/dev/null 2>&1 && { $(MAKE) -C "$$dir" manifests || exit 1; } || :; \
 		fi; \
 	done
 
