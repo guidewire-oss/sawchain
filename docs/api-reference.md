@@ -1040,19 +1040,19 @@ HaveStatusCondition returns a Gomega matcher that uses Chainsaw matching to chec
 
 #### Examples
 
-Check if a Deployment has condition Available=True:
+Assert a Deployment has condition Available=True:
 
 ```go
 Expect(deployment).To(sc.HaveStatusCondition("Available", "True"))
 ```
 
-Check if a Pod has condition Ready=True:
+Assert a Pod has condition Ready=True:
 
 ```go
 Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
 ```
 
-Check if multiple resources have condition Ready=True:
+Assert multiple resources have condition Ready=True:
 
 ```go
 for _, obj := range objs {
@@ -1061,7 +1061,7 @@ for _, obj := range objs {
 ```
 
 <a name="Sawchain.List"></a>
-### func \(\*Sawchain\) [List](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L72>)
+### func \(\*Sawchain\) [List](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L76>)
 
 ```go
 func (s *Sawchain) List(ctx context.Context, template string, bindings ...map[string]any) []client.Object
@@ -1087,12 +1087,16 @@ List retrieves all resources matching YAML expectations defined in a template, e
 
 #### Examples
 
-List all ConfigMaps cluster\-wide:
+List all warning Events regarding Pods cluster\-wide:
 
 ```go
 matches := sc.List(ctx, `
-  apiVersion: v1
-  kind: ConfigMap
+  apiVersion: events.k8s.io/v1
+  kind: Event
+  type: Warning
+  regarding:
+    apiVersion: v1
+    kind: Pod
 `)
 ```
 
@@ -1128,7 +1132,7 @@ Eventually(sc.ListFunc(ctx, `
 ```
 
 <a name="Sawchain.ListFunc"></a>
-### func \(\*Sawchain\) [ListFunc](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L120>)
+### func \(\*Sawchain\) [ListFunc](<https://github.com/guidewire-oss/sawchain/blob/main/list.go#L124>)
 
 ```go
 func (s *Sawchain) ListFunc(ctx context.Context, template string, bindings ...map[string]any) func() []client.Object

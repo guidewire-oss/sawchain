@@ -4,6 +4,7 @@ import (
 	"github.com/guidewire-oss/sawchain"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	eventsv1 "k8s.io/api/events/v1"
 	"k8s.io/utils/ptr"
 
 	v1 "example/api/v1"
@@ -132,6 +133,24 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 	})
 
 	AfterAll(func() {
+		// Log relevant events for debugging
+		events := sc.List(ctx, `
+			apiVersion: events.k8s.io/v1
+			kind: Event
+			regarding:
+			  apiVersion: apps.example.com/v1
+			  kind: PodSet
+		`)
+		if len(events) > 0 {
+			GinkgoWriter.Println("PodSet events:")
+			for _, event := range events {
+				typedEvent, ok := event.(*eventsv1.Event)
+				Expect(ok).To(BeTrue(), "failed to cast list result to Event type")
+				GinkgoWriter.Printf("- Type=%q, Reason=%q, Note=%q\n",
+					typedEvent.Type, typedEvent.Reason, typedEvent.Note)
+			}
+		}
+
 		// Delete pods (no garbage collection in test env)
 		for _, podName := range podSet.Status.Pods {
 			sc.DeleteAndWait(ctx, `

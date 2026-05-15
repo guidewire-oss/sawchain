@@ -2,12 +2,15 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -19,7 +22,8 @@ import (
 
 type PodSetReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 func (r *PodSetReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -34,10 +38,25 @@ func (r *PodSetReconciler) Reconcile(ctx context.Context, req reconcile.Request)
 		return reconcile.Result{}, err
 	}
 
+	// Run reconcile logic and record events on success or failure
+	res, err := r.reconcile(ctx, podSet, log)
+	if err != nil {
+		r.Recorder.Event(podSet, corev1.EventTypeWarning, "ReconcileError", err.Error())
+	} else {
+		r.Recorder.Event(podSet, corev1.EventTypeNormal, "ReconcileSuccess", "successfully reconciled PodSet")
+	}
+	return res, err
+}
+
+func (r *PodSetReconciler) reconcile(ctx context.Context, podSet *v1.PodSet, log logr.Logger) (reconcile.Result, error) {
+	if podSet == nil {
+		return reconcile.Result{}, errors.New("fetched PodSet is nil")
+	}
+
 	// List pods owned by this PodSet resource
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList,
-		client.InNamespace(req.Namespace),
+		client.InNamespace(podSet.Namespace),
 		client.MatchingLabels(map[string]string{"app": podSet.Name}),
 	); err != nil {
 		return reconcile.Result{}, err
@@ -121,6 +140,7 @@ func (r *PodSetReconciler) constructPodForPodSet(podName string, podSet *v1.PodS
 }
 
 func (r *PodSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Recorder = mgr.GetEventRecorderFor("podset-controller")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.PodSet{}).
 		Owns(&corev1.Pod{}).
