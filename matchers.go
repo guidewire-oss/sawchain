@@ -112,15 +112,15 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 // # Examples
 //
-// Check if a Deployment has condition Available=True:
+// Assert a Deployment has condition Available=True:
 //
 //	Expect(deployment).To(sc.HaveStatusCondition("Available", "True"))
 //
-// Check if a Pod has condition Ready=True:
+// Assert a Pod has condition Ready=True:
 //
 //	Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
 //
-// Check if multiple resources have condition Ready=True:
+// Assert multiple resources have condition Ready=True:
 //
 //	for _, obj := range objs {
 //	    Expect(obj).To(sc.HaveStatusCondition("Ready", "True"))

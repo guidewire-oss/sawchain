@@ -38,11 +38,15 @@ import (
 //
 // # Examples
 //
-// List all ConfigMaps cluster-wide:
+// List all warning Events regarding Pods cluster-wide:
 //
 //	matches := sc.List(ctx, `
-//	  apiVersion: v1
-//	  kind: ConfigMap
+//	  apiVersion: events.k8s.io/v1
+//	  kind: Event
+//	  type: Warning
+//	  regarding:
+//	    apiVersion: v1
+//	    kind: Pod
 //	`)
 //
 // List ConfigMaps with specific labels and data fields:
