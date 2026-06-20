@@ -2,6 +2,7 @@ package chainsaw_test
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kyverno/chainsaw/pkg/apis"
 	. "github.com/onsi/ginkgo/v2"
@@ -10,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/guidewire-oss/sawchain/internal/chainsaw"
-	"github.com/guidewire-oss/sawchain/internal/options"
 	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
@@ -800,7 +800,7 @@ data:
 				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
 				Expect(err).NotTo(HaveOccurred())
 				// Test Match
-				match, err := chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings, options.VerbosityNormal)
+				match, err := chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings)
 				// Check error
 				if len(tc.expectedErrs) > 0 {
 					Expect(err).To(HaveOccurred())
@@ -1128,8 +1128,7 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
-					"0 of 1 candidates match expectation",
-					"Candidate #1 mismatch errors:",
+					"[ERROR]",
 					"v1/ConfigMap/default/test-config",
 					"data.key1: Invalid value: \"wrong-value\": Expected value: \"expected-value\"",
 					"--- expected",
@@ -1167,8 +1166,7 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
-					"0 of 1 candidates match expectation",
-					"Candidate #1 mismatch errors:",
+					"[ERROR]",
 					"v1/ConfigMap/default/test-config",
 					"data: Required value: field not found in the input object",
 					"--- expected",
@@ -1221,21 +1219,17 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
-					"0 of 2 candidates match expectation",
-					"Candidate #1 mismatch errors:",
+					"0 of 2 attempts matched expectation",
+					"best match: v1/ConfigMap/default/test-config-1 (1 field error)",
+					"[ERROR #1]",
 					"v1/ConfigMap/default/test-config-1",
 					"data.key1: Invalid value: \"wrong-value-1\": Expected value: \"expected-value\"",
 					"--- expected",
 					"+++ actual",
 					"-  key1: expected-value",
 					"+  key1: wrong-value-1",
-					"Candidate #2 mismatch errors:",
-					"v1/ConfigMap/default/test-config-2",
-					"data.key1: Invalid value: \"wrong-value-2\": Expected value: \"expected-value\"",
-					"--- expected",
-					"+++ actual",
-					"-  key1: expected-value",
-					"+  key1: wrong-value-2",
+					"[OTHER ATTEMPTS]",
+					"Attempt #2: v1/ConfigMap/default/test-config-2 (1 field error)",
 				},
 			}),
 			// Empty candidates test
@@ -1257,25 +1251,32 @@ data:
 		)
 	})
 
-	Describe("Match with verbosity", func() {
-		type verbosityTestCase struct {
-			candidates   []unstructured.Unstructured
-			expected     unstructured.Unstructured
-			verbosity    options.Verbosity
-			containsErrs []string
-			excludesErrs []string
-		}
-
-		candidate := unstructured.Unstructured{
+	Describe("Match error", func() {
+		candidate1 := unstructured.Unstructured{
 			Object: map[string]any{
 				"apiVersion": "v1",
 				"kind":       "ConfigMap",
 				"metadata": map[string]any{
-					"name":      "test-config",
+					"name":      "test-config-1",
 					"namespace": "default",
 				},
 				"data": map[string]any{
-					"key1": "actual-value",
+					"key1": "actual-value-1",
+					"key2": "expected-value",
+				},
+			},
+		}
+		candidate2 := unstructured.Unstructured{
+			Object: map[string]any{
+				"apiVersion": "v1",
+				"kind":       "ConfigMap",
+				"metadata": map[string]any{
+					"name":      "test-config-2",
+					"namespace": "default",
+				},
+				"data": map[string]any{
+					"key1": "actual-value-2a",
+					"key2": "actual-value-2b",
 				},
 			},
 		}
@@ -1284,75 +1285,47 @@ data:
 				"apiVersion": "v1",
 				"kind":       "ConfigMap",
 				"metadata": map[string]any{
-					"name":      "test-config",
 					"namespace": "default",
 				},
 				"data": map[string]any{
 					"key1": "expected-value",
+					"key2": "expected-value",
 				},
 			},
 		}
 
-		DescribeTable("error detail by verbosity level",
-			func(tc verbosityTestCase) {
-				bindings, err := chainsaw.BindingsFromMap(map[string]any{})
-				Expect(err).NotTo(HaveOccurred())
-				_, err = chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings, tc.verbosity)
-				Expect(err).To(HaveOccurred())
-				for _, s := range tc.containsErrs {
-					Expect(err.Error()).To(ContainSubstring(s))
-				}
-				for _, s := range tc.excludesErrs {
-					Expect(err.Error()).NotTo(ContainSubstring(s))
-				}
-			},
-			Entry("VerbosityMinimal omits diff", verbosityTestCase{
-				candidates: []unstructured.Unstructured{candidate},
-				expected:   expected,
-				verbosity:  options.VerbosityMinimal,
-				containsErrs: []string{
-					"Candidate #1 mismatch errors:",
-					"v1/ConfigMap/default/test-config",
-					"data.key1: Invalid value:",
-				},
-				excludesErrs: []string{
-					"--- expected",
-					"+++ actual",
-					"-  key1: expected-value",
-					"+  key1: actual-value",
-				},
-			}),
-			Entry("VerbosityNormal includes diff", verbosityTestCase{
-				candidates: []unstructured.Unstructured{candidate},
-				expected:   expected,
-				verbosity:  options.VerbosityNormal,
-				containsErrs: []string{
-					"Candidate #1 mismatch errors:",
-					"v1/ConfigMap/default/test-config",
-					"data.key1: Invalid value:",
-					"--- expected",
-					"+++ actual",
-					"-  key1: expected-value",
-					"+  key1: actual-value",
-				},
-				excludesErrs: nil,
-			}),
-			Entry("VerbosityVerbose includes diff", verbosityTestCase{
-				candidates: []unstructured.Unstructured{candidate},
-				expected:   expected,
-				verbosity:  options.VerbosityVerbose,
-				containsErrs: []string{
-					"Candidate #1 mismatch errors:",
-					"v1/ConfigMap/default/test-config",
-					"data.key1: Invalid value:",
-					"--- expected",
-					"+++ actual",
-					"-  key1: expected-value",
-					"+  key1: actual-value",
-				},
-				excludesErrs: nil,
-			}),
-		)
+		It("returns a *MatchError with vary-actual mode and one attempt per mismatched candidate", func() {
+			bindings, err := chainsaw.BindingsFromMap(map[string]any{})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = chainsaw.Match(context.Background(),
+				[]unstructured.Unstructured{candidate1, candidate2}, expected, bindings)
+			Expect(err).To(HaveOccurred())
+
+			var me *chainsaw.MatchError
+			Expect(errors.As(err, &me)).To(BeTrue(), "error should be a *MatchError")
+			Expect(me.Mode).To(Equal(chainsaw.MatchModeVaryActual))
+			Expect(me.Attempts).To(HaveLen(2))
+			for _, a := range me.Attempts {
+				Expect(a.Expected).To(Equal(expected))
+				Expect(a.FieldErrs).NotTo(BeEmpty())
+			}
+
+			// candidate1 has 1 field error (key1); candidate2 has 2 (key1, key2),
+			// so the best match is candidate1.
+			best := me.BestMatch()
+			Expect(best.Actual).To(Equal(candidate1))
+			Expect(best.FieldErrs).To(HaveLen(1))
+		})
+
+		It("returns no error when the candidate list is empty", func() {
+			bindings, err := chainsaw.BindingsFromMap(map[string]any{})
+			Expect(err).NotTo(HaveOccurred())
+			match, err := chainsaw.Match(context.Background(),
+				[]unstructured.Unstructured{}, expected, bindings)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(match).To(Equal(unstructured.Unstructured{}))
+		})
 	})
 
 	Describe("MatchAll", func() {
@@ -1997,7 +1970,7 @@ spec:
 
 				It("should check resources correctly", func() {
 					// Test Check
-					match, err := chainsaw.Check(k8sClient, ctx, tc.templateContent, bindings, options.VerbosityNormal)
+					match, err := chainsaw.Check(k8sClient, ctx, tc.templateContent, bindings)
 
 					// Check error
 					if len(tc.expectedErrs) > 0 {
@@ -2220,8 +2193,7 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
-					"0 of 1 candidates match expectation",
-					"Candidate #1 mismatch errors:",
+					"[ERROR]",
 					"v1/ConfigMap/default/test-check-nomatch",
 					"data.key1: Invalid value: \"actual-value\": Expected value: \"expected-value\"",
 					"--- expected",
@@ -2433,8 +2405,7 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs: []string{
-					"0 of 1 candidates match expectation",
-					"Candidate #1 mismatch errors:",
+					"[ERROR]",
 					"v1/ConfigMap/default/test-check-length-fail",
 					"data.(length(value) > `1` && length(value) < `10`): Invalid value: false: Expected value: true",
 				},
@@ -2537,15 +2508,7 @@ metadata:
 		)
 	})
 
-	Describe("Check with verbosity", func() {
-		type verbosityTestCase struct {
-			resourcesYaml string
-			template      string
-			verbosity     options.Verbosity
-			containsErrs  []string
-			excludesErrs  []string
-		}
-
+	Describe("Check error", func() {
 		var createdResources []unstructured.Unstructured
 
 		BeforeEach(func() {
@@ -2567,123 +2530,43 @@ metadata:
 			}
 		})
 
-		DescribeTable("error detail by verbosity level",
-			func(tc verbosityTestCase) {
-				// Create resources if provided
-				if tc.resourcesYaml != "" {
-					resources, err := chainsaw.RenderTemplate(ctx, tc.resourcesYaml, nil)
-					Expect(err).NotTo(HaveOccurred(), "Failed to parse test resources")
-					for _, r := range resources {
-						obj := r.DeepCopy() // Avoid modifying original
-						Expect(k8sClient.Create(ctx, obj)).To(Succeed(), "Failed to create test resource")
-						createdResources = append(createdResources, *obj)
-					}
-				}
-				bindings, err := chainsaw.BindingsFromMap(map[string]any{})
-				Expect(err).NotTo(HaveOccurred())
-				_, err = chainsaw.Check(k8sClient, ctx, tc.template, bindings, tc.verbosity)
-				Expect(err).To(HaveOccurred())
-				for _, s := range tc.containsErrs {
-					Expect(err.Error()).To(ContainSubstring(s))
-				}
-				for _, s := range tc.excludesErrs {
-					Expect(err.Error()).NotTo(ContainSubstring(s))
-				}
-			},
-			Entry("VerbosityMinimal omits diff", verbosityTestCase{
-				resourcesYaml: `
+		It("returns a *MatchError with vary-actual mode on mismatch", func() {
+			resourcesYaml := `
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-verbosity-check-cm-min
+  name: test-check-error
   namespace: default
 data:
   key1: actual-value
-`,
-				template: `
+`
+			template := `
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-verbosity-check-cm-min
+  name: test-check-error
   namespace: default
 data:
   key1: expected-value
-`,
-				verbosity: options.VerbosityMinimal,
-				containsErrs: []string{
-					"Candidate #1 mismatch errors:",
-					"v1/ConfigMap/default/test-verbosity-check-cm-min",
-					"data.key1: Invalid value:",
-				},
-				excludesErrs: []string{
-					"--- expected",
-					"+++ actual",
-					"-  key1: expected-value",
-					"+  key1: actual-value",
-				},
-			}),
-			Entry("VerbosityNormal includes diff", verbosityTestCase{
-				resourcesYaml: `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-verbosity-check-cm
-  namespace: default
-data:
-  key1: actual-value
-`,
-				template: `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-verbosity-check-cm
-  namespace: default
-data:
-  key1: expected-value
-`,
-				verbosity: options.VerbosityNormal,
-				containsErrs: []string{
-					"Candidate #1 mismatch errors:",
-					"v1/ConfigMap/default/test-verbosity-check-cm",
-					"data.key1: Invalid value:",
-					"--- expected",
-					"+++ actual",
-					"-  key1: expected-value",
-					"+  key1: actual-value",
-				},
-				excludesErrs: nil,
-			}),
-			Entry("VerbosityVerbose includes diff", verbosityTestCase{
-				resourcesYaml: `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-verbosity-check-cm-verbose
-  namespace: default
-data:
-  key1: actual-value
-`,
-				template: `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-verbosity-check-cm-verbose
-  namespace: default
-data:
-  key1: expected-value
-`,
-				verbosity: options.VerbosityVerbose,
-				containsErrs: []string{
-					"Candidate #1 mismatch errors:",
-					"v1/ConfigMap/default/test-verbosity-check-cm-verbose",
-					"data.key1: Invalid value:",
-					"--- expected",
-					"+++ actual",
-					"-  key1: expected-value",
-					"+  key1: actual-value",
-				},
-				excludesErrs: nil,
-			}),
-		)
+`
+			resources, err := chainsaw.RenderTemplate(ctx, resourcesYaml, nil)
+			Expect(err).NotTo(HaveOccurred(), "Failed to parse test resources")
+			for _, r := range resources {
+				obj := r.DeepCopy() // Avoid modifying original
+				Expect(k8sClient.Create(ctx, obj)).To(Succeed(), "Failed to create test resource")
+				createdResources = append(createdResources, *obj)
+			}
+
+			bindings, err := chainsaw.BindingsFromMap(map[string]any{})
+			Expect(err).NotTo(HaveOccurred())
+			_, err = chainsaw.Check(k8sClient, ctx, template, bindings)
+			Expect(err).To(HaveOccurred())
+
+			var me *chainsaw.MatchError
+			Expect(errors.As(err, &me)).To(BeTrue(), "error should be a *MatchError")
+			Expect(me.Mode).To(Equal(chainsaw.MatchModeVaryActual))
+			Expect(me.Attempts).To(HaveLen(1))
+			Expect(me.Attempts[0].FieldErrs).NotTo(BeEmpty())
+		})
 	})
 })

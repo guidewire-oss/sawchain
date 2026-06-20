@@ -659,8 +659,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedReturnErrs: []string{
-				"0 of 1 candidates match expectation",
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-cm",
 				"data.key: Invalid value: \"value\": Expected value: \"wrong-value\"",
 				"--- expected",
@@ -695,8 +694,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedReturnErrs: []string{
-				"0 of 1 candidates match expectation",
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-cm",
 				"data.(to_number(count) > `5`): Invalid value: false: Expected value: true",
 				"--- expected",
@@ -1084,37 +1082,41 @@ var _ = Describe("Check and CheckFunc verbosity", func() {
 				Expect(err.Error()).NotTo(ContainSubstring(s))
 			}
 		},
-		Entry("VerbosityMinimal omits diff in return error", verbosityTestCase{
+		Entry("VerbosityMinimal omits diff and verbose context in return error", verbosityTestCase{
 			verbosity: sawchain.VerbosityMinimal,
 			containsErrs: []string{
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-verbosity-check-cm",
 				"data.key1: Invalid value:",
 			},
 			excludesErrs: []string{
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
+				"[TEMPLATE]", "[BINDINGS]",
 			},
 		}),
-		Entry("VerbosityNormal includes diff in return error", verbosityTestCase{
+		Entry("VerbosityNormal includes diff but omits verbose context in return error", verbosityTestCase{
 			verbosity: sawchain.VerbosityNormal,
 			containsErrs: []string{
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-verbosity-check-cm",
 				"data.key1: Invalid value:",
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
 			},
-			excludesErrs: nil,
+			excludesErrs: []string{
+				"[TEMPLATE]", "[BINDINGS]",
+			},
 		}),
-		Entry("VerbosityVerbose includes diff in return error", verbosityTestCase{
+		Entry("VerbosityVerbose includes diff, full YAML, template, and bindings in return error", verbosityTestCase{
 			verbosity: sawchain.VerbosityVerbose,
 			containsErrs: []string{
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-verbosity-check-cm",
 				"data.key1: Invalid value:",
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
+				"[ACTUAL]", "[EXPECTED]", "[TEMPLATE]", "[BINDINGS]",
 			},
 			excludesErrs: nil,
 		}),

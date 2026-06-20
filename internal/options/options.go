@@ -20,9 +20,15 @@ const (
 type Verbosity int
 
 const (
-	VerbosityMinimal Verbosity = 1  // Field errors only, no diff, no info logs.
-	VerbosityNormal  Verbosity = 10 // Field errors + YAML diff, no info logs (default).
-	VerbosityVerbose Verbosity = 20 // Field errors + YAML diff + info logs.
+	// VerbosityMinimal outputs field errors only (no YAML diff), with best-match
+	// filtering for multi-attempt failures, and no info logs.
+	VerbosityMinimal Verbosity = 1
+	// VerbosityNormal outputs field errors and YAML diffs, with best-match filtering
+	// for multi-attempt failures, and no info logs (default).
+	VerbosityNormal Verbosity = 10
+	// VerbosityVerbose outputs field errors and YAML diffs for every attempt, plus the
+	// full actual/expected YAML, template content, and bindings, and info logs.
+	VerbosityVerbose Verbosity = 20
 )
 
 func (v Verbosity) String() string {

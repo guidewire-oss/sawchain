@@ -20,10 +20,15 @@ type Verbosity = options.Verbosity
 
 const (
 	// VerbosityMinimal outputs field-level errors only, without YAML diffs or info logs.
+	// For multi-candidate/multi-document failures, only the best match is detailed.
 	VerbosityMinimal = options.VerbosityMinimal
-	// VerbosityNormal outputs field-level errors with YAML diffs. This is the default.
+	// VerbosityNormal outputs field-level errors with YAML diffs, but no info logs. For
+	// multi-candidate/multi-document failures, the best match is detailed and the rest
+	// are summarized. This is the default.
 	VerbosityNormal = options.VerbosityNormal
-	// VerbosityVerbose outputs field-level errors with YAML diffs and info logs.
+	// VerbosityVerbose outputs field-level errors with YAML diffs for every candidate or
+	// document, plus the full actual/expected YAML, template content, bindings, and info
+	// logs.
 	VerbosityVerbose = options.VerbosityVerbose
 )
 

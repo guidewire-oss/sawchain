@@ -2,6 +2,8 @@ package sawchain
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -129,8 +131,12 @@ func (s *Sawchain) Check(ctx context.Context, args ...any) error {
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 	matches := make([]unstructured.Unstructured, len(documents))
 	for i, document := range documents {
-		match, err := chainsaw.Check(s.c, ctx, document, bindings, s.opts.Verbosity)
+		match, err := chainsaw.Check(s.c, ctx, document, bindings)
 		if err != nil {
+			var me *chainsaw.MatchError
+			if errors.As(err, &me) {
+				return fmt.Errorf("%s", me.Format(s.opts.Verbosity, document, bindings))
+			}
 			return err
 		}
 		matches[i] = match
@@ -185,8 +191,12 @@ func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error {
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 		matches := make([]unstructured.Unstructured, len(documents))
 		for i, document := range documents {
-			match, err := chainsaw.Check(s.c, ctx, document, bindings, s.opts.Verbosity)
+			match, err := chainsaw.Check(s.c, ctx, document, bindings)
 			if err != nil {
+				var me *chainsaw.MatchError
+				if errors.As(err, &me) {
+					return fmt.Errorf("%s", me.Format(s.opts.Verbosity, document, bindings))
+				}
 				return err
 			}
 			matches[i] = match

@@ -43,16 +43,21 @@ import "github.com/guidewire-oss/sawchain"
 ```go
 const (
     // VerbosityMinimal outputs field-level errors only, without YAML diffs or info logs.
+    // For multi-candidate/multi-document failures, only the best match is detailed.
     VerbosityMinimal = options.VerbosityMinimal
-    // VerbosityNormal outputs field-level errors with YAML diffs. This is the default.
+    // VerbosityNormal outputs field-level errors with YAML diffs, but no info logs. For
+    // multi-candidate/multi-document failures, the best match is detailed and the rest
+    // are summarized. This is the default.
     VerbosityNormal = options.VerbosityNormal
-    // VerbosityVerbose outputs field-level errors with YAML diffs and info logs.
+    // VerbosityVerbose outputs field-level errors with YAML diffs for every candidate or
+    // document, plus the full actual/expected YAML, template content, bindings, and info
+    // logs.
     VerbosityVerbose = options.VerbosityVerbose
 )
 ```
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L74-L79>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L79-L84>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -67,7 +72,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L122>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L127>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -116,7 +121,7 @@ sc := sawchain.New(t, k8sClient, "10s", "2s")
 ```
 
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L192>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L197>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -172,7 +177,7 @@ sc := sawchain.NewWithGomega(t, g, k8sClient, "10s", "2s")
 ```
 
 <a name="Sawchain.Check"></a>
-### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L105>)
+### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L107>)
 
 ```go
 func (s *Sawchain) Check(ctx context.Context, args ...any) error
@@ -266,7 +271,7 @@ err := sc.Check(ctx, []client.Object{configMap, secret}, `
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 
 <a name="Sawchain.CheckFunc"></a>
-### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L158>)
+### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L164>)
 
 ```go
 func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error

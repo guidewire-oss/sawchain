@@ -328,12 +328,11 @@ data:
 				},
 				shouldMatch: false,
 				expectedMatchErrs: []string{
-					"[ACTUAL]",
-					"[TEMPLATE]",
-					"[BINDINGS]",
-					"<string>\"expected-value\"",
 					"[ERROR]",
+					"v1/ConfigMap/default/test-config",
 					"* data.key1: Invalid value: \"wrong-value\": Expected value: \"expected-value\"",
+					"--- expected",
+					"+++ actual",
 				},
 			}),
 
@@ -353,9 +352,6 @@ data:
 				bindings:    map[string]any{},
 				shouldMatch: false,
 				expectedMatchErrs: []string{
-					"[ACTUAL]",
-					"[TEMPLATE]",
-					"[BINDINGS]",
 					"[ERROR]",
 					"* data.key1: Required value: field not found in the input object",
 				},
@@ -385,15 +381,13 @@ data:
 				bindings:    map[string]any{},
 				shouldMatch: false,
 				expectedMatchErrs: []string{
-					"[ACTUAL]",
-					"[TEMPLATE]",
-					"[BINDINGS]",
-					"[ERROR - DOCUMENT #1]",
+					"0 of 2 attempts matched expectation",
+					"best match: v1/ConfigMap/default/cm1 (2 field errors)",
+					"[ERROR #1]",
 					"* data.key: Invalid value: \"other\": Expected value: \"val1\"",
 					"* metadata.name: Invalid value: \"cm-other\": Expected value: \"cm1\"",
-					"[ERROR - DOCUMENT #2]",
-					"* data.key: Invalid value: \"other\": Expected value: \"val2\"",
-					"* metadata.name: Invalid value: \"cm-other\": Expected value: \"cm2\"",
+					"[OTHER ATTEMPTS]",
+					"Attempt #2: v1/ConfigMap/default/cm2 (2 field errors)",
 				},
 			}),
 
@@ -526,7 +520,7 @@ data:
 					Expect(msg).NotTo(ContainSubstring(s))
 				}
 			},
-			Entry("VerbosityMinimal omits diff in failure message", verbosityTestCase{
+			Entry("VerbosityMinimal omits diff and verbose context in failure message", verbosityTestCase{
 				verbosity: options.VerbosityMinimal,
 				containsErrs: []string{
 					"data.key1: Invalid value:",
@@ -536,9 +530,11 @@ data:
 					"+++ actual",
 					"-  key1: expected-value",
 					"+  key1: actual-value",
+					"[TEMPLATE]",
+					"[BINDINGS]",
 				},
 			}),
-			Entry("VerbosityNormal includes diff in failure message", verbosityTestCase{
+			Entry("VerbosityNormal includes diff but omits verbose context in failure message", verbosityTestCase{
 				verbosity: options.VerbosityNormal,
 				containsErrs: []string{
 					"data.key1: Invalid value:",
@@ -547,9 +543,12 @@ data:
 					"-  key1: expected-value",
 					"+  key1: actual-value",
 				},
-				excludesErrs: nil,
+				excludesErrs: []string{
+					"[TEMPLATE]",
+					"[BINDINGS]",
+				},
 			}),
-			Entry("VerbosityVerbose includes diff in failure message", verbosityTestCase{
+			Entry("VerbosityVerbose includes diff, full YAML, template, and bindings in failure message", verbosityTestCase{
 				verbosity: options.VerbosityVerbose,
 				containsErrs: []string{
 					"data.key1: Invalid value:",
@@ -557,6 +556,10 @@ data:
 					"+++ actual",
 					"-  key1: expected-value",
 					"+  key1: actual-value",
+					"[ACTUAL]",
+					"[EXPECTED]",
+					"[TEMPLATE]",
+					"[BINDINGS]",
 				},
 				excludesErrs: nil,
 			}),
@@ -679,9 +682,6 @@ data:
 				expectedStatus: "True",
 				shouldMatch:    false,
 				expectedMatchErrs: []string{
-					"[ACTUAL]",
-					"[TEMPLATE]",
-					"[BINDINGS]",
 					"[ERROR]",
 					"* status.(conditions[?type == 'Ready'])[0].status: Invalid value: \"False\": Expected value: \"True\"",
 				},
@@ -699,9 +699,6 @@ data:
 				expectedStatus: "True",
 				shouldMatch:    false,
 				expectedMatchErrs: []string{
-					"[ACTUAL]",
-					"[TEMPLATE]",
-					"[BINDINGS]",
 					"[ERROR]",
 					"* status.(conditions[?type == 'Ready']): Invalid value: []: lengths of slices don't match",
 				},
@@ -715,9 +712,6 @@ data:
 				expectedStatus: "True",
 				shouldMatch:    false,
 				expectedMatchErrs: []string{
-					"[ACTUAL]",
-					"[TEMPLATE]",
-					"[BINDINGS]",
 					"[ERROR]",
 					"* status.(conditions[?type == 'Ready']): Invalid value: null: value is null",
 				},
@@ -737,9 +731,6 @@ data:
 				expectedStatus: "True",
 				shouldMatch:    false,
 				expectedMatchErrs: []string{
-					"[ACTUAL]",
-					"[TEMPLATE]",
-					"[BINDINGS]",
 					"[ERROR]",
 					"* status: Required value: field not found in the input object",
 				},

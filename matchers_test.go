@@ -344,10 +344,12 @@ var _ = Describe("MatchYAML", func() {
 			`,
 			expectedFailureLogs: []string{
 				"Expected actual to match at least one document in Chainsaw template",
-				"[ERROR - DOCUMENT #1]",
+				"0 of 2 attempts matched expectation",
+				"best match: v1/ConfigMap/default/cm1",
+				"[ERROR #1]",
 				"metadata.name: Invalid value: \"cm-other\": Expected value: \"cm1\"",
-				"[ERROR - DOCUMENT #2]",
-				"metadata.name: Invalid value: \"cm-other\": Expected value: \"cm2\"",
+				"[OTHER ATTEMPTS]",
+				"Attempt #2: v1/ConfigMap/default/cm2 (2 field errors)",
 			},
 		}),
 
@@ -552,7 +554,7 @@ var _ = Describe("MatchYAML verbosity", func() {
 				Expect(t.ErrorLogs).NotTo(ContainElement(ContainSubstring(s)))
 			}
 		},
-		Entry("VerbosityMinimal omits diff in failure message", verbosityTestCase{
+		Entry("VerbosityMinimal omits diff and verbose context in failure message", verbosityTestCase{
 			verbosity: sawchain.VerbosityMinimal,
 			containsErrs: []string{
 				"data.key1: Invalid value:",
@@ -560,23 +562,27 @@ var _ = Describe("MatchYAML verbosity", func() {
 			excludesErrs: []string{
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
+				"[TEMPLATE]", "[BINDINGS]",
 			},
 		}),
-		Entry("VerbosityNormal includes diff in failure message", verbosityTestCase{
+		Entry("VerbosityNormal includes diff but omits verbose context in failure message", verbosityTestCase{
 			verbosity: sawchain.VerbosityNormal,
 			containsErrs: []string{
 				"data.key1: Invalid value:",
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
 			},
-			excludesErrs: nil,
+			excludesErrs: []string{
+				"[TEMPLATE]", "[BINDINGS]",
+			},
 		}),
-		Entry("VerbosityVerbose includes diff in failure message", verbosityTestCase{
+		Entry("VerbosityVerbose includes diff, full YAML, template, and bindings in failure message", verbosityTestCase{
 			verbosity: sawchain.VerbosityVerbose,
 			containsErrs: []string{
 				"data.key1: Invalid value:",
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
+				"[ACTUAL]", "[EXPECTED]", "[TEMPLATE]", "[BINDINGS]",
 			},
 			excludesErrs: nil,
 		}),

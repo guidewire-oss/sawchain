@@ -10,7 +10,6 @@ import (
 	"github.com/onsi/gomega/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 
 	"github.com/guidewire-oss/sawchain/internal/chainsaw"
 	"github.com/guidewire-oss/sawchain/internal/options"
@@ -31,8 +30,8 @@ type chainsawMatcher struct {
 	bindings chainsaw.Bindings
 	// Verbosity level for error output.
 	verbosity options.Verbosity
-	// Current match errors (one per document).
-	matchErrs []error
+	// Current match error (attempts flattened across all documents).
+	matchErr *chainsaw.MatchError
 }
 
 func (m *chainsawMatcher) Match(actual any) (bool, error) {
@@ -64,75 +63,63 @@ func (m *chainsawMatcher) Match(actual any) (bool, error) {
 		return false, errors.New("template must contain at least one resource")
 	}
 
-	// Try matching against each expectation document
-	m.matchErrs = nil
+	// Try matching against each expectation document, collecting one attempt per document
+	m.matchErr = nil
+	var attempts []chainsaw.MatchAttempt
 	for _, expected := range expectedObjs {
 		_, matchErr := chainsaw.Match(
-			context.TODO(), []unstructured.Unstructured{candidate}, expected, m.bindings, m.verbosity,
+			context.TODO(), []unstructured.Unstructured{candidate}, expected, m.bindings,
 		)
 		if matchErr == nil {
 			// Match found
 			return true, nil
 		}
-		m.matchErrs = append(m.matchErrs, matchErr)
+		var me *chainsaw.MatchError
+		if !errors.As(matchErr, &me) {
+			// Genuine evaluation error (e.g. invalid assertion expression)
+			return false, matchErr
+		}
+		attempts = append(attempts, me.Attempts...)
 	}
+	m.matchErr = &chainsaw.MatchError{Attempts: attempts, Mode: chainsaw.MatchModeVaryExpected}
 	return false, nil
 }
 
-func wrapYaml(s string) string {
-	return fmt.Sprintf("```yaml\n%s\n```", strings.TrimSpace(s))
-}
-
 func (m *chainsawMatcher) String() string {
-	return fmt.Sprintf("\n[TEMPLATE]\n%s\n\n[BINDINGS]\n%s\n",
-		wrapYaml(m.templateContent), format.Object(m.bindings, 0))
+	return fmt.Sprintf("\n[TEMPLATE]\n```yaml\n%s\n```\n\n[BINDINGS]\n%s\n",
+		strings.TrimSpace(m.templateContent), format.Object(m.bindings, 0))
 }
 
-func (m *chainsawMatcher) failureMessageFormat(actual any, negated bool) string {
-	actualYamlBytes, _ := yaml.Marshal(actual)
-	actualYamlString := wrapYaml(string(actualYamlBytes))
+// failureMessage renders the matcher failure message, delegating detail to
+// MatchError.Format and prepending a negation-aware header line.
+func (m *chainsawMatcher) failureMessage(negated bool) string {
+	multi := m.matchErr != nil && len(m.matchErr.Attempts) > 1
 
 	var base string
-	if len(m.matchErrs) > 1 {
-		if negated {
-			base = "Expected actual not to match any documents in Chainsaw template"
-		} else {
-			base = "Expected actual to match at least one document in Chainsaw template"
-		}
-	} else {
-		if negated {
-			base = "Expected actual not to match Chainsaw template"
-		} else {
-			base = "Expected actual to match Chainsaw template"
-		}
+	switch {
+	case negated && multi:
+		base = "Expected actual not to match any documents in Chainsaw template"
+	case negated:
+		base = "Expected actual not to match Chainsaw template"
+	case multi:
+		base = "Expected actual to match at least one document in Chainsaw template"
+	default:
+		base = "Expected actual to match Chainsaw template"
 	}
 
-	if len(m.matchErrs) == 0 {
+	if m.matchErr == nil || len(m.matchErr.Attempts) == 0 {
 		// Safety: should not happen, but handle gracefully
-		return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n[ERROR]\nno match errors recorded\n",
-			base, actualYamlString, m.String())
-	} else if len(m.matchErrs) == 1 {
-		// Single document case: include single [ERROR] section
-		return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n[ERROR]\n%s\n",
-			base, actualYamlString, m.String(), strings.TrimSpace(m.matchErrs[0].Error()))
-	} else {
-		// Multi-document case: include multiple [ERROR - DOCUMENT #N] sections
-		var errorSections []string
-		for i, err := range m.matchErrs {
-			errorSections = append(errorSections,
-				fmt.Sprintf("[ERROR - DOCUMENT #%d]\n%s", i+1, strings.TrimSpace(err.Error())))
-		}
-		return fmt.Sprintf("%s\n\n[ACTUAL]\n%s\n%s\n%s\n",
-			base, actualYamlString, m.String(), strings.Join(errorSections, "\n\n"))
+		return base + "\n\n(no match details recorded)"
 	}
+	return base + "\n\n" + m.matchErr.Format(m.verbosity, m.templateContent, m.bindings)
 }
 
 func (m *chainsawMatcher) FailureMessage(actual any) string {
-	return m.failureMessageFormat(actual, false)
+	return m.failureMessage(false)
 }
 
 func (m *chainsawMatcher) NegatedFailureMessage(actual any) string {
-	return m.failureMessageFormat(actual, true)
+	return m.failureMessage(true)
 }
 
 // NewChainsawMatcher creates a new chainsawMatcher with static template content.
