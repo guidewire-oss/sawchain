@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/options"
 	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
@@ -799,7 +800,7 @@ data:
 				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
 				Expect(err).NotTo(HaveOccurred())
 				// Test Match
-				match, err := chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings)
+				match, err := chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings, options.VerbosityNormal)
 				// Check error
 				if len(tc.expectedErrs) > 0 {
 					Expect(err).To(HaveOccurred())
@@ -1252,6 +1253,104 @@ data:
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs:  nil,
+			}),
+		)
+	})
+
+	Describe("Match with verbosity", func() {
+		type verbosityTestCase struct {
+			candidates   []unstructured.Unstructured
+			expected     unstructured.Unstructured
+			verbosity    options.Verbosity
+			containsErrs []string
+			excludesErrs []string
+		}
+
+		candidate := unstructured.Unstructured{
+			Object: map[string]any{
+				"apiVersion": "v1",
+				"kind":       "ConfigMap",
+				"metadata": map[string]any{
+					"name":      "test-config",
+					"namespace": "default",
+				},
+				"data": map[string]any{
+					"key1": "actual-value",
+				},
+			},
+		}
+		expected := unstructured.Unstructured{
+			Object: map[string]any{
+				"apiVersion": "v1",
+				"kind":       "ConfigMap",
+				"metadata": map[string]any{
+					"name":      "test-config",
+					"namespace": "default",
+				},
+				"data": map[string]any{
+					"key1": "expected-value",
+				},
+			},
+		}
+
+		DescribeTable("error detail by verbosity level",
+			func(tc verbosityTestCase) {
+				bindings, err := chainsaw.BindingsFromMap(map[string]any{})
+				Expect(err).NotTo(HaveOccurred())
+				_, err = chainsaw.Match(context.Background(), tc.candidates, tc.expected, bindings, tc.verbosity)
+				Expect(err).To(HaveOccurred())
+				for _, s := range tc.containsErrs {
+					Expect(err.Error()).To(ContainSubstring(s))
+				}
+				for _, s := range tc.excludesErrs {
+					Expect(err.Error()).NotTo(ContainSubstring(s))
+				}
+			},
+			Entry("VerbosityMinimal omits diff", verbosityTestCase{
+				candidates: []unstructured.Unstructured{candidate},
+				expected:   expected,
+				verbosity:  options.VerbosityMinimal,
+				containsErrs: []string{
+					"Candidate #1 mismatch errors:",
+					"v1/ConfigMap/default/test-config",
+					"data.key1: Invalid value:",
+				},
+				excludesErrs: []string{
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+			}),
+			Entry("VerbosityNormal includes diff", verbosityTestCase{
+				candidates: []unstructured.Unstructured{candidate},
+				expected:   expected,
+				verbosity:  options.VerbosityNormal,
+				containsErrs: []string{
+					"Candidate #1 mismatch errors:",
+					"v1/ConfigMap/default/test-config",
+					"data.key1: Invalid value:",
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+				excludesErrs: nil,
+			}),
+			Entry("VerbosityVerbose includes diff", verbosityTestCase{
+				candidates: []unstructured.Unstructured{candidate},
+				expected:   expected,
+				verbosity:  options.VerbosityVerbose,
+				containsErrs: []string{
+					"Candidate #1 mismatch errors:",
+					"v1/ConfigMap/default/test-config",
+					"data.key1: Invalid value:",
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+				excludesErrs: nil,
 			}),
 		)
 	})
@@ -1886,7 +1985,6 @@ spec:
 					for _, resource := range createdResources {
 						Expect(client.IgnoreNotFound(k8sClient.Delete(ctx, &resource))).
 							To(Succeed(), "Failed to delete test resource")
-
 					}
 
 					// Wait for resources to be fully deleted
@@ -1899,7 +1997,7 @@ spec:
 
 				It("should check resources correctly", func() {
 					// Test Check
-					match, err := chainsaw.Check(k8sClient, ctx, tc.templateContent, bindings)
+					match, err := chainsaw.Check(k8sClient, ctx, tc.templateContent, bindings, options.VerbosityNormal)
 
 					// Check error
 					if len(tc.expectedErrs) > 0 {
@@ -2435,6 +2533,156 @@ metadata:
 						},
 					},
 				},
+			}),
+		)
+	})
+
+	Describe("Check with verbosity", func() {
+		type verbosityTestCase struct {
+			resourcesYaml string
+			template      string
+			verbosity     options.Verbosity
+			containsErrs  []string
+			excludesErrs  []string
+		}
+
+		var createdResources []unstructured.Unstructured
+
+		BeforeEach(func() {
+			createdResources = nil
+		})
+
+		AfterEach(func() {
+			// Delete resources
+			for _, resource := range createdResources {
+				Expect(client.IgnoreNotFound(k8sClient.Delete(ctx, &resource))).
+					To(Succeed(), "Failed to delete test resource")
+			}
+
+			// Wait for resources to be fully deleted
+			for _, resource := range createdResources {
+				Eventually(func() error {
+					return k8sClient.Get(ctx, client.ObjectKeyFromObject(&resource), &resource)
+				}).ShouldNot(Succeed(), "Timed out waiting for resource to be deleted")
+			}
+		})
+
+		DescribeTable("error detail by verbosity level",
+			func(tc verbosityTestCase) {
+				// Create resources if provided
+				if tc.resourcesYaml != "" {
+					resources, err := chainsaw.RenderTemplate(ctx, tc.resourcesYaml, nil)
+					Expect(err).NotTo(HaveOccurred(), "Failed to parse test resources")
+					for _, r := range resources {
+						obj := r.DeepCopy() // Avoid modifying original
+						Expect(k8sClient.Create(ctx, obj)).To(Succeed(), "Failed to create test resource")
+						createdResources = append(createdResources, *obj)
+					}
+				}
+				bindings, err := chainsaw.BindingsFromMap(map[string]any{})
+				Expect(err).NotTo(HaveOccurred())
+				_, err = chainsaw.Check(k8sClient, ctx, tc.template, bindings, tc.verbosity)
+				Expect(err).To(HaveOccurred())
+				for _, s := range tc.containsErrs {
+					Expect(err.Error()).To(ContainSubstring(s))
+				}
+				for _, s := range tc.excludesErrs {
+					Expect(err.Error()).NotTo(ContainSubstring(s))
+				}
+			},
+			Entry("VerbosityMinimal omits diff", verbosityTestCase{
+				resourcesYaml: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-verbosity-check-cm-min
+  namespace: default
+data:
+  key1: actual-value
+`,
+				template: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-verbosity-check-cm-min
+  namespace: default
+data:
+  key1: expected-value
+`,
+				verbosity: options.VerbosityMinimal,
+				containsErrs: []string{
+					"Candidate #1 mismatch errors:",
+					"v1/ConfigMap/default/test-verbosity-check-cm-min",
+					"data.key1: Invalid value:",
+				},
+				excludesErrs: []string{
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+			}),
+			Entry("VerbosityNormal includes diff", verbosityTestCase{
+				resourcesYaml: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-verbosity-check-cm
+  namespace: default
+data:
+  key1: actual-value
+`,
+				template: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-verbosity-check-cm
+  namespace: default
+data:
+  key1: expected-value
+`,
+				verbosity: options.VerbosityNormal,
+				containsErrs: []string{
+					"Candidate #1 mismatch errors:",
+					"v1/ConfigMap/default/test-verbosity-check-cm",
+					"data.key1: Invalid value:",
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+				excludesErrs: nil,
+			}),
+			Entry("VerbosityVerbose includes diff", verbosityTestCase{
+				resourcesYaml: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-verbosity-check-cm-verbose
+  namespace: default
+data:
+  key1: actual-value
+`,
+				template: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-verbosity-check-cm-verbose
+  namespace: default
+data:
+  key1: expected-value
+`,
+				verbosity: options.VerbosityVerbose,
+				containsErrs: []string{
+					"Candidate #1 mismatch errors:",
+					"v1/ConfigMap/default/test-verbosity-check-cm-verbose",
+					"data.key1: Invalid value:",
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+				excludesErrs: nil,
 			}),
 		)
 	})

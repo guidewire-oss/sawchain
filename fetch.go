@@ -83,7 +83,7 @@ func (s *Sawchain) FetchSingle(ctx context.Context, args ...any) client.Object {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, false, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, false, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -200,7 +200,7 @@ func (s *Sawchain) FetchMultiple(ctx context.Context, args ...any) []client.Obje
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, false, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -259,7 +259,7 @@ func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...any) func() clie
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, false, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, false, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -274,6 +274,8 @@ func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...any) func() clie
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 		return func() client.Object {
+			s.t.Helper()
+
 			// Get resource
 			s.g.Expect(s.c.Get(ctx, client.ObjectKeyFromObject(&unstructuredObj), &unstructuredObj)).To(gomega.Succeed(), errFailedGetWithTemplate)
 			// Save/return object
@@ -286,6 +288,8 @@ func (s *Sawchain) FetchSingleFunc(ctx context.Context, args ...any) func() clie
 		}
 	} else {
 		return func() client.Object {
+			s.t.Helper()
+
 			// Get resource
 			s.g.Expect(s.c.Get(ctx, client.ObjectKeyFromObject(opts.Object), opts.Object)).To(gomega.Succeed(), errFailedGetWithObject)
 			// Return object
@@ -305,7 +309,7 @@ func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...any) func() []
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, false, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -325,6 +329,8 @@ func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...any) func() []
 		}
 
 		return func() []client.Object {
+			s.t.Helper()
+
 			// Get resources
 			for i := range unstructuredObjs {
 				// Pass pointer to slice element to save to outer scope
@@ -347,6 +353,8 @@ func (s *Sawchain) FetchMultipleFunc(ctx context.Context, args ...any) func() []
 		}
 	} else {
 		return func() []client.Object {
+			s.t.Helper()
+
 			// Get resources
 			for _, obj := range opts.Objects {
 				s.g.Expect(s.c.Get(ctx, client.ObjectKeyFromObject(obj), obj)).To(gomega.Succeed(), errFailedGetWithObject)

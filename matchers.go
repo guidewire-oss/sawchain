@@ -84,7 +84,7 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 
 	// Create matcher
-	matcher := matchers.NewChainsawMatcher(s.c, template, b)
+	matcher := matchers.NewChainsawMatcher(s.c, template, b, s.opts.Verbosity)
 	s.g.Expect(matcher).NotTo(gomega.BeNil(), errCreatedMatcherIsNil)
 
 	return matcher
@@ -127,7 +127,7 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //	}
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher {
 	s.t.Helper()
-	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus)
+	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus, s.opts.Verbosity)
 	s.g.Expect(matcher).NotTo(gomega.BeNil(), errCreatedMatcherIsNil)
 	return matcher
 }

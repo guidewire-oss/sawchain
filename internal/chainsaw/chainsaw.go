@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/kyverno/chainsaw/pkg/apis"
@@ -16,8 +17,11 @@ import (
 	"github.com/kyverno/chainsaw/pkg/loaders/resource"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/guidewire-oss/sawchain/internal/options"
 )
 
 type Bindings = apis.Bindings
@@ -131,6 +135,36 @@ func RenderTemplateSingle(
 	return rendered[0], nil
 }
 
+// formatMinimalError formats a mismatch as "resource ID + field errors" with no YAML diff.
+func formatMinimalError(obj unstructured.Unstructured, fieldErrs field.ErrorList) string {
+	var parts []string
+	if v := obj.GetAPIVersion(); v != "" {
+		parts = append(parts, v)
+	}
+	if v := obj.GetKind(); v != "" {
+		parts = append(parts, v)
+	}
+	if v := obj.GetNamespace(); v != "" {
+		parts = append(parts, v)
+	}
+	if v := obj.GetName(); v != "" {
+		parts = append(parts, v)
+	}
+	resourceId := strings.Join(parts, "/")
+
+	sorted := make(field.ErrorList, len(fieldErrs))
+	copy(sorted, fieldErrs)
+	slices.SortStableFunc(sorted, func(a, b *field.Error) int {
+		return strings.Compare(a.Error(), b.Error())
+	})
+
+	lines := []string{resourceId}
+	for _, fe := range sorted {
+		lines = append(lines, "* "+fe.Error())
+	}
+	return strings.Join(lines, "\n")
+}
+
 // Match compares candidates with the expectation and returns the first match
 // or an error if no match is found. Does not handle non-resource matching.
 // Based on github.com/kyverno/chainsaw/pkg/engine/operations/assert.Exec.
@@ -139,6 +173,7 @@ func Match(
 	candidates []unstructured.Unstructured,
 	expected unstructured.Unstructured,
 	bindings Bindings,
+	verbosity options.Verbosity,
 ) (unstructured.Unstructured, error) {
 	var mismatchMessages []string
 	for i, candidate := range candidates {
@@ -148,9 +183,13 @@ func Match(
 			return unstructured.Unstructured{}, fmt.Errorf("failed to check candidate: %w", err)
 		}
 		if len(fieldErrs) != 0 {
-			resourceErr := operrors.ResourceError(compilers, expected, candidate, true, bindings, fieldErrs)
-			mismatchMessage := fmt.Sprintf("Candidate #%d mismatch errors:\n%s", i+1, resourceErr.Error())
-			mismatchMessages = append(mismatchMessages, mismatchMessage)
+			var detail string
+			if verbosity >= options.VerbosityNormal {
+				detail = operrors.ResourceError(compilers, expected, candidate, true, bindings, fieldErrs).Error()
+			} else {
+				detail = formatMinimalError(candidate, fieldErrs)
+			}
+			mismatchMessages = append(mismatchMessages, fmt.Sprintf("Candidate #%d mismatch errors:\n%s", i+1, detail))
 		} else {
 			// Match found
 			return candidate, nil
@@ -230,6 +269,7 @@ func Check(
 	ctx context.Context,
 	templateContent string,
 	bindings Bindings,
+	verbosity options.Verbosity,
 ) (unstructured.Unstructured, error) {
 	// Render expected resource
 	expected, err := RenderTemplateSingle(ctx, templateContent, bindings)
@@ -252,5 +292,5 @@ func Check(
 	}
 
 	// Return first match
-	return Match(ctx, candidates, expected, bindings)
+	return Match(ctx, candidates, expected, bindings, verbosity)
 }

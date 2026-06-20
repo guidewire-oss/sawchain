@@ -31,6 +31,7 @@ func TestSawchain(t *testing.T) {
 
 // copy returns a deep copy of the given object.
 func copy(obj client.Object) client.Object {
+	GinkgoT().Helper()
 	c, ok := obj.DeepCopyObject().(client.Object)
 	Expect(ok).To(BeTrue(), "failed to deep copy object")
 	return c
@@ -45,11 +46,12 @@ func intent(c client.Client, obj client.Object) unstructured.Unstructured {
 	return u
 }
 
-// MockT allows capturing failures and error logs.
+// MockT allows capturing failures, error logs, and info logs.
 type MockT struct {
 	testing.TB
 	failed    bool
 	ErrorLogs []string
+	InfoLogs  []string
 }
 
 func (m *MockT) Failed() bool {
@@ -82,6 +84,14 @@ func (m *MockT) Fatalf(format string, args ...any) {
 	m.ErrorLogs = append(m.ErrorLogs, fmt.Sprintf(format, args...))
 	m.failed = true
 	runtime.Goexit()
+}
+
+func (m *MockT) Logf(format string, args ...any) {
+	m.InfoLogs = append(m.InfoLogs, fmt.Sprintf(format, args...))
+}
+
+func (m *MockT) Log(args ...any) {
+	m.InfoLogs = append(m.InfoLogs, fmt.Sprint(args...))
 }
 
 // MockClient allows simulating K8s API failures.

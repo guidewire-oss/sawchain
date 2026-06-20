@@ -138,6 +138,8 @@ func (s *Sawchain) ListFunc(ctx context.Context, template string, bindings ...ma
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidTemplate)
 
 	return func() []client.Object {
+		s.t.Helper()
+
 		// List candidates from cluster
 		candidates, err := chainsaw.ListCandidates(s.c, ctx, &expected)
 		if err != nil {

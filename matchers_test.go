@@ -514,6 +514,75 @@ var _ = Describe("MatchYAML", func() {
 	)
 })
 
+var _ = Describe("MatchYAML verbosity", func() {
+	type verbosityTestCase struct {
+		verbosity    sawchain.Verbosity
+		containsErrs []string
+		excludesErrs []string
+	}
+
+	mismatchActual := testutil.NewConfigMap("test-config", "default", map[string]string{
+		"key1": "actual-value",
+	})
+	mismatchTemplate := `
+		apiVersion: v1
+		kind: ConfigMap
+		metadata:
+		  name: test-config
+		  namespace: default
+		data:
+		  key1: expected-value
+	`
+
+	DescribeTable("diff output in failure message",
+		func(tc verbosityTestCase) {
+			t := &MockT{TB: GinkgoTB()}
+			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.verbosity)
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				NewWithT(t).Expect(mismatchActual).To(sc.MatchYAML(mismatchTemplate))
+			}()
+			<-done
+			Expect(t.Failed()).To(BeTrue())
+			for _, s := range tc.containsErrs {
+				Expect(t.ErrorLogs).To(ContainElement(ContainSubstring(s)))
+			}
+			for _, s := range tc.excludesErrs {
+				Expect(t.ErrorLogs).NotTo(ContainElement(ContainSubstring(s)))
+			}
+		},
+		Entry("VerbosityMinimal omits diff in failure message", verbosityTestCase{
+			verbosity: sawchain.VerbosityMinimal,
+			containsErrs: []string{
+				"data.key1: Invalid value:",
+			},
+			excludesErrs: []string{
+				"--- expected", "+++ actual",
+				"-  key1: expected-value", "+  key1: actual-value",
+			},
+		}),
+		Entry("VerbosityNormal includes diff in failure message", verbosityTestCase{
+			verbosity: sawchain.VerbosityNormal,
+			containsErrs: []string{
+				"data.key1: Invalid value:",
+				"--- expected", "+++ actual",
+				"-  key1: expected-value", "+  key1: actual-value",
+			},
+			excludesErrs: nil,
+		}),
+		Entry("VerbosityVerbose includes diff in failure message", verbosityTestCase{
+			verbosity: sawchain.VerbosityVerbose,
+			containsErrs: []string{
+				"data.key1: Invalid value:",
+				"--- expected", "+++ actual",
+				"-  key1: expected-value", "+  key1: actual-value",
+			},
+			excludesErrs: nil,
+		}),
+	)
+})
+
 var _ = Describe("HaveStatusCondition", func() {
 	type testCase struct {
 		client              client.Client

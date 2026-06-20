@@ -106,7 +106,7 @@ func (s *Sawchain) Check(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -129,7 +129,7 @@ func (s *Sawchain) Check(ctx context.Context, args ...any) error {
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 	matches := make([]unstructured.Unstructured, len(documents))
 	for i, document := range documents {
-		match, err := chainsaw.Check(s.c, ctx, document, bindings)
+		match, err := chainsaw.Check(s.c, ctx, document, bindings, s.opts.Verbosity)
 		if err != nil {
 			return err
 		}
@@ -159,7 +159,7 @@ func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -178,12 +178,14 @@ func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error {
 	}
 
 	return func() error {
+		s.t.Helper()
+
 		// Execute checks
 		bindings, err := chainsaw.BindingsFromMap(opts.Bindings)
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 		matches := make([]unstructured.Unstructured, len(documents))
 		for i, document := range documents {
-			match, err := chainsaw.Check(s.c, ctx, document, bindings)
+			match, err := chainsaw.Check(s.c, ctx, document, bindings, s.opts.Verbosity)
 			if err != nil {
 				return err
 			}

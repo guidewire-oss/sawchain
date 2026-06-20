@@ -83,7 +83,7 @@ func (s *Sawchain) RenderSingle(args ...any) client.Object {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, false, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, false, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -198,7 +198,7 @@ func (s *Sawchain) RenderMultiple(args ...any) []client.Object {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, false, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
