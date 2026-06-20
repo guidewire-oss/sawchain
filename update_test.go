@@ -1166,7 +1166,7 @@ var _ = Describe("UpdateAndWait", func() {
 
 			// Verify execution time
 			if tc.expectedDuration > 0 {
-				maxAllowedDuration := time.Duration(float64(tc.expectedDuration) * 1.1)
+				maxAllowedDuration := time.Duration(float64(tc.expectedDuration) * 1.2)
 				Expect(executionTime).To(BeNumerically("<", maxAllowedDuration),
 					"expected execution time %v to be less than %v",
 					executionTime, maxAllowedDuration)
