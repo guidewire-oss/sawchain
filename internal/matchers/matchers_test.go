@@ -9,6 +9,7 @@ import (
 
 	"github.com/guidewire-oss/sawchain/internal/chainsaw"
 	"github.com/guidewire-oss/sawchain/internal/matchers"
+	"github.com/guidewire-oss/sawchain/internal/options"
 	"github.com/guidewire-oss/sawchain/internal/testutil"
 )
 
@@ -27,7 +28,7 @@ var _ = Describe("Matchers", func() {
 			func(tc testCase) {
 				bindings, err := chainsaw.BindingsFromMap(tc.bindings)
 				Expect(err).NotTo(HaveOccurred())
-				matcher := matchers.NewChainsawMatcher(standardClient, tc.templateContent, bindings)
+				matcher := matchers.NewChainsawMatcher(standardClient, tc.templateContent, bindings, options.VerbosityNormal)
 
 				// Test Match
 				match, err := matcher.Match(tc.actual)
@@ -489,6 +490,79 @@ metadata:
 		)
 	})
 
+	Describe("NewChainsawMatcher verbosity", func() {
+		type verbosityTestCase struct {
+			verbosity    options.Verbosity
+			containsErrs []string
+			excludesErrs []string
+		}
+
+		mismatchActual := testutil.NewConfigMap("test-config", "default", map[string]string{
+			"key1": "actual-value",
+		})
+		mismatchTemplate := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data:
+  key1: expected-value
+`
+
+		DescribeTable("error detail by verbosity level",
+			func(tc verbosityTestCase) {
+				bindings, err := chainsaw.BindingsFromMap(map[string]any{})
+				Expect(err).NotTo(HaveOccurred())
+				matcher := matchers.NewChainsawMatcher(standardClient, mismatchTemplate, bindings, tc.verbosity)
+				match, err := matcher.Match(mismatchActual)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(match).To(BeFalse())
+				msg := matcher.FailureMessage(mismatchActual)
+				for _, s := range tc.containsErrs {
+					Expect(msg).To(ContainSubstring(s))
+				}
+				for _, s := range tc.excludesErrs {
+					Expect(msg).NotTo(ContainSubstring(s))
+				}
+			},
+			Entry("VerbosityMinimal omits diff in failure message", verbosityTestCase{
+				verbosity: options.VerbosityMinimal,
+				containsErrs: []string{
+					"data.key1: Invalid value:",
+				},
+				excludesErrs: []string{
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+			}),
+			Entry("VerbosityNormal includes diff in failure message", verbosityTestCase{
+				verbosity: options.VerbosityNormal,
+				containsErrs: []string{
+					"data.key1: Invalid value:",
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+				excludesErrs: nil,
+			}),
+			Entry("VerbosityVerbose includes diff in failure message", verbosityTestCase{
+				verbosity: options.VerbosityVerbose,
+				containsErrs: []string{
+					"data.key1: Invalid value:",
+					"--- expected",
+					"+++ actual",
+					"-  key1: expected-value",
+					"+  key1: actual-value",
+				},
+				excludesErrs: nil,
+			}),
+		)
+	})
+
 	Describe("NewStatusConditionMatcher", func() {
 		type testCase struct {
 			client              client.Client
@@ -502,7 +576,7 @@ metadata:
 
 		DescribeTable("matching resources against status conditions",
 			func(tc testCase) {
-				matcher := matchers.NewStatusConditionMatcher(tc.client, tc.conditionType, tc.expectedStatus)
+				matcher := matchers.NewStatusConditionMatcher(tc.client, tc.conditionType, tc.expectedStatus, options.VerbosityNormal)
 
 				// Test Match
 				match, err := matcher.Match(tc.actual)

@@ -123,7 +123,7 @@ func (s *Sawchain) Get(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -188,7 +188,7 @@ func (s *Sawchain) GetFunc(ctx context.Context, args ...any) func() error {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -210,6 +210,8 @@ func (s *Sawchain) GetFunc(ctx context.Context, args ...any) func() error {
 		}
 
 		return func() error {
+			s.t.Helper()
+
 			// Get resources
 			for i := range unstructuredObjs {
 				// Pass pointer to slice element to save to outer scope

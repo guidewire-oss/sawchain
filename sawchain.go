@@ -15,6 +15,18 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
+// Verbosity controls the detail level of assertion error output and logging.
+type Verbosity = options.Verbosity
+
+const (
+	// VerbosityMinimal outputs field-level errors only, without YAML diffs or info logs.
+	VerbosityMinimal = options.VerbosityMinimal
+	// VerbosityNormal outputs field-level errors with YAML diffs. This is the default.
+	VerbosityNormal = options.VerbosityNormal
+	// VerbosityVerbose outputs field-level errors with YAML diffs and info logs.
+	VerbosityVerbose = options.VerbosityVerbose
+)
+
 const (
 	prefixErr         = "[SAWCHAIN][ERROR] "
 	prefixErrInternal = "[SAWCHAIN][ERROR][INTERNAL] "
@@ -115,12 +127,14 @@ func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 	g.Expect(c).NotTo(gomega.BeNil(), errClientNil)
 	// Parse options
 	opts, err := options.ParseAndApplyDefaults(&options.Options{
-		Timeout:  time.Second * 5,
-		Interval: time.Second,
-	}, true, false, false, false, args...)
+		Verbosity: options.VerbosityNormal,
+		Timeout:   time.Second * 5,
+		Interval:  time.Second,
+	}, true, true, false, false, false, args...)
 	g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 	// Check required options
+	g.Expect(options.RequireVerbosity(opts)).To(gomega.Succeed(), errInvalidArgs)
 	g.Expect(options.RequireDurations(opts)).To(gomega.Succeed(), errInvalidArgs)
 	// Instantiate Sawchain
 	return &Sawchain{t: t, g: g, c: c, opts: *opts}
@@ -181,18 +195,27 @@ func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) 
 	g.Expect(c).NotTo(gomega.BeNil(), errClientNil)
 	// Parse options
 	opts, err := options.ParseAndApplyDefaults(&options.Options{
-		Timeout:  time.Second * 5,
-		Interval: time.Second,
-	}, true, false, false, false, args...)
+		Verbosity: options.VerbosityNormal,
+		Timeout:   time.Second * 5,
+		Interval:  time.Second,
+	}, true, true, false, false, false, args...)
 	g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 	// Check required options
+	g.Expect(options.RequireVerbosity(opts)).To(gomega.Succeed(), errInvalidArgs)
 	g.Expect(options.RequireDurations(opts)).To(gomega.Succeed(), errInvalidArgs)
 	// Instantiate Sawchain
 	return &Sawchain{t: t, g: g, c: c, opts: *opts}
 }
 
 // HELPERS
+
+func (s *Sawchain) logInfo(format string, args ...any) {
+	if s.opts.Verbosity >= options.VerbosityVerbose {
+		s.t.Helper()
+		s.t.Logf(format, args...)
+	}
+}
 
 func (s *Sawchain) mergeBindings(bindings ...map[string]any) map[string]any {
 	return util.MergeMaps(append([]map[string]any{s.opts.Bindings}, bindings...)...)
@@ -242,10 +265,12 @@ func (s *Sawchain) checkNotFoundF(ctx context.Context, obj client.Object) func()
 }
 
 func (s *Sawchain) convertReturnObject(unstructuredObj unstructured.Unstructured) client.Object {
+	s.t.Helper()
+
 	// Convert to typed
 	if obj, err := util.TypedFromUnstructured(s.c, unstructuredObj); err != nil {
 		// Log warning and return unstructured object
-		s.t.Logf("%s: %v", infoFailedConvert, err)
+		s.logInfo("%s: %v", infoFailedConvert, err)
 		return &unstructuredObj
 	} else {
 		// Return typed object

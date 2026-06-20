@@ -16,14 +16,37 @@ const (
 	errObjectAndObjects = "client.Object and []client.Object arguments both provided"
 )
 
+// Verbosity controls the detail level of assertion error output and logging.
+type Verbosity int
+
+const (
+	VerbosityMinimal Verbosity = 1  // Field errors only, no diff, no info logs.
+	VerbosityNormal  Verbosity = 10 // Field errors + YAML diff, no info logs (default).
+	VerbosityVerbose Verbosity = 20 // Field errors + YAML diff + info logs.
+)
+
+func (v Verbosity) String() string {
+	switch v {
+	case VerbosityMinimal:
+		return "minimal"
+	case VerbosityNormal:
+		return "normal"
+	case VerbosityVerbose:
+		return "verbose"
+	default:
+		return fmt.Sprintf("Verbosity(%d)", int(v))
+	}
+}
+
 // Options is a common struct for options used in Sawchain operations.
 type Options struct {
-	Timeout  time.Duration   // Timeout for eventual assertions.
-	Interval time.Duration   // Polling interval for eventual assertions.
-	Template string          // Template content for Chainsaw resource operations.
-	Bindings map[string]any  // Template bindings for Chainsaw resource operations.
-	Object   client.Object   // Object to store state for single-resource operations.
-	Objects  []client.Object // Slice to store state for multi-resource operations.
+	Timeout   time.Duration   // Timeout for eventual assertions.
+	Interval  time.Duration   // Polling interval for eventual assertions.
+	Template  string          // Template content for Chainsaw resource operations.
+	Bindings  map[string]any  // Template bindings for Chainsaw resource operations.
+	Object    client.Object   // Object to store state for single-resource operations.
+	Objects   []client.Object // Slice to store state for multi-resource operations.
+	Verbosity Verbosity       // Detail level of assertion error output and logging.
 }
 
 // ProcessTemplate extracts content from the given template string or file and sanitizes it
@@ -54,11 +77,13 @@ func ProcessTemplate(template string) (string, error) {
 }
 
 // parse parses variable arguments into an Options struct.
+//   - If includeVerbosity is true, checks for Verbosity; otherwise disallows it.
 //   - If includeDurations is true, checks for Timeout and Interval; otherwise disallows them.
 //   - If includeObject is true, checks for Object; otherwise disallows it.
 //   - If includeObjects is true, checks for Objects; otherwise disallows it.
 //   - If includeTemplate is true, checks for Template; otherwise disallows it.
 func parse(
+	includeVerbosity bool,
 	includeDurations bool,
 	includeObject bool,
 	includeObjects bool,
@@ -70,6 +95,21 @@ func parse(
 	}
 
 	for _, arg := range args {
+		if includeVerbosity {
+			// Check for Verbosity
+			if v, ok := arg.(Verbosity); ok {
+				if v == 0 {
+					return nil, errors.New("provided verbosity is zero")
+				} else if v < 0 {
+					return nil, errors.New("provided verbosity is negative")
+				} else if opts.Verbosity != 0 {
+					return nil, errors.New("multiple verbosity arguments provided")
+				}
+				opts.Verbosity = v
+				continue
+			}
+		}
+
 		if includeDurations {
 			// Check for Timeout and Interval
 			if d, ok := util.AsDuration(arg); ok {
@@ -161,6 +201,11 @@ func applyDefaults(defaults, opts *Options) *Options {
 		return defaults
 	}
 
+	// Default verbosity
+	if opts.Verbosity == 0 {
+		opts.Verbosity = defaults.Verbosity
+	}
+
 	// Default durations
 	if opts.Timeout == 0 {
 		opts.Timeout = defaults.Timeout
@@ -179,17 +224,29 @@ func applyDefaults(defaults, opts *Options) *Options {
 // and applies defaults where needed.
 func ParseAndApplyDefaults(
 	defaults *Options,
+	includeVerbosity bool,
 	includeDurations bool,
 	includeObject bool,
 	includeObjects bool,
 	includeTemplate bool,
 	args ...any,
 ) (*Options, error) {
-	opts, err := parse(includeDurations, includeObject, includeObjects, includeTemplate, args...)
+	opts, err := parse(includeVerbosity, includeDurations, includeObject, includeObjects, includeTemplate, args...)
 	if err != nil {
 		return nil, err
 	}
 	return applyDefaults(defaults, opts), nil
+}
+
+// RequireVerbosity requires option Verbosity to be provided.
+func RequireVerbosity(opts *Options) error {
+	if opts == nil {
+		return errors.New(errNil)
+	}
+	if opts.Verbosity == 0 {
+		return errors.New(errRequired + ": Verbosity (sawchain.Verbosity)")
+	}
+	return nil
 }
 
 // RequireDurations requires options Timeout and Interval to be provided.

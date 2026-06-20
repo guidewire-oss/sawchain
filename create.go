@@ -141,7 +141,7 @@ func (s *Sawchain) Create(ctx context.Context, args ...any) error {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, false, true, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 
@@ -333,7 +333,7 @@ func (s *Sawchain) CreateAndWait(ctx context.Context, args ...any) {
 	s.t.Helper()
 
 	// Parse options
-	opts, err := options.ParseAndApplyDefaults(&s.opts, true, true, true, true, args...)
+	opts, err := options.ParseAndApplyDefaults(&s.opts, false, true, true, true, true, args...)
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidArgs)
 	s.g.Expect(opts).NotTo(gomega.BeNil(), errNilOpts)
 

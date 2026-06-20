@@ -1041,3 +1041,82 @@ var _ = Describe("Check and CheckFunc", func() {
 		}),
 	)
 })
+
+var _ = Describe("Check and CheckFunc verbosity", func() {
+	type verbosityTestCase struct {
+		verbosity    sawchain.Verbosity
+		containsErrs []string
+		excludesErrs []string
+	}
+
+	DescribeTable("diff output in return error",
+		func(tc verbosityTestCase) {
+			t := &MockT{TB: GinkgoTB()}
+			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.verbosity)
+
+			// Create resource
+			sc.CreateAndWait(ctx, `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-verbosity-check-cm
+				  namespace: default
+				data:
+				  key1: actual-value
+			`)
+
+			// Check with mismatching template
+			err := sc.Check(ctx, `
+				apiVersion: v1
+				kind: ConfigMap
+				metadata:
+				  name: test-verbosity-check-cm
+				  namespace: default
+				data:
+				  key1: expected-value
+			`)
+
+			Expect(err).To(HaveOccurred())
+			for _, s := range tc.containsErrs {
+				Expect(err.Error()).To(ContainSubstring(s))
+			}
+			for _, s := range tc.excludesErrs {
+				Expect(err.Error()).NotTo(ContainSubstring(s))
+			}
+		},
+		Entry("VerbosityMinimal omits diff in return error", verbosityTestCase{
+			verbosity: sawchain.VerbosityMinimal,
+			containsErrs: []string{
+				"Candidate #1 mismatch errors:",
+				"v1/ConfigMap/default/test-verbosity-check-cm",
+				"data.key1: Invalid value:",
+			},
+			excludesErrs: []string{
+				"--- expected", "+++ actual",
+				"-  key1: expected-value", "+  key1: actual-value",
+			},
+		}),
+		Entry("VerbosityNormal includes diff in return error", verbosityTestCase{
+			verbosity: sawchain.VerbosityNormal,
+			containsErrs: []string{
+				"Candidate #1 mismatch errors:",
+				"v1/ConfigMap/default/test-verbosity-check-cm",
+				"data.key1: Invalid value:",
+				"--- expected", "+++ actual",
+				"-  key1: expected-value", "+  key1: actual-value",
+			},
+			excludesErrs: nil,
+		}),
+		Entry("VerbosityVerbose includes diff in return error", verbosityTestCase{
+			verbosity: sawchain.VerbosityVerbose,
+			containsErrs: []string{
+				"Candidate #1 mismatch errors:",
+				"v1/ConfigMap/default/test-verbosity-check-cm",
+				"data.key1: Invalid value:",
+				"--- expected", "+++ actual",
+				"-  key1: expected-value", "+  key1: actual-value",
+			},
+			excludesErrs: nil,
+		}),
+	)
+})

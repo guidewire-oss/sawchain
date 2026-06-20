@@ -33,6 +33,18 @@ var _ = Describe("Options", func() {
 		defaults = &options.Options{Timeout: ten, Interval: one, Bindings: bindings}
 	)
 
+	Describe("Verbosity", func() {
+		DescribeTable("String representation",
+			func(v options.Verbosity, expected string) {
+				Expect(v.String()).To(Equal(expected))
+			},
+			Entry("minimal", options.VerbosityMinimal, "minimal"),
+			Entry("normal", options.VerbosityNormal, "normal"),
+			Entry("verbose", options.VerbosityVerbose, "verbose"),
+			Entry("unknown", options.Verbosity(99), "Verbosity(99)"),
+		)
+	})
+
 	Describe("ProcessTemplate", func() {
 		DescribeTable("processing templates",
 			func(template string, expectedContent string, expectedErrs []string) {
@@ -109,6 +121,7 @@ var _ = Describe("Options", func() {
 	Describe("ParseAndApplyDefaults", func() {
 		type testCase struct {
 			defaults         *options.Options
+			includeVerbosity bool
 			includeDurations bool
 			includeObject    bool
 			includeObjects   bool
@@ -121,7 +134,7 @@ var _ = Describe("Options", func() {
 		DescribeTable("parsing and applying defaults",
 			func(tc testCase) {
 				opts, err := options.ParseAndApplyDefaults(
-					tc.defaults, tc.includeDurations, tc.includeObject,
+					tc.defaults, tc.includeVerbosity, tc.includeDurations, tc.includeObject,
 					tc.includeObjects, tc.includeTemplate, tc.args...)
 				if tc.expectedErr != nil {
 					Expect(err).To(MatchError(tc.expectedErr))
@@ -376,6 +389,97 @@ var _ = Describe("Options", func() {
 				expectedOpts:     nil,
 				expectedErr:      errors.New("unexpected argument type: []client.Object"),
 			}),
+			Entry("with verbosity minimal", testCase{
+				defaults:         nil,
+				includeVerbosity: true,
+				args:             []any{options.VerbosityMinimal},
+				expectedOpts:     &options.Options{Verbosity: options.VerbosityMinimal, Bindings: map[string]any{}},
+				expectedErr:      nil,
+			}),
+			Entry("with verbosity normal", testCase{
+				defaults:         nil,
+				includeVerbosity: true,
+				args:             []any{options.VerbosityNormal},
+				expectedOpts:     &options.Options{Verbosity: options.VerbosityNormal, Bindings: map[string]any{}},
+				expectedErr:      nil,
+			}),
+			Entry("with verbosity verbose", testCase{
+				defaults:         nil,
+				includeVerbosity: true,
+				args:             []any{options.VerbosityVerbose},
+				expectedOpts:     &options.Options{Verbosity: options.VerbosityVerbose, Bindings: map[string]any{}},
+				expectedErr:      nil,
+			}),
+			Entry("verbosity defaulted from defaults", testCase{
+				defaults:         &options.Options{Verbosity: options.VerbosityNormal},
+				includeVerbosity: true,
+				args:             []any{},
+				expectedOpts:     &options.Options{Verbosity: options.VerbosityNormal, Bindings: map[string]any{}},
+				expectedErr:      nil,
+			}),
+			Entry("verbosity arg overrides default", testCase{
+				defaults:         &options.Options{Verbosity: options.VerbosityNormal},
+				includeVerbosity: true,
+				args:             []any{options.VerbosityMinimal},
+				expectedOpts:     &options.Options{Verbosity: options.VerbosityMinimal, Bindings: map[string]any{}},
+				expectedErr:      nil,
+			}),
+			Entry("error with zero verbosity", testCase{
+				defaults:         nil,
+				includeVerbosity: true,
+				args:             []any{options.Verbosity(0)},
+				expectedOpts:     nil,
+				expectedErr:      errors.New("provided verbosity is zero"),
+			}),
+			Entry("error with negative verbosity", testCase{
+				defaults:         nil,
+				includeVerbosity: true,
+				args:             []any{options.Verbosity(-1)},
+				expectedOpts:     nil,
+				expectedErr:      errors.New("provided verbosity is negative"),
+			}),
+			Entry("error with multiple verbosity arguments", testCase{
+				defaults:         nil,
+				includeVerbosity: true,
+				args:             []any{options.VerbosityMinimal, options.VerbosityNormal},
+				expectedOpts:     nil,
+				expectedErr:      errors.New("multiple verbosity arguments provided"),
+			}),
+			Entry("error with verbosity when not included", testCase{
+				defaults:         nil,
+				includeVerbosity: false,
+				args:             []any{options.VerbosityMinimal},
+				expectedOpts:     nil,
+				expectedErr:      errors.New("unexpected argument type: options.Verbosity"),
+			}),
+		)
+	})
+
+	Describe("RequireVerbosity", func() {
+		DescribeTable("requiring verbosity",
+			func(opts *options.Options, expectedErr error) {
+				err := options.RequireVerbosity(opts)
+				if expectedErr != nil {
+					Expect(err).To(MatchError(expectedErr))
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
+			},
+			Entry("minimal",
+				&options.Options{Verbosity: options.VerbosityMinimal},
+				nil),
+			Entry("normal",
+				&options.Options{Verbosity: options.VerbosityNormal},
+				nil),
+			Entry("verbose",
+				&options.Options{Verbosity: options.VerbosityVerbose},
+				nil),
+			Entry("unset",
+				&options.Options{},
+				errors.New("required argument(s) not provided: Verbosity (sawchain.Verbosity)")),
+			Entry("nil options",
+				nil,
+				errors.New("options is nil")),
 		)
 	})
 

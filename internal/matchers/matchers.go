@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/guidewire-oss/sawchain/internal/chainsaw"
+	"github.com/guidewire-oss/sawchain/internal/options"
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
@@ -28,6 +29,8 @@ type chainsawMatcher struct {
 	templateContent string
 	// Template bindings.
 	bindings chainsaw.Bindings
+	// Verbosity level for error output.
+	verbosity options.Verbosity
 	// Current match errors (one per document).
 	matchErrs []error
 }
@@ -65,7 +68,7 @@ func (m *chainsawMatcher) Match(actual any) (bool, error) {
 	m.matchErrs = nil
 	for _, expected := range expectedObjs {
 		_, matchErr := chainsaw.Match(
-			context.TODO(), []unstructured.Unstructured{candidate}, expected, m.bindings,
+			context.TODO(), []unstructured.Unstructured{candidate}, expected, m.bindings, m.verbosity,
 		)
 		if matchErr == nil {
 			// Match found
@@ -137,13 +140,15 @@ func NewChainsawMatcher(
 	c client.Client,
 	templateContent string,
 	bindings chainsaw.Bindings,
+	verbosity options.Verbosity,
 ) types.GomegaMatcher {
 	return &chainsawMatcher{
 		c: c,
 		createTemplateContent: func(c client.Client, obj client.Object) (string, error) {
 			return templateContent, nil
 		},
-		bindings: bindings,
+		bindings:  bindings,
+		verbosity: verbosity,
 	}
 }
 
@@ -153,9 +158,11 @@ func NewStatusConditionMatcher(
 	c client.Client,
 	conditionType string,
 	expectedStatus string,
+	verbosity options.Verbosity,
 ) types.GomegaMatcher {
 	return &chainsawMatcher{
-		c: c,
+		c:         c,
+		verbosity: verbosity,
 		createTemplateContent: func(c client.Client, obj client.Object) (string, error) {
 			// Extract apiVersion and kind from object
 			gvk, err := util.GetGroupVersionKind(obj, c.Scheme())

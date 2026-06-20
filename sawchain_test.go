@@ -61,7 +61,7 @@ var _ = Describe("New", func() {
 		}),
 		Entry("should create Sawchain with all optional arguments", testCase{
 			client: testutil.NewStandardFakeClient(),
-			args:   []any{"10s", "2s", map[string]any{"namespace": "test"}},
+			args:   []any{"10s", "2s", map[string]any{"namespace": "test"}, sawchain.VerbosityVerbose},
 		}),
 
 		// Failure cases
@@ -170,7 +170,7 @@ var _ = Describe("NewWithGomega", func() {
 		}),
 		Entry("should create Sawchain with all optional arguments", testCase{
 			client: testutil.NewStandardFakeClient(),
-			args:   []any{"10s", "2s", map[string]any{"namespace": "test"}},
+			args:   []any{"10s", "2s", map[string]any{"namespace": "test"}, sawchain.VerbosityVerbose},
 		}),
 
 		// Failure cases
@@ -182,6 +182,45 @@ var _ = Describe("NewWithGomega", func() {
 			client:              testutil.NewStandardFakeClient(),
 			args:                []any{123}, // Invalid argument type
 			expectedFailureLogs: []string{"[SAWCHAIN][ERROR] invalid arguments"},
+		}),
+	)
+})
+
+var _ = Describe("logInfo verbosity", func() {
+	type verbosityTestCase struct {
+		verbosity      sawchain.Verbosity
+		expectInfoLogs bool
+	}
+	DescribeTable("info log suppression",
+		func(tc verbosityTestCase) {
+			t := &MockT{TB: GinkgoTB()}
+			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.verbosity)
+			// TestResource is not registered in the standard client's scheme,
+			// triggering the info log in convertReturnObject
+			sc.RenderSingle(`
+				apiVersion: example.com/v1
+				kind: TestResource
+				metadata:
+				  name: test-cr
+				  namespace: default
+			`)
+			if tc.expectInfoLogs {
+				Expect(t.InfoLogs).To(ContainElement(ContainSubstring("[SAWCHAIN][INFO]")))
+			} else {
+				Expect(t.InfoLogs).To(BeEmpty())
+			}
+		},
+		Entry("VerbosityMinimal suppresses info logs", verbosityTestCase{
+			verbosity:      sawchain.VerbosityMinimal,
+			expectInfoLogs: false,
+		}),
+		Entry("VerbosityNormal suppresses info logs", verbosityTestCase{
+			verbosity:      sawchain.VerbosityNormal,
+			expectInfoLogs: false,
+		}),
+		Entry("VerbosityVerbose emits info logs", verbosityTestCase{
+			verbosity:      sawchain.VerbosityVerbose,
+			expectInfoLogs: true,
 		}),
 	)
 })
