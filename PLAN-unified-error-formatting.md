@@ -2,7 +2,7 @@
 
 ## Context
 
-**Depends on**: GitHub issue #40 (verbosity levels) — assumes `Verbosity` type, `VerbosityMinimal`/`VerbosityNormal` constants, and verbosity threading are already implemented per `PLAN-verbosity.md`.
+**Depends on**: GitHub issue #40 (verbosity levels).
 
 **Problem**: Matchers and Check perform the same fundamental operation — match an actual resource against an expected template — but format errors through completely separate code paths:
 
@@ -14,7 +14,7 @@ This inconsistency makes debugging harder — the same assertion expressed diffe
 **Goals**:
 1. Consistent error formatting between matchers and Check
 2. Intelligent "best match" filtering for multi-candidate/multi-document failures
-3. Full candidate/actual YAML available at `VerbosityVerbose` (new level)
+3. Full candidate/actual YAML available at `VerbosityVerbose`
 4. Single rendering path controlled by verbosity
 
 ## Design
@@ -68,20 +68,6 @@ The caller declares what varied across attempts, avoiding expensive deep-compari
 - **Matcher** sets `MatchModeVaryExpected` — one actual object, multiple template documents
 - Single-attempt cases use `MatchModeSingle`
 
-### New Verbosity Level
-
-Add `VerbosityVerbose` to the levels established by issue #40:
-
-```go
-const (
-    VerbosityMinimal Verbosity = 1   // Field errors only
-    VerbosityNormal  Verbosity = 10  // Field errors + YAML diff (default)
-    VerbosityVerbose Verbosity = 20  // Full actual/candidate YAML + template + bindings
-)
-```
-
-This was already anticipated in `PLAN-verbosity.md`'s design rationale (numeric gaps for future levels).
-
 ### Formatter Logic
 
 `MatchError.Format()` adapts output based on mode and verbosity:
@@ -134,17 +120,19 @@ One-line summary format: `"Attempt #N: <resource-id> (M field errors)"`
 **File**: `internal/chainsaw/chainsaw.go`
 
 Update `Match()`:
+- Drop the `verbosity options.Verbosity` parameter — formatting now lives in `MatchError.Format()`
 - Build `[]MatchAttempt` instead of `[]string` mismatch messages
 - On no match, return `&MatchError{Attempts: attempts, Mode: MatchModeVaryActual}`
 - On match, return `(candidate, nil)` as before
+- Delete the `formatMinimalError` helper — it becomes dead code
 
 Update `Check()` (the internal chainsaw function):
-- No signature change needed — it already returns `(unstructured.Unstructured, error)`
-- The error is now a `*MatchError` which still satisfies `error` via `Error()`
+- Drop the `verbosity options.Verbosity` parameter — same reason as `Match()`
+- The return type `(unstructured.Unstructured, error)` is unchanged; the error is now a `*MatchError`
 
 **File**: `internal/chainsaw/chainsaw_test.go`
 
-- Update existing tests for new error type
+- Update existing tests for new error type and dropped verbosity parameter
 - Verify `errors.As(err, &me)` works on returned errors
 - Verify `MatchModeVaryActual` is set
 
@@ -210,20 +198,9 @@ func (m *chainsawMatcher) Match(actual any) (bool, error) {
 - Verify single-document and multi-document output consistency with Check
 - Verify verbosity levels produce expected sections
 
-### Phase 5: Add VerbosityVerbose
-
 **File**: `internal/options/options.go`
 
-- Add `VerbosityVerbose Verbosity = 20` constant
-- Update `String()` method
-
-**File**: `sawchain.go`
-
-- Export `VerbosityVerbose` constant
-
-**Files**: `internal/options/options_test.go`, `sawchain_test.go`
-
-- Test new constant, parsing, `String()`
+- Update `VerbosityVerbose` comment to reflect that it also shows full actual/candidate YAML, template content, and bindings in error output
 
 ## Files Modified
 
@@ -231,16 +208,13 @@ func (m *chainsawMatcher) Match(actual any) (bool, error) {
 |------|-------|--------|
 | `internal/chainsaw/errors.go` (new) | 1 | `MatchAttempt`, `MatchMode`, `MatchError`, `BestMatch()`, `Format()` |
 | `internal/chainsaw/errors_test.go` (new) | 1 | Unit tests for error types and formatting |
-| `internal/chainsaw/chainsaw.go` | 2 | `Match()` returns `*MatchError`, remove string formatting |
-| `internal/chainsaw/chainsaw_test.go` | 2 | Update for structured error type |
+| `internal/chainsaw/chainsaw.go` | 2 | Drop `verbosity` param from `Match()`/`Check()`, return `*MatchError`, delete `formatMinimalError` |
+| `internal/chainsaw/chainsaw_test.go` | 2 | Update for structured error type and dropped verbosity parameter |
 | `check.go` | 3 | Extract `*MatchError`, call `Format()` with verbosity |
 | `check_test.go` | 3 | Verbosity-level error output tests |
-| `internal/matchers/matchers.go` | 4 | Replace `matchErrs`/`failureMessageFormat` with `MatchError.Format()` |
+| `internal/matchers/matchers.go` | 4 | Replace `matchErrs`/`failureMessageFormat` with `MatchError.Format()`; update `Match()` call (drop verbosity arg) |
 | `internal/matchers/matchers_test.go` | 4 | Update for consistent output format |
-| `internal/options/options.go` | 5 | Add `VerbosityVerbose` |
-| `sawchain.go` | 5 | Export `VerbosityVerbose` |
-| `internal/options/options_test.go` | 5 | Test new level |
-| `sawchain_test.go` | 5 | Test new level |
+| `internal/options/options.go` | 4 | Update `VerbosityVerbose` comment to reflect full YAML output |
 
 ## Verification
 
