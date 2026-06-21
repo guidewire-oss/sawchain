@@ -12,23 +12,13 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
-// matchFailure carries a verbosity-rendered failure message while preserving the underlying
-// *chainsaw.MatchError, so callers can extract it with errors.As(err, &sawchain.MatchError{})
-// for programmatic inspection without losing the formatted error string.
-type matchFailure struct {
-	msg string
-	err *chainsaw.MatchError
-}
-
-func (e *matchFailure) Error() string { return e.msg }
-func (e *matchFailure) Unwrap() error { return e.err }
-
-// formatMatchError renders a check error: if it is a *chainsaw.MatchError, it is wrapped in a
-// matchFailure rendered at the given verbosity; otherwise it is returned unchanged.
+// formatMatchError renders a check error: if it is a *chainsaw.MatchError, it is rendered at
+// the given verbosity while remaining unwrappable to *chainsaw.MatchError via errors.As;
+// otherwise it is returned unchanged.
 func formatMatchError(err error, verbosity options.Verbosity, template string, bindings chainsaw.Bindings) error {
 	var me *chainsaw.MatchError
 	if errors.As(err, &me) {
-		return &matchFailure{msg: me.Format(verbosity, template, bindings), err: me}
+		return me.FormatError(verbosity, template, bindings)
 	}
 	return err
 }

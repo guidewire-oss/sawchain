@@ -22,10 +22,10 @@ const (
 	// MatchModeSingle is a single attempt pairing one actual with one expected.
 	MatchModeSingle MatchMode = iota
 	// MatchModeVaryActual is multiple attempts sharing one expected with varying actuals
-	// (e.g. Check matching one template against multiple cluster candidates).
+	// (e.g. one expectation matched against multiple candidate resources).
 	MatchModeVaryActual
 	// MatchModeVaryExpected is multiple attempts sharing one actual with varying expecteds
-	// (e.g. a matcher checking one object against multiple template documents).
+	// (e.g. one object matched against multiple expectation documents).
 	MatchModeVaryExpected
 )
 
@@ -38,7 +38,7 @@ type MatchAttempt struct {
 }
 
 // MatchError is a structured error describing why one or more match attempts failed. It
-// provides a single, verbosity-controlled rendering path shared by Check and matchers.
+// provides a single, verbosity-controlled rendering path for match failures.
 type MatchError struct {
 	Attempts []MatchAttempt
 	Mode     MatchMode
@@ -48,19 +48,6 @@ type MatchError struct {
 // content or bindings (which are only included by Format at VerbosityVerbose).
 func (e *MatchError) Error() string {
 	return e.Format(options.VerbosityNormal, "", nil)
-}
-
-// bestMatchIndex returns the index of the attempt with the fewest field errors. Ties are
-// broken by the lowest index, preserving caller ordering (cluster ordering for Check,
-// document ordering for matchers).
-func (e *MatchError) bestMatchIndex() int {
-	best := 0
-	for i := 1; i < len(e.Attempts); i++ {
-		if len(e.Attempts[i].FieldErrs) < len(e.Attempts[best].FieldErrs) {
-			best = i
-		}
-	}
-	return best
 }
 
 // BestMatch returns the attempt with the fewest field errors (the closest match). Ties are
@@ -132,6 +119,35 @@ func (e *MatchError) Format(verbosity options.Verbosity, template string, bindin
 	return strings.Join(sections, "\n\n")
 }
 
+// FormatError is the error-returning counterpart to Format: it renders at the given verbosity
+// (with template and bindings context) and returns an error whose message is that rendering,
+// while remaining unwrappable to this *MatchError via errors.As for programmatic inspection.
+func (e *MatchError) FormatError(verbosity options.Verbosity, template string, bindings Bindings) error {
+	return &formattedError{msg: e.Format(verbosity, template, bindings), err: e}
+}
+
+// formattedError carries a pre-rendered message while remaining unwrappable to the
+// originating *MatchError via errors.As.
+type formattedError struct {
+	msg string
+	err *MatchError
+}
+
+func (e *formattedError) Error() string { return e.msg }
+func (e *formattedError) Unwrap() error { return e.err }
+
+// bestMatchIndex returns the index of the attempt with the fewest field errors. Ties are
+// broken by the lowest index, preserving the caller's attempt ordering.
+func (e *MatchError) bestMatchIndex() int {
+	best := 0
+	for i := 1; i < len(e.Attempts); i++ {
+		if len(e.Attempts[i].FieldErrs) < len(e.Attempts[best].FieldErrs) {
+			best = i
+		}
+	}
+	return best
+}
+
 // varyingIsActual reports whether the actual object is the one that varies across attempts
 // (true for single-attempt and vary-actual modes).
 func (e *MatchError) varyingIsActual() bool {
@@ -201,6 +217,18 @@ func (e *MatchError) summaryLine(a MatchAttempt, idx int) string {
 	return fmt.Sprintf("Attempt #%d: %s (%s)", idx+1, resourceID(e.varyingObj(a)), fieldErrorCount(len(a.FieldErrs)))
 }
 
+// ContextSection renders the [TEMPLATE] (when non-empty) and [BINDINGS] sections. It is
+// shared by Format's verbose output and exposed for other renderers so that template content
+// and bindings are formatted consistently.
+func ContextSection(template string, bindings Bindings) string {
+	var sections []string
+	if strings.TrimSpace(template) != "" {
+		sections = append(sections, "[TEMPLATE]\n"+wrapYAML(template))
+	}
+	sections = append(sections, "[BINDINGS]\n"+strings.TrimSpace(format.Object(bindings, 0)))
+	return strings.Join(sections, "\n\n")
+}
+
 // resourceID renders a slash-joined identifier for an object, e.g.
 // "v1/ConfigMap/default/my-config". Empty segments are omitted.
 func resourceID(obj unstructured.Unstructured) string {
@@ -254,16 +282,4 @@ func toYAML(obj unstructured.Unstructured) string {
 // wrapYAML wraps content in a fenced YAML code block.
 func wrapYAML(s string) string {
 	return fmt.Sprintf("```yaml\n%s\n```", strings.TrimSpace(s))
-}
-
-// ContextSection renders the [TEMPLATE] (when non-empty) and [BINDINGS] sections shared by
-// verbose Format output and the matcher's String representation, ensuring both paths format
-// template content and bindings identically.
-func ContextSection(template string, bindings Bindings) string {
-	var sections []string
-	if strings.TrimSpace(template) != "" {
-		sections = append(sections, "[TEMPLATE]\n"+wrapYAML(template))
-	}
-	sections = append(sections, "[BINDINGS]\n"+strings.TrimSpace(format.Object(bindings, 0)))
-	return strings.Join(sections, "\n\n")
 }

@@ -1,6 +1,9 @@
 package chainsaw_test
 
 import (
+	"errors"
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -36,6 +39,22 @@ func fieldErrs(keys ...string) field.ErrorList {
 }
 
 var _ = Describe("MatchError", func() {
+	Describe("Error", func() {
+		It("should render at VerbosityNormal without template or bindings", func() {
+			me := &chainsaw.MatchError{
+				Mode: chainsaw.MatchModeSingle,
+				Attempts: []chainsaw.MatchAttempt{{
+					Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value"}),
+					Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value"}),
+					FieldErrs: fieldErrs("key1"),
+				}},
+			}
+			Expect(me.Error()).To(Equal(me.Format(options.VerbosityNormal, "", nil)))
+			Expect(me.Error()).To(ContainSubstring("--- expected"))
+			Expect(me.Error()).NotTo(ContainSubstring("[TEMPLATE]"))
+		})
+	})
+
 	Describe("BestMatch", func() {
 		type bestMatchCase struct {
 			attempts    []chainsaw.MatchAttempt
@@ -82,6 +101,10 @@ var _ = Describe("MatchError", func() {
 			template     string
 			containsErrs []string
 			excludesErrs []string
+			// orderedErrs are the section markers we assemble; each must be present and appear
+			// in the given order. Content substrings (incl. Chainsaw's external diff text) go in
+			// containsErrs instead, so we never pin the order of output we don't own.
+			orderedErrs []string
 		}
 
 		singleAttempt := func() *chainsaw.MatchError {
@@ -142,6 +165,13 @@ var _ = Describe("MatchError", func() {
 				for _, s := range tc.excludesErrs {
 					Expect(out).NotTo(ContainSubstring(s))
 				}
+				lastIdx := -1
+				for _, s := range tc.orderedErrs {
+					idx := strings.Index(out, s)
+					Expect(idx).To(BeNumerically(">", lastIdx),
+						"expected %q to appear after the previous ordered section", s)
+					lastIdx = idx
+				}
 			},
 			Entry("should render nothing meaningful for an empty attempt list", formatCase{
 				matchErr:     &chainsaw.MatchError{},
@@ -188,13 +218,29 @@ var _ = Describe("MatchError", func() {
 				excludesErrs: []string{"[TEMPLATE]", "[BINDINGS]"},
 			}),
 			Entry("should add full YAML, template content, and bindings for a single attempt at verbose", formatCase{
-				matchErr:  singleAttempt(),
-				verbosity: options.VerbosityVerbose,
-				template:  "the-template",
+				matchErr:     singleAttempt(),
+				verbosity:    options.VerbosityVerbose,
+				template:     "the-template",
+				containsErrs: []string{"--- expected", "the-template"},
+				// Fixed expected first, then the attempt's actual + error, then global context.
+				orderedErrs: []string{"[EXPECTED]", "[ACTUAL]", "[ERROR]", "[TEMPLATE]", "[BINDINGS]"},
+			}),
+			Entry("should detail the best candidate and summarize the rest for vary-actual at minimal", formatCase{
+				matchErr:  varyActual(),
+				verbosity: options.VerbosityMinimal,
 				containsErrs: []string{
-					"[ACTUAL]", "[EXPECTED]", "[ERROR]",
-					"--- expected",
-					"[TEMPLATE]", "the-template", "[BINDINGS]",
+					"0 of 2 attempts matched expectation",
+					"best match: v1/ConfigMap/default/cm-best (1 field error)",
+					"[ERROR #1]",
+					"* data.key1: Invalid value:",
+					"[OTHER ATTEMPTS]",
+					"Attempt #2: v1/ConfigMap/default/cm-worse (2 field errors)",
+				},
+				excludesErrs: []string{
+					"--- expected", // no diff at minimal
+					"[ACTUAL #1]",  // no candidate YAML at minimal
+					"[ERROR #2]",   // non-best attempt is summarized, not detailed
+					"[TEMPLATE]", "[BINDINGS]",
 				},
 			}),
 			Entry("should detail the best candidate and summarize the rest for vary-actual at normal", formatCase{
@@ -203,23 +249,32 @@ var _ = Describe("MatchError", func() {
 				containsErrs: []string{
 					"0 of 2 attempts matched expectation",
 					"best match: v1/ConfigMap/default/cm-best (1 field error)",
-					"[ERROR #1]",
-					"v1/ConfigMap/default/cm-best",
 					"--- expected",
-					"[OTHER ATTEMPTS]",
 					"Attempt #2: v1/ConfigMap/default/cm-worse (2 field errors)",
 				},
+				excludesErrs: []string{
+					"[ACTUAL #1]", // candidate YAML is verbose-only
+					"[ERROR #2]",  // non-best attempt is summarized, not detailed
+					"data.key2",   // only cm-worse has a key2 error, and it is not detailed
+				},
+				// Best-match detail precedes the summaries of the rest.
+				orderedErrs: []string{"best match:", "[ERROR #1]", "[OTHER ATTEMPTS]", "Attempt #2:"},
 			}),
 			Entry("should detail every candidate under per-attempt labels for vary-actual at verbose", formatCase{
 				matchErr:  varyActual(),
 				verbosity: options.VerbosityVerbose,
+				template:  "the-template",
 				containsErrs: []string{
 					"0 of 2 attempts matched expectation:",
-					"[EXPECTED]\n```yaml", // fixed expected shown once at top
-					"[ACTUAL #1]", "[ERROR #1]",
-					"[ACTUAL #2]", "[ERROR #2]",
+					"```yaml", // attempts and the fixed expected are rendered as YAML blocks
+					"the-template",
 				},
 				excludesErrs: []string{"[OTHER ATTEMPTS]"},
+				// Fixed expected, then every attempt in order, then global context.
+				orderedErrs: []string{
+					"[EXPECTED]", "[ACTUAL #1]", "[ERROR #1]", "[ACTUAL #2]", "[ERROR #2]",
+					"[TEMPLATE]", "[BINDINGS]",
+				},
 			}),
 			Entry("should detail the best document and summarize the rest for vary-expected at normal", formatCase{
 				matchErr:  varyExpected(),
@@ -227,10 +282,15 @@ var _ = Describe("MatchError", func() {
 				containsErrs: []string{
 					"0 of 2 attempts matched expectation",
 					"best match: v1/ConfigMap/default/doc-2 (1 field error)",
-					"[ERROR #2]",
-					"[OTHER ATTEMPTS]",
 					"Attempt #1: v1/ConfigMap/default/doc-1 (2 field errors)",
 				},
+				excludesErrs: []string{
+					"[EXPECTED #1]", "[EXPECTED #2]", // expectation YAML is verbose-only
+					"[ERROR #1]", // non-best document is summarized, not detailed
+					"data.key2",  // only doc-1 has a key2 error, and it is not detailed
+				},
+				// Best-match detail (the #2 document here) precedes the summaries of the rest.
+				orderedErrs: []string{"best match:", "[ERROR #2]", "[OTHER ATTEMPTS]", "Attempt #1:"},
 			}),
 			Entry("should show the fixed actual once and each expected document for vary-expected at verbose", formatCase{
 				matchErr:  varyExpected(),
@@ -244,8 +304,8 @@ var _ = Describe("MatchError", func() {
 		)
 	})
 
-	Describe("Error", func() {
-		It("should render at VerbosityNormal without template or bindings", func() {
+	Describe("FormatError", func() {
+		It("should render at the given verbosity and remain unwrappable to the *MatchError", func() {
 			me := &chainsaw.MatchError{
 				Mode: chainsaw.MatchModeSingle,
 				Attempts: []chainsaw.MatchAttempt{{
@@ -254,9 +314,16 @@ var _ = Describe("MatchError", func() {
 					FieldErrs: fieldErrs("key1"),
 				}},
 			}
-			Expect(me.Error()).To(Equal(me.Format(options.VerbosityNormal, "", nil)))
-			Expect(me.Error()).To(ContainSubstring("--- expected"))
-			Expect(me.Error()).NotTo(ContainSubstring("[TEMPLATE]"))
+
+			err := me.FormatError(options.VerbosityVerbose, "the-template", nil)
+			// Message matches Format at the requested verbosity (with context).
+			Expect(err.Error()).To(Equal(me.Format(options.VerbosityVerbose, "the-template", nil)))
+			Expect(err.Error()).To(ContainSubstring("[TEMPLATE]"))
+
+			// The structured error remains recoverable for programmatic inspection.
+			var extracted *chainsaw.MatchError
+			Expect(errors.As(err, &extracted)).To(BeTrue())
+			Expect(extracted).To(BeIdenticalTo(me))
 		})
 	})
 })
