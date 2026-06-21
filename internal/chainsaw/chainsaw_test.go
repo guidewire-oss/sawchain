@@ -2171,6 +2171,20 @@ data:
 				expectedMatch: unstructured.Unstructured{},
 				expectedErrs:  []string{"actual resource not found"},
 			}),
+			Entry("should fail when label selector finds no candidates", testCase{
+				resourcesYaml: ``,
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: default
+  labels:
+    sawchain-nonexistent: "true"
+`,
+				bindings:      map[string]any{},
+				expectedMatch: unstructured.Unstructured{},
+				expectedErrs:  []string{"no actual resource found"},
+			}),
 			Entry("should fail when no resource matches", testCase{
 				resourcesYaml: `
 apiVersion: v1

@@ -159,6 +159,23 @@ var _ = Describe("MatchError", func() {
 				},
 				excludesErrs: []string{"--- expected", "[TEMPLATE]", "[BINDINGS]"},
 			}),
+			Entry("should sort field error lines for a single attempt at minimal", formatCase{
+				matchErr: &chainsaw.MatchError{
+					Mode: chainsaw.MatchModeSingle,
+					Attempts: []chainsaw.MatchAttempt{{
+						Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value", "key2": "actual-value"}),
+						Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value", "key2": "expected-value"}),
+						FieldErrs: fieldErrs("key2", "key1"), // unsorted input; output should be alphabetized
+					}},
+				},
+				verbosity: options.VerbosityMinimal,
+				containsErrs: []string{
+					// key1's line immediately precedes key2's line once sorted.
+					"* data.key1: Invalid value: \"actual-key1\": Expected value: \"expected-key1\"\n" +
+						"* data.key2: Invalid value: \"actual-key2\": Expected value: \"expected-key2\"",
+				},
+				excludesErrs: []string{"--- expected"},
+			}),
 			Entry("should add the diff but no verbose context for a single attempt at normal", formatCase{
 				matchErr:  singleAttempt(),
 				verbosity: options.VerbosityNormal,
