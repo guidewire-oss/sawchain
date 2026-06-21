@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/guidewire-oss/sawchain/internal/chainsaw"
 	"github.com/guidewire-oss/sawchain/internal/options"
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
@@ -30,6 +31,31 @@ const (
 	// document, plus the full actual/expected YAML, template content, bindings, and info
 	// logs.
 	VerbosityVerbose = options.VerbosityVerbose
+)
+
+// MatchError is a structured assertion error describing why one or more match attempts
+// failed. Errors returned by Check and CheckFunc wrap a *MatchError; use errors.As to extract
+// it for programmatic inspection of the attempts and their field errors. The error string is
+// rendered according to the configured Verbosity.
+type MatchError = chainsaw.MatchError
+
+// MatchAttempt records the result of comparing one actual resource against one expected
+// resource, including the field-level errors found.
+type MatchAttempt = chainsaw.MatchAttempt
+
+// MatchMode describes what varied across the attempts in a MatchError, which determines how
+// attempts are labeled when formatted.
+type MatchMode = chainsaw.MatchMode
+
+const (
+	// MatchModeSingle is a single attempt pairing one actual with one expected.
+	MatchModeSingle = chainsaw.MatchModeSingle
+	// MatchModeVaryActual is multiple attempts sharing one expected with varying actuals
+	// (e.g. Check matching one template against multiple cluster candidates).
+	MatchModeVaryActual = chainsaw.MatchModeVaryActual
+	// MatchModeVaryExpected is multiple attempts sharing one actual with varying expecteds
+	// (e.g. a matcher checking one object against multiple template documents).
+	MatchModeVaryExpected = chainsaw.MatchModeVaryExpected
 )
 
 const (
@@ -102,6 +128,10 @@ type Sawchain struct {
 //   - Interval (string or time.Duration): Optional. Defaults to 1s. Default polling interval for
 //     eventual assertions. If provided, must be after timeout.
 //
+//   - Verbosity (sawchain.Verbosity): Optional. Defaults to VerbosityNormal. Default detail level
+//     of assertion error output and logging. See the Verbosity constants for the behavior of each
+//     level.
+//
 // # Notes
 //
 //   - Invalid input will result in immediate test failure.
@@ -124,6 +154,10 @@ type Sawchain struct {
 // Initialize Sawchain with custom timeout and interval settings:
 //
 //	sc := sawchain.New(t, k8sClient, "10s", "2s")
+//
+// Initialize Sawchain with verbose error output:
+//
+//	sc := sawchain.New(t, k8sClient, sawchain.VerbosityVerbose)
 func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 	t.Helper()
 	// Initialize Gomega
@@ -166,6 +200,10 @@ func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 //
 //   - Interval (string or time.Duration): Optional. Defaults to 1s. Default polling interval for
 //     eventual assertions. If provided, must be after timeout.
+//
+//   - Verbosity (sawchain.Verbosity): Optional. Defaults to VerbosityNormal. Default detail level
+//     of assertion error output and logging. See the Verbosity constants for the behavior of each
+//     level.
 //
 // # Notes
 //

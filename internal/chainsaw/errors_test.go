@@ -10,8 +10,8 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/options"
 )
 
-// configMap builds an unstructured ConfigMap for error-formatting tests.
-func configMap(name, namespace string, data map[string]any) unstructured.Unstructured {
+// unstructuredConfigMap builds an unstructured ConfigMap for error-formatting tests.
+func unstructuredConfigMap(name, namespace string, data map[string]any) unstructured.Unstructured {
 	return unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "v1",
@@ -37,188 +37,203 @@ func fieldErrs(keys ...string) field.ErrorList {
 
 var _ = Describe("MatchError", func() {
 	Describe("BestMatch", func() {
-		It("returns a zero attempt when there are no attempts", func() {
-			me := &chainsaw.MatchError{}
-			Expect(me.BestMatch()).To(Equal(chainsaw.MatchAttempt{}))
-		})
+		type bestMatchCase struct {
+			attempts    []chainsaw.MatchAttempt
+			expectedIdx int // index of the attempt expected to be returned; -1 means zero value
+		}
 
-		It("returns the only attempt when there is one", func() {
-			only := chainsaw.MatchAttempt{
-				Actual:    configMap("cm", "default", map[string]any{"key1": "actual-key1"}),
-				Expected:  configMap("cm", "default", map[string]any{"key1": "expected-key1"}),
-				FieldErrs: fieldErrs("key1"),
-			}
-			me := &chainsaw.MatchError{Attempts: []chainsaw.MatchAttempt{only}, Mode: chainsaw.MatchModeSingle}
-			Expect(me.BestMatch()).To(Equal(only))
-		})
+		first := chainsaw.MatchAttempt{Actual: unstructuredConfigMap("first", "default", nil), FieldErrs: fieldErrs("k1")}
+		second := chainsaw.MatchAttempt{Actual: unstructuredConfigMap("second", "default", nil), FieldErrs: fieldErrs("k2")}
+		middle := chainsaw.MatchAttempt{Actual: unstructuredConfigMap("middle", "default", nil), FieldErrs: fieldErrs("k1", "k2")}
+		most := chainsaw.MatchAttempt{Actual: unstructuredConfigMap("most", "default", nil), FieldErrs: fieldErrs("k1", "k2", "k3")}
 
-		It("returns the attempt with the fewest field errors", func() {
-			most := chainsaw.MatchAttempt{Actual: configMap("a", "default", nil), FieldErrs: fieldErrs("k1", "k2", "k3")}
-			fewest := chainsaw.MatchAttempt{Actual: configMap("b", "default", nil), FieldErrs: fieldErrs("k1")}
-			middle := chainsaw.MatchAttempt{Actual: configMap("c", "default", nil), FieldErrs: fieldErrs("k1", "k2")}
-			me := &chainsaw.MatchError{
-				Attempts: []chainsaw.MatchAttempt{most, fewest, middle},
-				Mode:     chainsaw.MatchModeVaryActual,
-			}
-			Expect(me.BestMatch()).To(Equal(fewest))
-		})
-
-		It("breaks ties by the lowest index", func() {
-			first := chainsaw.MatchAttempt{Actual: configMap("first", "default", nil), FieldErrs: fieldErrs("k1")}
-			second := chainsaw.MatchAttempt{Actual: configMap("second", "default", nil), FieldErrs: fieldErrs("k2")}
-			me := &chainsaw.MatchError{
-				Attempts: []chainsaw.MatchAttempt{first, second},
-				Mode:     chainsaw.MatchModeVaryActual,
-			}
-			Expect(me.BestMatch()).To(Equal(first))
-		})
+		DescribeTable("selecting the closest attempt",
+			func(tc bestMatchCase) {
+				me := &chainsaw.MatchError{Attempts: tc.attempts, Mode: chainsaw.MatchModeVaryActual}
+				if tc.expectedIdx < 0 {
+					Expect(me.BestMatch()).To(Equal(chainsaw.MatchAttempt{}))
+				} else {
+					Expect(me.BestMatch()).To(Equal(tc.attempts[tc.expectedIdx]))
+				}
+			},
+			Entry("should return a zero attempt when there are no attempts", bestMatchCase{
+				attempts:    nil,
+				expectedIdx: -1,
+			}),
+			Entry("should return the only attempt when there is one", bestMatchCase{
+				attempts:    []chainsaw.MatchAttempt{first},
+				expectedIdx: 0,
+			}),
+			Entry("should return the attempt with the fewest field errors", bestMatchCase{
+				attempts:    []chainsaw.MatchAttempt{most, first, middle},
+				expectedIdx: 1,
+			}),
+			Entry("should break ties by the lowest index", bestMatchCase{
+				attempts:    []chainsaw.MatchAttempt{first, second},
+				expectedIdx: 0,
+			}),
+		)
 	})
 
 	Describe("Format", func() {
-		It("handles an empty attempt list gracefully", func() {
-			me := &chainsaw.MatchError{}
-			Expect(me.Format(options.VerbosityNormal, "", nil)).To(Equal("no match attempts recorded"))
-		})
+		type formatCase struct {
+			matchErr     *chainsaw.MatchError
+			verbosity    options.Verbosity
+			template     string
+			containsErrs []string
+			excludesErrs []string
+		}
 
-		Describe("single attempt", func() {
-			var me *chainsaw.MatchError
-			BeforeEach(func() {
-				me = &chainsaw.MatchError{
-					Mode: chainsaw.MatchModeSingle,
-					Attempts: []chainsaw.MatchAttempt{{
-						Actual:    configMap("test-config", "default", map[string]any{"key1": "actual-value"}),
-						Expected:  configMap("test-config", "default", map[string]any{"key1": "expected-value"}),
+		singleAttempt := func() *chainsaw.MatchError {
+			return &chainsaw.MatchError{
+				Mode: chainsaw.MatchModeSingle,
+				Attempts: []chainsaw.MatchAttempt{{
+					Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value"}),
+					Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value"}),
+					FieldErrs: fieldErrs("key1"),
+				}},
+			}
+		}
+
+		varyActual := func() *chainsaw.MatchError {
+			expected := unstructuredConfigMap("", "default", map[string]any{"key1": "expected-value"})
+			return &chainsaw.MatchError{
+				Mode: chainsaw.MatchModeVaryActual,
+				Attempts: []chainsaw.MatchAttempt{
+					{
+						Actual:    unstructuredConfigMap("cm-best", "default", map[string]any{"key1": "actual-value"}),
+						Expected:  expected,
 						FieldErrs: fieldErrs("key1"),
-					}},
-				}
-			})
-
-			It("at minimal shows field errors without a diff", func() {
-				out := me.Format(options.VerbosityMinimal, "the-template", nil)
-				Expect(out).To(ContainSubstring("[ERROR]"))
-				Expect(out).To(ContainSubstring("v1/ConfigMap/default/test-config"))
-				Expect(out).To(ContainSubstring("* data.key1: Invalid value:"))
-				Expect(out).NotTo(ContainSubstring("--- expected"))
-				Expect(out).NotTo(ContainSubstring("[TEMPLATE]"))
-				Expect(out).NotTo(ContainSubstring("[BINDINGS]"))
-			})
-
-			It("at normal shows field errors and a diff but no verbose context", func() {
-				out := me.Format(options.VerbosityNormal, "the-template", nil)
-				Expect(out).To(ContainSubstring("[ERROR]"))
-				Expect(out).To(ContainSubstring("v1/ConfigMap/default/test-config"))
-				Expect(out).To(ContainSubstring("--- expected"))
-				Expect(out).To(ContainSubstring("+++ actual"))
-				Expect(out).NotTo(ContainSubstring("[TEMPLATE]"))
-				Expect(out).NotTo(ContainSubstring("[BINDINGS]"))
-			})
-
-			It("at verbose shows full YAML, template content, and bindings", func() {
-				out := me.Format(options.VerbosityVerbose, "the-template", nil)
-				Expect(out).To(ContainSubstring("[ACTUAL]"))
-				Expect(out).To(ContainSubstring("[EXPECTED]"))
-				Expect(out).To(ContainSubstring("[ERROR]"))
-				Expect(out).To(ContainSubstring("--- expected"))
-				Expect(out).To(ContainSubstring("[TEMPLATE]"))
-				Expect(out).To(ContainSubstring("the-template"))
-				Expect(out).To(ContainSubstring("[BINDINGS]"))
-			})
-		})
-
-		Describe("multiple attempts (vary-actual)", func() {
-			var me *chainsaw.MatchError
-			BeforeEach(func() {
-				expected := configMap("", "default", map[string]any{"key1": "expected-value"})
-				me = &chainsaw.MatchError{
-					Mode: chainsaw.MatchModeVaryActual,
-					Attempts: []chainsaw.MatchAttempt{
-						{
-							Actual:    configMap("cm-best", "default", map[string]any{"key1": "actual-value"}),
-							Expected:  expected,
-							FieldErrs: fieldErrs("key1"),
-						},
-						{
-							Actual:    configMap("cm-worse", "default", map[string]any{"key1": "actual-value"}),
-							Expected:  expected,
-							FieldErrs: fieldErrs("key1", "key2"),
-						},
 					},
-				}
-			})
-
-			It("at normal details the best match and summarizes the rest", func() {
-				out := me.Format(options.VerbosityNormal, "", nil)
-				Expect(out).To(ContainSubstring("0 of 2 attempts matched expectation"))
-				Expect(out).To(ContainSubstring("best match: v1/ConfigMap/default/cm-best (1 field error)"))
-				Expect(out).To(ContainSubstring("[ERROR #1]"))
-				Expect(out).To(ContainSubstring("v1/ConfigMap/default/cm-best"))
-				Expect(out).To(ContainSubstring("--- expected"))
-				Expect(out).To(ContainSubstring("[OTHER ATTEMPTS]"))
-				Expect(out).To(ContainSubstring("Attempt #2: v1/ConfigMap/default/cm-worse (2 field errors)"))
-			})
-
-			It("at verbose details every attempt under per-attempt labels", func() {
-				out := me.Format(options.VerbosityVerbose, "", nil)
-				Expect(out).To(ContainSubstring("0 of 2 attempts matched expectation:"))
-				// Fixed expected shown once at top.
-				Expect(out).To(ContainSubstring("[EXPECTED]\n```yaml"))
-				// Each candidate detailed.
-				Expect(out).To(ContainSubstring("[ACTUAL #1]"))
-				Expect(out).To(ContainSubstring("[ERROR #1]"))
-				Expect(out).To(ContainSubstring("[ACTUAL #2]"))
-				Expect(out).To(ContainSubstring("[ERROR #2]"))
-				Expect(out).NotTo(ContainSubstring("[OTHER ATTEMPTS]"))
-			})
-		})
-
-		Describe("multiple attempts (vary-expected)", func() {
-			var me *chainsaw.MatchError
-			BeforeEach(func() {
-				actual := configMap("the-actual", "default", map[string]any{"key1": "actual-value"})
-				me = &chainsaw.MatchError{
-					Mode: chainsaw.MatchModeVaryExpected,
-					Attempts: []chainsaw.MatchAttempt{
-						{
-							Actual:    actual,
-							Expected:  configMap("doc-1", "default", nil),
-							FieldErrs: fieldErrs("key1", "key2"),
-						},
-						{
-							Actual:    actual,
-							Expected:  configMap("doc-2", "default", nil),
-							FieldErrs: fieldErrs("key1"),
-						},
+					{
+						Actual:    unstructuredConfigMap("cm-worse", "default", map[string]any{"key1": "actual-value"}),
+						Expected:  expected,
+						FieldErrs: fieldErrs("key1", "key2"),
 					},
+				},
+			}
+		}
+
+		varyExpected := func() *chainsaw.MatchError {
+			actual := unstructuredConfigMap("the-actual", "default", map[string]any{"key1": "actual-value"})
+			return &chainsaw.MatchError{
+				Mode: chainsaw.MatchModeVaryExpected,
+				Attempts: []chainsaw.MatchAttempt{
+					{
+						Actual:    actual,
+						Expected:  unstructuredConfigMap("doc-1", "default", nil),
+						FieldErrs: fieldErrs("key1", "key2"),
+					},
+					{
+						Actual:    actual,
+						Expected:  unstructuredConfigMap("doc-2", "default", nil),
+						FieldErrs: fieldErrs("key1"),
+					},
+				},
+			}
+		}
+
+		DescribeTable("rendering match errors",
+			func(tc formatCase) {
+				out := tc.matchErr.Format(tc.verbosity, tc.template, nil)
+				for _, s := range tc.containsErrs {
+					Expect(out).To(ContainSubstring(s))
 				}
-			})
-
-			It("at normal details the best document and summarizes the rest", func() {
-				out := me.Format(options.VerbosityNormal, "", nil)
-				Expect(out).To(ContainSubstring("0 of 2 attempts matched expectation"))
-				Expect(out).To(ContainSubstring("best match: v1/ConfigMap/default/doc-2 (1 field error)"))
-				Expect(out).To(ContainSubstring("[ERROR #2]"))
-				Expect(out).To(ContainSubstring("[OTHER ATTEMPTS]"))
-				Expect(out).To(ContainSubstring("Attempt #1: v1/ConfigMap/default/doc-1 (2 field errors)"))
-			})
-
-			It("at verbose shows the fixed actual once and each expected document", func() {
-				out := me.Format(options.VerbosityVerbose, "", nil)
-				Expect(out).To(ContainSubstring("[ACTUAL]\n```yaml"))
-				Expect(out).To(ContainSubstring("[EXPECTED #1]"))
-				Expect(out).To(ContainSubstring("[EXPECTED #2]"))
-				Expect(out).To(ContainSubstring("[ERROR #1]"))
-				Expect(out).To(ContainSubstring("[ERROR #2]"))
-			})
-		})
+				for _, s := range tc.excludesErrs {
+					Expect(out).NotTo(ContainSubstring(s))
+				}
+			},
+			Entry("should render nothing meaningful for an empty attempt list", formatCase{
+				matchErr:     &chainsaw.MatchError{},
+				verbosity:    options.VerbosityNormal,
+				containsErrs: []string{"no match attempts recorded"},
+			}),
+			Entry("should show field errors without a diff for a single attempt at minimal", formatCase{
+				matchErr:  singleAttempt(),
+				verbosity: options.VerbosityMinimal,
+				template:  "the-template",
+				containsErrs: []string{
+					"[ERROR]",
+					"v1/ConfigMap/default/test-config",
+					"* data.key1: Invalid value:",
+				},
+				excludesErrs: []string{"--- expected", "[TEMPLATE]", "[BINDINGS]"},
+			}),
+			Entry("should add the diff but no verbose context for a single attempt at normal", formatCase{
+				matchErr:  singleAttempt(),
+				verbosity: options.VerbosityNormal,
+				template:  "the-template",
+				containsErrs: []string{
+					"[ERROR]",
+					"v1/ConfigMap/default/test-config",
+					"--- expected", "+++ actual",
+				},
+				excludesErrs: []string{"[TEMPLATE]", "[BINDINGS]"},
+			}),
+			Entry("should add full YAML, template content, and bindings for a single attempt at verbose", formatCase{
+				matchErr:  singleAttempt(),
+				verbosity: options.VerbosityVerbose,
+				template:  "the-template",
+				containsErrs: []string{
+					"[ACTUAL]", "[EXPECTED]", "[ERROR]",
+					"--- expected",
+					"[TEMPLATE]", "the-template", "[BINDINGS]",
+				},
+			}),
+			Entry("should detail the best candidate and summarize the rest for vary-actual at normal", formatCase{
+				matchErr:  varyActual(),
+				verbosity: options.VerbosityNormal,
+				containsErrs: []string{
+					"0 of 2 attempts matched expectation",
+					"best match: v1/ConfigMap/default/cm-best (1 field error)",
+					"[ERROR #1]",
+					"v1/ConfigMap/default/cm-best",
+					"--- expected",
+					"[OTHER ATTEMPTS]",
+					"Attempt #2: v1/ConfigMap/default/cm-worse (2 field errors)",
+				},
+			}),
+			Entry("should detail every candidate under per-attempt labels for vary-actual at verbose", formatCase{
+				matchErr:  varyActual(),
+				verbosity: options.VerbosityVerbose,
+				containsErrs: []string{
+					"0 of 2 attempts matched expectation:",
+					"[EXPECTED]\n```yaml", // fixed expected shown once at top
+					"[ACTUAL #1]", "[ERROR #1]",
+					"[ACTUAL #2]", "[ERROR #2]",
+				},
+				excludesErrs: []string{"[OTHER ATTEMPTS]"},
+			}),
+			Entry("should detail the best document and summarize the rest for vary-expected at normal", formatCase{
+				matchErr:  varyExpected(),
+				verbosity: options.VerbosityNormal,
+				containsErrs: []string{
+					"0 of 2 attempts matched expectation",
+					"best match: v1/ConfigMap/default/doc-2 (1 field error)",
+					"[ERROR #2]",
+					"[OTHER ATTEMPTS]",
+					"Attempt #1: v1/ConfigMap/default/doc-1 (2 field errors)",
+				},
+			}),
+			Entry("should show the fixed actual once and each expected document for vary-expected at verbose", formatCase{
+				matchErr:  varyExpected(),
+				verbosity: options.VerbosityVerbose,
+				containsErrs: []string{
+					"[ACTUAL]\n```yaml", // fixed actual shown once at top
+					"[EXPECTED #1]", "[EXPECTED #2]",
+					"[ERROR #1]", "[ERROR #2]",
+				},
+			}),
+		)
 	})
 
 	Describe("Error", func() {
-		It("renders at VerbosityNormal without template or bindings", func() {
+		It("should render at VerbosityNormal without template or bindings", func() {
 			me := &chainsaw.MatchError{
 				Mode: chainsaw.MatchModeSingle,
 				Attempts: []chainsaw.MatchAttempt{{
-					Actual:    configMap("test-config", "default", map[string]any{"key1": "actual-value"}),
-					Expected:  configMap("test-config", "default", map[string]any{"key1": "expected-value"}),
+					Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value"}),
+					Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value"}),
 					FieldErrs: fieldErrs("key1"),
 				}},
 			}

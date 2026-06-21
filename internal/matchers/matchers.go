@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
-	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -86,8 +84,7 @@ func (m *chainsawMatcher) Match(actual any) (bool, error) {
 }
 
 func (m *chainsawMatcher) String() string {
-	return fmt.Sprintf("\n[TEMPLATE]\n```yaml\n%s\n```\n\n[BINDINGS]\n%s\n",
-		strings.TrimSpace(m.templateContent), format.Object(m.bindings, 0))
+	return "\n" + chainsaw.ContextSection(m.templateContent, m.bindings) + "\n"
 }
 
 // failureMessage renders the matcher failure message, delegating detail to

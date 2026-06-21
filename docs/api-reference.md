@@ -9,6 +9,9 @@ import "github.com/guidewire-oss/sawchain"
 ## Index
 
 - [Constants](<#constants>)
+- [type MatchAttempt](<#MatchAttempt>)
+- [type MatchError](<#MatchError>)
+- [type MatchMode](<#MatchMode>)
 - [type Sawchain](<#Sawchain>)
   - [func New\(t testing.TB, c client.Client, args ...any\) \*Sawchain](<#New>)
   - [func NewWithGomega\(t testing.TB, g gomega.Gomega, c client.Client, args ...any\) \*Sawchain](<#NewWithGomega>)
@@ -56,8 +59,50 @@ const (
 )
 ```
 
+<a name="MatchModeSingle"></a>
+
+```go
+const (
+    // MatchModeSingle is a single attempt pairing one actual with one expected.
+    MatchModeSingle = chainsaw.MatchModeSingle
+    // MatchModeVaryActual is multiple attempts sharing one expected with varying actuals
+    // (e.g. Check matching one template against multiple cluster candidates).
+    MatchModeVaryActual = chainsaw.MatchModeVaryActual
+    // MatchModeVaryExpected is multiple attempts sharing one actual with varying expecteds
+    // (e.g. a matcher checking one object against multiple template documents).
+    MatchModeVaryExpected = chainsaw.MatchModeVaryExpected
+)
+```
+
+<a name="MatchAttempt"></a>
+## type [MatchAttempt](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L44>)
+
+MatchAttempt records the result of comparing one actual resource against one expected resource, including the field\-level errors found.
+
+```go
+type MatchAttempt = chainsaw.MatchAttempt
+```
+
+<a name="MatchError"></a>
+## type [MatchError](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L40>)
+
+MatchError is a structured assertion error describing why one or more match attempts failed. Errors returned by Check and CheckFunc wrap a \*MatchError; use errors.As to extract it for programmatic inspection of the attempts and their field errors. The error string is rendered according to the configured Verbosity.
+
+```go
+type MatchError = chainsaw.MatchError
+```
+
+<a name="MatchMode"></a>
+## type [MatchMode](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L48>)
+
+MatchMode describes what varied across the attempts in a MatchError, which determines how attempts are labeled when formatted.
+
+```go
+type MatchMode = chainsaw.MatchMode
+```
+
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L79-L84>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L105-L110>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -72,7 +117,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L127>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L161>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -91,6 +136,8 @@ The following arguments may be provided in any order \(unless noted otherwise\) 
 - Timeout \(string or time.Duration\): Optional. Defaults to 5s. Default timeout for eventual assertions. If provided, must be before interval.
 
 - Interval \(string or time.Duration\): Optional. Defaults to 1s. Default polling interval for eventual assertions. If provided, must be after timeout.
+
+- Verbosity \(sawchain.Verbosity\): Optional. Defaults to VerbosityNormal. Default detail level of assertion error output and logging. See the Verbosity constants for the behavior of each level.
 
 #### Notes
 
@@ -120,8 +167,14 @@ Initialize Sawchain with custom timeout and interval settings:
 sc := sawchain.New(t, k8sClient, "10s", "2s")
 ```
 
+Initialize Sawchain with verbose error output:
+
+```go
+sc := sawchain.New(t, k8sClient, sawchain.VerbosityVerbose)
+```
+
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L197>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L235>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -142,6 +195,8 @@ The following arguments may be provided in any order \(unless noted otherwise\) 
 - Timeout \(string or time.Duration\): Optional. Defaults to 5s. Default timeout for eventual assertions. If provided, must be before interval.
 
 - Interval \(string or time.Duration\): Optional. Defaults to 1s. Default polling interval for eventual assertions. If provided, must be after timeout.
+
+- Verbosity \(sawchain.Verbosity\): Optional. Defaults to VerbosityNormal. Default detail level of assertion error output and logging. See the Verbosity constants for the behavior of each level.
 
 #### Notes
 
@@ -177,7 +232,7 @@ sc := sawchain.NewWithGomega(t, g, k8sClient, "10s", "2s")
 ```
 
 <a name="Sawchain.Check"></a>
-### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L107>)
+### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L127>)
 
 ```go
 func (s *Sawchain) Check(ctx context.Context, args ...any) error
@@ -271,7 +326,7 @@ err := sc.Check(ctx, []client.Object{configMap, secret}, `
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 
 <a name="Sawchain.CheckFunc"></a>
-### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L164>)
+### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L180>)
 
 ```go
 func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error
@@ -1805,7 +1860,7 @@ sc.UpdateAndWait(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Verbosity"></a>
-## type [Verbosity](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L19>)
+## type [Verbosity](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L20>)
 
 Verbosity controls the detail level of assertion error output and logging.
 

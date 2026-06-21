@@ -126,10 +126,7 @@ func (e *MatchError) Format(verbosity options.Verbosity, template string, bindin
 
 	// Global context, shown once (verbose only).
 	if verbose {
-		if strings.TrimSpace(template) != "" {
-			sections = append(sections, "[TEMPLATE]\n"+wrapYAML(template))
-		}
-		sections = append(sections, "[BINDINGS]\n"+strings.TrimSpace(format.Object(bindings, 0)))
+		sections = append(sections, ContextSection(template, bindings))
 	}
 
 	return strings.Join(sections, "\n\n")
@@ -257,4 +254,16 @@ func toYAML(obj unstructured.Unstructured) string {
 // wrapYAML wraps content in a fenced YAML code block.
 func wrapYAML(s string) string {
 	return fmt.Sprintf("```yaml\n%s\n```", strings.TrimSpace(s))
+}
+
+// ContextSection renders the [TEMPLATE] (when non-empty) and [BINDINGS] sections shared by
+// verbose Format output and the matcher's String representation, ensuring both paths format
+// template content and bindings identically.
+func ContextSection(template string, bindings Bindings) string {
+	var sections []string
+	if strings.TrimSpace(template) != "" {
+		sections = append(sections, "[TEMPLATE]\n"+wrapYAML(template))
+	}
+	sections = append(sections, "[BINDINGS]\n"+strings.TrimSpace(format.Object(bindings, 0)))
+	return strings.Join(sections, "\n\n")
 }

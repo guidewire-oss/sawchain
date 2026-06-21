@@ -1,6 +1,8 @@
 package matchers_test
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -481,6 +483,32 @@ metadata:
 				bindings:            map[string]any{},
 				expectedInternalErr: "variable not defined: $missing",
 			}),
+
+			Entry("error on template with no resources", testCase{
+				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+					"key1": "value1",
+				}),
+				templateContent:     "# only a comment, no resources\n",
+				bindings:            map[string]any{},
+				expectedInternalErr: "template must contain at least one resource",
+			}),
+
+			Entry("error on undefined binding in assertion expression", testCase{
+				actual: testutil.NewConfigMap("test-config", "default", map[string]string{
+					"key1": "value1",
+				}),
+				templateContent: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data:
+  (key1 == $undefined): true
+`,
+				bindings:            map[string]any{},
+				expectedInternalErr: "failed to check candidate",
+			}),
 		)
 	})
 
@@ -564,6 +592,36 @@ data:
 				excludesErrs: nil,
 			}),
 		)
+	})
+
+	Describe("String", func() {
+		template := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: default
+data:
+  key1: ($value)
+`
+
+		It("should render template and bindings sections once a match has been attempted", func() {
+			bindings, err := chainsaw.BindingsFromMap(map[string]any{"value": "expected-value"})
+			Expect(err).NotTo(HaveOccurred())
+			matcher := matchers.NewChainsawMatcher(standardClient, template, bindings, options.VerbosityNormal)
+
+			// Match populates the matcher's template content used by String.
+			_, err = matcher.Match(testutil.NewConfigMap("test-config", "default", map[string]string{
+				"key1": "actual-value",
+			}))
+			Expect(err).NotTo(HaveOccurred())
+
+			str := matcher.(fmt.Stringer).String()
+			Expect(str).To(ContainSubstring("[TEMPLATE]"))
+			Expect(str).To(ContainSubstring("key1: ($value)"))
+			Expect(str).To(ContainSubstring("[BINDINGS]"))
+			Expect(str).To(ContainSubstring("expected-value"))
+		})
 	})
 
 	Describe("NewStatusConditionMatcher", func() {

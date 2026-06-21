@@ -1,6 +1,8 @@
 package sawchain_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -1121,4 +1123,45 @@ var _ = Describe("Check and CheckFunc verbosity", func() {
 			excludesErrs: nil,
 		}),
 	)
+})
+
+var _ = Describe("Check error", func() {
+	It("should wrap a *sawchain.MatchError that can be extracted with errors.As", func() {
+		t := &MockT{TB: GinkgoTB()}
+		sc := sawchain.New(t, testutil.NewStandardFakeClient())
+
+		sc.CreateAndWait(ctx, `
+			apiVersion: v1
+			kind: ConfigMap
+			metadata:
+			  name: test-inspect-cm
+			  namespace: default
+			data:
+			  key1: actual-value
+		`)
+
+		err := sc.Check(ctx, `
+			apiVersion: v1
+			kind: ConfigMap
+			metadata:
+			  name: test-inspect-cm
+			  namespace: default
+			data:
+			  key1: expected-value
+		`)
+		Expect(err).To(HaveOccurred())
+
+		// The structured error is recoverable for programmatic inspection.
+		var me *sawchain.MatchError
+		Expect(errors.As(err, &me)).To(BeTrue(), "expected to extract a *sawchain.MatchError")
+		Expect(me.Mode).To(Equal(sawchain.MatchModeVaryActual))
+		Expect(me.Attempts).To(HaveLen(1))
+
+		best := me.BestMatch()
+		Expect(best.FieldErrs).NotTo(BeEmpty())
+		Expect(best.Actual.GetName()).To(Equal("test-inspect-cm"))
+
+		// Extracting the structured error does not change the formatted message.
+		Expect(err.Error()).To(ContainSubstring("data.key1: Invalid value:"))
+	})
 })

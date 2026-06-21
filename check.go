@@ -3,7 +3,6 @@ package sawchain
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -12,6 +11,27 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/options"
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
+
+// matchFailure carries a verbosity-rendered failure message while preserving the underlying
+// *chainsaw.MatchError, so callers can extract it with errors.As(err, &sawchain.MatchError{})
+// for programmatic inspection without losing the formatted error string.
+type matchFailure struct {
+	msg string
+	err *chainsaw.MatchError
+}
+
+func (e *matchFailure) Error() string { return e.msg }
+func (e *matchFailure) Unwrap() error { return e.err }
+
+// formatMatchError renders a check error: if it is a *chainsaw.MatchError, it is wrapped in a
+// matchFailure rendered at the given verbosity; otherwise it is returned unchanged.
+func formatMatchError(err error, verbosity options.Verbosity, template string, bindings chainsaw.Bindings) error {
+	var me *chainsaw.MatchError
+	if errors.As(err, &me) {
+		return &matchFailure{msg: me.Format(verbosity, template, bindings), err: me}
+	}
+	return err
+}
 
 // Check searches the cluster for resources matching YAML expectations defined in a template and optionally
 // saves found matches to objects for type-safe access. If no match is found, a detailed error will be
@@ -133,11 +153,7 @@ func (s *Sawchain) Check(ctx context.Context, args ...any) error {
 	for i, document := range documents {
 		match, err := chainsaw.Check(s.c, ctx, document, bindings)
 		if err != nil {
-			var me *chainsaw.MatchError
-			if errors.As(err, &me) {
-				return fmt.Errorf("%s", me.Format(s.opts.Verbosity, document, bindings))
-			}
-			return err
+			return formatMatchError(err, s.opts.Verbosity, document, bindings)
 		}
 		matches[i] = match
 	}
@@ -193,11 +209,7 @@ func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error {
 		for i, document := range documents {
 			match, err := chainsaw.Check(s.c, ctx, document, bindings)
 			if err != nil {
-				var me *chainsaw.MatchError
-				if errors.As(err, &me) {
-					return fmt.Errorf("%s", me.Format(s.opts.Verbosity, document, bindings))
-				}
-				return err
+				return formatMatchError(err, s.opts.Verbosity, document, bindings)
 			}
 			matches[i] = match
 		}
