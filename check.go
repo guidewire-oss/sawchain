@@ -66,6 +66,10 @@ func formatMatchError(err error, verbosity options.Verbosity, template string, b
 //     programmatic inspection, and its detail level follows the Sawchain instance's configured
 //     Verbosity.
 //
+//   - Assert the returned error with Succeed (e.g. Expect(sc.Check(...)).To(Succeed())) for the
+//     clearest failure output; other error matchers fall back to Gomega's struct formatting,
+//     which is noisier.
+//
 //   - Use CheckFunc if you need to create a Check function for polling.
 //
 // # Examples

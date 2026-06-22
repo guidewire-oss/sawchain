@@ -325,5 +325,47 @@ var _ = Describe("MatchError", func() {
 			Expect(errors.As(err, &extracted)).To(BeTrue())
 			Expect(extracted).To(BeIdenticalTo(me))
 		})
+
+		// Guards the real assertion paths users hit with Check/CheckFunc results: Gomega must emit
+		// the structured message verbatim and exactly once, with no struct reflection or length
+		// truncation of the wrapped *MatchError (the failures FormattedGomegaError exists to avoid).
+		It("should render through Gomega assertions verbatim, exactly once, without reflection or truncation", func() {
+			expected := unstructuredConfigMap("", "default", map[string]any{"key1": "expected-value"})
+			me := &chainsaw.MatchError{
+				Mode: chainsaw.MatchModeVaryActual,
+				Attempts: []chainsaw.MatchAttempt{
+					{
+						Actual:    unstructuredConfigMap("cm-1", "default", map[string]any{"key1": "actual-value"}),
+						Expected:  expected,
+						FieldErrs: fieldErrs("key1"),
+					},
+					{
+						Actual:    unstructuredConfigMap("cm-2", "default", map[string]any{"key1": "actual-value"}),
+						Expected:  expected,
+						FieldErrs: fieldErrs("key1"),
+					},
+				},
+			}
+			newErr := func() error { return me.FormatError(options.VerbosityNormal, "", nil) }
+
+			assertClean := func(msg string) {
+				Expect(msg).To(ContainSubstring("[OTHER ATTEMPTS]"))                           // full message present
+				Expect(strings.Count(msg, "0 of 2 attempts matched expectation")).To(Equal(1)) // rendered once
+				Expect(msg).NotTo(ContainSubstring("Attempts:"))                               // no struct reflection
+				Expect(msg).NotTo(ContainSubstring("FieldErrs:"))                              // no struct reflection
+				Expect(msg).NotTo(ContainSubstring("formattedError"))                          // no type/address header
+				Expect(strings.ToLower(msg)).NotTo(ContainSubstring("truncat"))                // not truncated
+			}
+
+			// Expect(Check(...)).To(Succeed())
+			var sync string
+			NewGomega(func(message string, _ ...int) { sync = message }).Expect(newErr()).To(Succeed())
+			assertClean(sync)
+
+			// Eventually(CheckFunc(...)).Should(Succeed())
+			var async string
+			NewGomega(func(message string, _ ...int) { async = message }).Eventually(newErr, "15ms", "5ms").Should(Succeed())
+			assertClean(async)
+		})
 	})
 })

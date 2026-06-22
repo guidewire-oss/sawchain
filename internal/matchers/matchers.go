@@ -112,9 +112,9 @@ func (m *chainsawMatcher) failureMessage(negated bool) string {
 
 	if m.matchErr == nil || len(m.matchErr.Attempts) == 0 {
 		// Safety: should not happen, but handle gracefully
-		return base + "\n\n(no match details recorded)\n"
+		return base + "\n\n(no match details recorded)"
 	}
-	return base + "\n\n" + m.matchErr.Format(m.verbosity, m.templateContent, m.bindings) + "\n"
+	return base + "\n\n" + m.matchErr.Format(m.verbosity, m.templateContent, m.bindings)
 }
 
 func (m *chainsawMatcher) FailureMessage(actual any) string {

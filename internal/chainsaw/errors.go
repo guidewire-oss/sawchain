@@ -57,27 +57,25 @@ func (e *MatchError) BestMatch() MatchAttempt {
 	return e.Attempts[e.bestMatchIndex()]
 }
 
-// Format renders the error, adapting to mode and verbosity:
+// Format renders the error at the given verbosity:
 //
-//   - Field error summary lines are always included.
-//   - YAML diffs are included at VerbosityNormal and above.
-//   - Full actual/expected YAML, template content, and bindings are included at
-//     VerbosityVerbose.
+//   - VerbosityMinimal: field-level errors only, without YAML diffs. For multiple attempts,
+//     only the best match is detailed and the rest are summarized in one line each.
+//   - VerbosityNormal: field-level errors with YAML diffs. For multiple attempts, only the best
+//     match is detailed and the rest are summarized in one line each.
+//   - VerbosityVerbose: field-level errors with YAML diffs for every attempt, plus the full
+//     actual/expected YAML, template content, and bindings.
 //
-// For multiple attempts, VerbosityVerbose renders every attempt in full detail, while lower
-// verbosities render the best match in full detail plus one-line summaries for the rest.
-//
-// The template and bindings arguments are only used at VerbosityVerbose; callers may pass
-// zero values when verbose context is not needed.
+// The template and bindings arguments are only used at VerbosityVerbose; callers may pass zero
+// values when verbose context is not needed.
 func (e *MatchError) Format(verbosity options.Verbosity, template string, bindings Bindings) string {
 	if len(e.Attempts) == 0 {
 		return "no match attempts recorded"
 	}
-	verbose := verbosity >= options.VerbosityVerbose
 
 	var sections []string
 
-	// Fixed object shared by all attempts, shown once (verbose only).
+	// Fixed object shared by all attempts, shown once (verbose only)
 	if s := e.fixedSection(verbosity); s != "" {
 		sections = append(sections, s)
 	}
@@ -85,13 +83,13 @@ func (e *MatchError) Format(verbosity options.Verbosity, template string, bindin
 	if len(e.Attempts) == 1 {
 		sections = append(sections, e.attemptBlock(e.Attempts[0], 0, verbosity, bindings, false))
 	} else {
-		bestIdx := e.bestMatchIndex()
-		if verbose {
+		if verbosity >= options.VerbosityVerbose {
 			sections = append(sections, fmt.Sprintf("0 of %d attempts matched expectation:", len(e.Attempts)))
 			for i := range e.Attempts {
 				sections = append(sections, e.attemptBlock(e.Attempts[i], i, verbosity, bindings, true))
 			}
 		} else {
+			bestIdx := e.bestMatchIndex()
 			best := e.Attempts[bestIdx]
 			sections = append(sections, fmt.Sprintf(
 				"0 of %d attempts matched expectation; best match: %s (%s)",
@@ -109,8 +107,8 @@ func (e *MatchError) Format(verbosity options.Verbosity, template string, bindin
 		}
 	}
 
-	// Global context, shown once (verbose only).
-	if verbose {
+	// Global context, shown once (verbose only)
+	if verbosity >= options.VerbosityVerbose {
 		sections = append(sections, ContextSection(template, bindings))
 	}
 
@@ -134,6 +132,11 @@ type formattedError struct {
 func (e *formattedError) Error() string { return e.msg }
 func (e *formattedError) Unwrap() error { return e.err }
 
+// FormattedGomegaError makes Gomega's Succeed/Eventually/Consistently emit the pre-rendered
+// message verbatim, bypassing the struct reflection (and truncation) that format.Object
+// would otherwise apply to the wrapped error.
+func (e *formattedError) FormattedGomegaError() string { return e.msg }
+
 // bestMatchIndex returns the index of the attempt with the fewest field errors. Ties are
 // broken by the lowest index, preserving the caller's attempt ordering.
 func (e *MatchError) bestMatchIndex() int {
@@ -154,8 +157,8 @@ func (e *MatchError) varyingObj(a MatchAttempt) unstructured.Unstructured {
 	return a.Actual
 }
 
-// fixedSection renders the object shared by all attempts (the one that does not vary). Only
-// rendered at VerbosityVerbose.
+// fixedSection renders the object shared by all attempts (the one that does not vary).
+// Only rendered at VerbosityVerbose.
 func (e *MatchError) fixedSection(verbosity options.Verbosity) string {
 	if verbosity < options.VerbosityVerbose {
 		return ""

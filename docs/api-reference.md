@@ -237,7 +237,7 @@ sc := sawchain.NewWithGomega(t, g, k8sClient, sawchain.VerbosityMinimal)
 ```
 
 <a name="Sawchain.Check"></a>
-### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L121>)
+### func \(\*Sawchain\) [Check](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L125>)
 
 ```go
 func (s *Sawchain) Check(ctx context.Context, args ...any) error
@@ -270,6 +270,8 @@ The following arguments may be provided in any order after the context:
 - Because Chainsaw performs partial/subset matching on resource fields \(expected fields must exist, extras are allowed\), template expectations only have to include fields of interest, not necessarily complete resource definitions.
 
 - When no match is found, the returned error unwraps to a \*MatchError via errors.As for programmatic inspection, and its detail level follows the Sawchain instance's configured Verbosity.
+
+- Assert the returned error with Succeed \(e.g. Expect\(sc.Check\(...\)\).To\(Succeed\(\)\)\) for the clearest failure output; other error matchers fall back to Gomega's struct formatting, which is noisier.
 
 - Use CheckFunc if you need to create a Check function for polling.
 
@@ -333,7 +335,7 @@ err := sc.Check(ctx, []client.Object{configMap, secret}, `
 For more Chainsaw examples, see https://github.com/guidewire-oss/sawchain/blob/main/docs/chainsaw-cheatsheet.md.
 
 <a name="Sawchain.CheckFunc"></a>
-### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L174>)
+### func \(\*Sawchain\) [CheckFunc](<https://github.com/guidewire-oss/sawchain/blob/main/check.go#L178>)
 
 ```go
 func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error
