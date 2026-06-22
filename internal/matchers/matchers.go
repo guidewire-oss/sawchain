@@ -14,6 +14,11 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
+// templateNotRendered is the placeholder template content a matcher carries until
+// Match() renders the real template. It surfaces if String() is called first,
+// keeping ContextSection's [TEMPLATE] block meaningful.
+const templateNotRendered = "# template not yet rendered"
+
 // chainsawMatcher is a Gomega matcher that checks if a client.Object matches
 // a Chainsaw template. Supports single-document matching and multi-document
 // matching with "match any document" semantics.
@@ -47,10 +52,11 @@ func (m *chainsawMatcher) Match(actual any) (bool, error) {
 	}
 
 	// Render expectation objects
-	m.templateContent, err = m.createTemplateContent(m.c, obj)
+	templateContent, err := m.createTemplateContent(m.c, obj)
 	if err != nil {
 		return false, err
 	}
+	m.templateContent = templateContent
 	expectedObjs, err := chainsaw.RenderTemplate(
 		context.TODO(), m.templateContent, m.bindings,
 	)
@@ -106,9 +112,9 @@ func (m *chainsawMatcher) failureMessage(negated bool) string {
 
 	if m.matchErr == nil || len(m.matchErr.Attempts) == 0 {
 		// Safety: should not happen, but handle gracefully
-		return base + "\n\n(no match details recorded)"
+		return base + "\n\n(no match details recorded)\n"
 	}
-	return base + "\n\n" + m.matchErr.Format(m.verbosity, m.templateContent, m.bindings)
+	return base + "\n\n" + m.matchErr.Format(m.verbosity, m.templateContent, m.bindings) + "\n"
 }
 
 func (m *chainsawMatcher) FailureMessage(actual any) string {
@@ -131,8 +137,9 @@ func NewChainsawMatcher(
 		createTemplateContent: func(c client.Client, obj client.Object) (string, error) {
 			return templateContent, nil
 		},
-		bindings:  bindings,
-		verbosity: verbosity,
+		templateContent: templateNotRendered,
+		bindings:        bindings,
+		verbosity:       verbosity,
 	}
 }
 
@@ -145,8 +152,9 @@ func NewStatusConditionMatcher(
 	verbosity options.Verbosity,
 ) types.GomegaMatcher {
 	return &chainsawMatcher{
-		c:         c,
-		verbosity: verbosity,
+		c:               c,
+		verbosity:       verbosity,
+		templateContent: templateNotRendered,
 		createTemplateContent: func(c client.Client, obj client.Object) (string, error) {
 			// Extract apiVersion and kind from object
 			gvk, err := util.GetGroupVersionKind(obj, c.Scheme())

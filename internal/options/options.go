@@ -16,18 +16,15 @@ const (
 	errObjectAndObjects = "client.Object and []client.Object arguments both provided"
 )
 
-// Verbosity controls the detail level of assertion error output and logging.
+// Verbosity is an ordered detail level; higher values produce more detailed output.
 type Verbosity int
 
 const (
-	// VerbosityMinimal outputs field errors only (no YAML diff), with best-match
-	// filtering for multi-attempt failures, and no info logs.
+	// VerbosityMinimal is the lowest detail level.
 	VerbosityMinimal Verbosity = 1
-	// VerbosityNormal outputs field errors and YAML diffs, with best-match filtering
-	// for multi-attempt failures, and no info logs (default).
+	// VerbosityNormal is an intermediate detail level.
 	VerbosityNormal Verbosity = 10
-	// VerbosityVerbose outputs field errors and YAML diffs for every attempt, plus the
-	// full actual/expected YAML, template content, and bindings, and info logs.
+	// VerbosityVerbose is the highest detail level.
 	VerbosityVerbose Verbosity = 20
 )
 

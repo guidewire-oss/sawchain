@@ -605,6 +605,18 @@ data:
   key1: ($value)
 `
 
+		It("should render a placeholder template before a match has been attempted", func() {
+			bindings, err := chainsaw.BindingsFromMap(map[string]any{"value": "expected-value"})
+			Expect(err).NotTo(HaveOccurred())
+			matcher := matchers.NewChainsawMatcher(standardClient, template, bindings, options.VerbosityNormal)
+
+			// String may be called before Match (e.g. when an empty slice is passed to a collection matcher).
+			str := matcher.(fmt.Stringer).String()
+			Expect(str).To(ContainSubstring("[TEMPLATE]"))
+			Expect(str).To(ContainSubstring("template not yet rendered"))
+			Expect(str).NotTo(ContainSubstring("key1: ($value)"))
+		})
+
 		It("should render template and bindings sections once a match has been attempted", func() {
 			bindings, err := chainsaw.BindingsFromMap(map[string]any{"value": "expected-value"})
 			Expect(err).NotTo(HaveOccurred())

@@ -19,13 +19,11 @@ import (
 type MatchMode int
 
 const (
-	// MatchModeSingle is a single attempt pairing one actual with one expected.
-	MatchModeSingle MatchMode = iota
-	// MatchModeVaryActual is multiple attempts sharing one expected with varying actuals
-	// (e.g. one expectation matched against multiple candidate resources).
-	MatchModeVaryActual
-	// MatchModeVaryExpected is multiple attempts sharing one actual with varying expecteds
-	// (e.g. one object matched against multiple expectation documents).
+	// MatchModeVaryActual is one or more attempts sharing one expected with varying actuals
+	// (e.g. one expectation matched against one or more candidate resources).
+	MatchModeVaryActual MatchMode = iota
+	// MatchModeVaryExpected is one or more attempts sharing one actual with varying expecteds
+	// (e.g. one object matched against one or more expectation documents).
 	MatchModeVaryExpected
 )
 
@@ -148,18 +146,12 @@ func (e *MatchError) bestMatchIndex() int {
 	return best
 }
 
-// varyingIsActual reports whether the actual object is the one that varies across attempts
-// (true for single-attempt and vary-actual modes).
-func (e *MatchError) varyingIsActual() bool {
-	return e.Mode != MatchModeVaryExpected
-}
-
 // varyingObj returns the attempt's object that varies across attempts.
 func (e *MatchError) varyingObj(a MatchAttempt) unstructured.Unstructured {
-	if e.varyingIsActual() {
-		return a.Actual
+	if e.Mode == MatchModeVaryExpected {
+		return a.Expected
 	}
-	return a.Expected
+	return a.Actual
 }
 
 // fixedSection renders the object shared by all attempts (the one that does not vary). Only
@@ -168,7 +160,7 @@ func (e *MatchError) fixedSection(verbosity options.Verbosity) string {
 	if verbosity < options.VerbosityVerbose {
 		return ""
 	}
-	if e.varyingIsActual() {
+	if e.Mode == MatchModeVaryActual {
 		return "[EXPECTED]\n" + wrapYAML(toYAML(e.Attempts[0].Expected))
 	}
 	return "[ACTUAL]\n" + wrapYAML(toYAML(e.Attempts[0].Actual))
@@ -192,7 +184,7 @@ func (e *MatchError) attemptBlock(
 	var sections []string
 	if verbosity >= options.VerbosityVerbose {
 		label := "ACTUAL"
-		if !e.varyingIsActual() {
+		if e.Mode == MatchModeVaryExpected {
 			label = "EXPECTED"
 		}
 		sections = append(sections, fmt.Sprintf("[%s%s]\n%s", label, suffix, wrapYAML(toYAML(e.varyingObj(a)))))
@@ -217,15 +209,14 @@ func (e *MatchError) summaryLine(a MatchAttempt, idx int) string {
 	return fmt.Sprintf("Attempt #%d: %s (%s)", idx+1, resourceID(e.varyingObj(a)), fieldErrorCount(len(a.FieldErrs)))
 }
 
-// ContextSection renders the [TEMPLATE] (when non-empty) and [BINDINGS] sections. It is
-// shared by Format's verbose output and exposed for other renderers so that template content
-// and bindings are formatted consistently.
+// ContextSection renders the [TEMPLATE] and [BINDINGS] sections. It is shared by Format's
+// verbose output and exposed for other renderers so that template content and bindings are
+// formatted consistently. Callers are responsible for supplying meaningful template content.
 func ContextSection(template string, bindings Bindings) string {
-	var sections []string
-	if strings.TrimSpace(template) != "" {
-		sections = append(sections, "[TEMPLATE]\n"+wrapYAML(template))
+	sections := []string{
+		"[TEMPLATE]\n" + wrapYAML(template),
+		"[BINDINGS]\n" + strings.TrimSpace(format.Object(bindings, 0)),
 	}
-	sections = append(sections, "[BINDINGS]\n"+strings.TrimSpace(format.Object(bindings, 0)))
 	return strings.Join(sections, "\n\n")
 }
 

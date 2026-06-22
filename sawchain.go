@@ -34,9 +34,8 @@ const (
 )
 
 // MatchError is a structured assertion error describing why one or more match attempts
-// failed. Errors returned by Check and CheckFunc wrap a *MatchError; use errors.As to extract
-// it for programmatic inspection of the attempts and their field errors. The error string is
-// rendered according to the configured Verbosity.
+// failed, exposing the attempts and their field errors for programmatic inspection. Errors
+// returned by Check and CheckFunc unwrap to a *MatchError via errors.As.
 type MatchError = chainsaw.MatchError
 
 // MatchAttempt records the result of comparing one actual resource against one expected
@@ -48,13 +47,11 @@ type MatchAttempt = chainsaw.MatchAttempt
 type MatchMode = chainsaw.MatchMode
 
 const (
-	// MatchModeSingle is a single attempt pairing one actual with one expected.
-	MatchModeSingle = chainsaw.MatchModeSingle
-	// MatchModeVaryActual is multiple attempts sharing one expected with varying actuals
-	// (e.g. Check matching one template against multiple cluster candidates).
+	// MatchModeVaryActual is one or more attempts sharing one expected with varying actuals
+	// (e.g. Check matching one template against one or more cluster candidates).
 	MatchModeVaryActual = chainsaw.MatchModeVaryActual
-	// MatchModeVaryExpected is multiple attempts sharing one actual with varying expecteds
-	// (e.g. a matcher checking one object against multiple template documents).
+	// MatchModeVaryExpected is one or more attempts sharing one actual with varying expecteds
+	// (e.g. a matcher checking one object against one or more template documents).
 	MatchModeVaryExpected = chainsaw.MatchModeVaryExpected
 )
 
@@ -128,9 +125,9 @@ type Sawchain struct {
 //   - Interval (string or time.Duration): Optional. Defaults to 1s. Default polling interval for
 //     eventual assertions. If provided, must be after timeout.
 //
-//   - Verbosity (sawchain.Verbosity): Optional. Defaults to VerbosityNormal. Default detail level
-//     of assertion error output and logging. See the Verbosity constants for the behavior of each
-//     level.
+//   - Verbosity (sawchain.Verbosity): Optional. Defaults to VerbosityNormal. Detail level of
+//     assertion error output and logging for this Sawchain instance. See the Verbosity constants
+//     for the behavior of each level.
 //
 // # Notes
 //
@@ -201,9 +198,9 @@ func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 //   - Interval (string or time.Duration): Optional. Defaults to 1s. Default polling interval for
 //     eventual assertions. If provided, must be after timeout.
 //
-//   - Verbosity (sawchain.Verbosity): Optional. Defaults to VerbosityNormal. Default detail level
-//     of assertion error output and logging. See the Verbosity constants for the behavior of each
-//     level.
+//   - Verbosity (sawchain.Verbosity): Optional. Defaults to VerbosityNormal. Detail level of
+//     assertion error output and logging for this Sawchain instance. See the Verbosity constants
+//     for the behavior of each level.
 //
 // # Notes
 //
@@ -232,6 +229,11 @@ func New(t testing.TB, c client.Client, args ...any) *Sawchain {
 //
 //	g := gomega.NewGomega(customFailHandler)
 //	sc := sawchain.NewWithGomega(t, g, k8sClient, "10s", "2s")
+//
+// Initialize Sawchain with a custom Gomega instance and minimal error output:
+//
+//	g := gomega.NewGomega(customFailHandler)
+//	sc := sawchain.NewWithGomega(t, g, k8sClient, sawchain.VerbosityMinimal)
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain {
 	t.Helper()
 	// Check client

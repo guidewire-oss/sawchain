@@ -62,6 +62,10 @@ func formatMatchError(err error, verbosity options.Verbosity, template string, b
 //     extras are allowed), template expectations only have to include fields of interest, not necessarily
 //     complete resource definitions.
 //
+//   - When no match is found, the returned error unwraps to a *MatchError via errors.As for
+//     programmatic inspection, and its detail level follows the Sawchain instance's configured
+//     Verbosity.
+//
 //   - Use CheckFunc if you need to create a Check function for polling.
 //
 // # Examples

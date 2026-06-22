@@ -42,7 +42,7 @@ var _ = Describe("MatchError", func() {
 	Describe("Error", func() {
 		It("should render at VerbosityNormal without template or bindings", func() {
 			me := &chainsaw.MatchError{
-				Mode: chainsaw.MatchModeSingle,
+				Mode: chainsaw.MatchModeVaryActual,
 				Attempts: []chainsaw.MatchAttempt{{
 					Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value"}),
 					Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value"}),
@@ -109,7 +109,7 @@ var _ = Describe("MatchError", func() {
 
 		singleAttempt := func() *chainsaw.MatchError {
 			return &chainsaw.MatchError{
-				Mode: chainsaw.MatchModeSingle,
+				Mode: chainsaw.MatchModeVaryActual,
 				Attempts: []chainsaw.MatchAttempt{{
 					Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value"}),
 					Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value"}),
@@ -191,7 +191,7 @@ var _ = Describe("MatchError", func() {
 			}),
 			Entry("should sort field error lines for a single attempt at minimal", formatCase{
 				matchErr: &chainsaw.MatchError{
-					Mode: chainsaw.MatchModeSingle,
+					Mode: chainsaw.MatchModeVaryActual,
 					Attempts: []chainsaw.MatchAttempt{{
 						Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value", "key2": "actual-value"}),
 						Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value", "key2": "expected-value"}),
@@ -307,7 +307,7 @@ var _ = Describe("MatchError", func() {
 	Describe("FormatError", func() {
 		It("should render at the given verbosity and remain unwrappable to the *MatchError", func() {
 			me := &chainsaw.MatchError{
-				Mode: chainsaw.MatchModeSingle,
+				Mode: chainsaw.MatchModeVaryActual,
 				Attempts: []chainsaw.MatchAttempt{{
 					Actual:    unstructuredConfigMap("test-config", "default", map[string]any{"key1": "actual-value"}),
 					Expected:  unstructuredConfigMap("test-config", "default", map[string]any{"key1": "expected-value"}),
