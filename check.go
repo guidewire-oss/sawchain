@@ -2,6 +2,7 @@ package sawchain
 
 import (
 	"context"
+	"errors"
 
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -10,6 +11,17 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/options"
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
+
+// formatMatchError renders a check error: if it is a *chainsaw.MatchError, it is rendered at
+// the given verbosity while remaining unwrappable to *chainsaw.MatchError via errors.As;
+// otherwise it is returned unchanged.
+func formatMatchError(err error, verbosity options.Verbosity, template string, bindings chainsaw.Bindings) error {
+	var me *chainsaw.MatchError
+	if errors.As(err, &me) {
+		return me.FormatError(verbosity, template, bindings)
+	}
+	return err
+}
 
 // Check searches the cluster for resources matching YAML expectations defined in a template and optionally
 // saves found matches to objects for type-safe access. If no match is found, a detailed error will be
@@ -49,6 +61,14 @@ import (
 //   - Because Chainsaw performs partial/subset matching on resource fields (expected fields must exist,
 //     extras are allowed), template expectations only have to include fields of interest, not necessarily
 //     complete resource definitions.
+//
+//   - When no match is found, the returned error unwraps to a *MatchError via errors.As for
+//     programmatic inspection, and its detail level follows the Sawchain instance's configured
+//     Verbosity.
+//
+//   - Assert the returned error with Succeed (e.g. Expect(sc.Check(...)).To(Succeed())) for the
+//     clearest failure output; other error matchers fall back to Gomega's struct formatting,
+//     which is noisier.
 //
 //   - Use CheckFunc if you need to create a Check function for polling.
 //
@@ -129,9 +149,9 @@ func (s *Sawchain) Check(ctx context.Context, args ...any) error {
 	s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 	matches := make([]unstructured.Unstructured, len(documents))
 	for i, document := range documents {
-		match, err := chainsaw.Check(s.c, ctx, document, bindings, s.opts.Verbosity)
+		match, err := chainsaw.Check(s.c, ctx, document, bindings)
 		if err != nil {
-			return err
+			return formatMatchError(err, s.opts.Verbosity, document, bindings)
 		}
 		matches[i] = match
 	}
@@ -185,9 +205,9 @@ func (s *Sawchain) CheckFunc(ctx context.Context, args ...any) func() error {
 		s.g.Expect(err).NotTo(gomega.HaveOccurred(), errInvalidBindings)
 		matches := make([]unstructured.Unstructured, len(documents))
 		for i, document := range documents {
-			match, err := chainsaw.Check(s.c, ctx, document, bindings, s.opts.Verbosity)
+			match, err := chainsaw.Check(s.c, ctx, document, bindings)
 			if err != nil {
-				return err
+				return formatMatchError(err, s.opts.Verbosity, document, bindings)
 			}
 			matches[i] = match
 		}

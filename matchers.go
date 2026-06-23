@@ -38,6 +38,9 @@ import (
 //     extras are allowed), template expectations only have to include fields of interest, not necessarily
 //     complete resource definitions.
 //
+//   - The detail level of the matcher's failure message follows the Sawchain instance's configured
+//     Verbosity.
+//
 //   - For optimal failure output, use individual assertions in a for-loop rather than collection
 //     matchers (e.g., HaveEach, ContainElement). Collection matchers work correctly but provide
 //     limited error details due to Gomega limitations. If collection matchers are necessary,
@@ -104,6 +107,9 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //   - Invalid input will result in immediate test failure.
 //
 //   - When dealing with typed objects, the client scheme will be used for internal conversions.
+//
+//   - The detail level of the matcher's failure message follows the Sawchain instance's configured
+//     Verbosity.
 //
 //   - For optimal failure output, use individual assertions in a for-loop rather than collection
 //     matchers (e.g., HaveEach, ContainElement). Collection matchers work correctly but provide

@@ -1,6 +1,8 @@
 package sawchain_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -21,6 +23,7 @@ var _ = Describe("Check and CheckFunc", func() {
 		expectedFailureLogs []string
 		expectedMatchObj    client.Object
 		expectedMatchObjs   []client.Object
+		inspectReturnErr    func(err error)
 	}
 
 	DescribeTableSubtree("checking the cluster for matching resources",
@@ -59,6 +62,11 @@ var _ = Describe("Check and CheckFunc", func() {
 					}
 				} else {
 					Expect(err).NotTo(HaveOccurred(), "expected no error")
+				}
+
+				// Verify structured error (e.g. recoverable via errors.As)
+				if tc.inspectReturnErr != nil {
+					tc.inspectReturnErr(err)
 				}
 
 				// Verify failure
@@ -659,14 +667,24 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedReturnErrs: []string{
-				"0 of 1 candidates match expectation",
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-cm",
 				"data.key: Invalid value: \"value\": Expected value: \"wrong-value\"",
 				"--- expected",
 				"+++ actual",
 				"-  key: wrong-value",
 				"+  key: value",
+			},
+			// The structured error is recoverable for programmatic inspection.
+			inspectReturnErr: func(err error) {
+				var me *sawchain.MatchError
+				Expect(errors.As(err, &me)).To(BeTrue(), "expected to extract a *sawchain.MatchError")
+				Expect(me.Mode).To(Equal(sawchain.MatchModeVaryActual))
+				Expect(me.Attempts).To(HaveLen(1))
+
+				best := me.BestMatch()
+				Expect(best.FieldErrs).NotTo(BeEmpty())
+				Expect(best.Actual.GetName()).To(Equal("test-cm"))
 			},
 		}),
 
@@ -695,8 +713,7 @@ var _ = Describe("Check and CheckFunc", func() {
 				`,
 			},
 			expectedReturnErrs: []string{
-				"0 of 1 candidates match expectation",
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-cm",
 				"data.(to_number(count) > `5`): Invalid value: false: Expected value: true",
 				"--- expected",
@@ -1049,72 +1066,90 @@ var _ = Describe("Check and CheckFunc verbosity", func() {
 		excludesErrs []string
 	}
 
-	DescribeTable("diff output in return error",
+	const mismatchTemplate = `
+		apiVersion: v1
+		kind: ConfigMap
+		metadata:
+		  name: test-verbosity-check-cm
+		  namespace: default
+		data:
+		  key1: expected-value
+	`
+
+	DescribeTableSubtree("diff output in return error",
 		func(tc verbosityTestCase) {
-			t := &MockT{TB: GinkgoTB()}
-			sc := sawchain.New(t, testutil.NewStandardFakeClient(), tc.verbosity)
+			var sc *sawchain.Sawchain
 
-			// Create resource
-			sc.CreateAndWait(ctx, `
-				apiVersion: v1
-				kind: ConfigMap
-				metadata:
-				  name: test-verbosity-check-cm
-				  namespace: default
-				data:
-				  key1: actual-value
-			`)
+			BeforeEach(func() {
+				t := &MockT{TB: GinkgoTB()}
+				sc = sawchain.New(t, testutil.NewStandardFakeClient(), tc.verbosity)
 
-			// Check with mismatching template
-			err := sc.Check(ctx, `
-				apiVersion: v1
-				kind: ConfigMap
-				metadata:
-				  name: test-verbosity-check-cm
-				  namespace: default
-				data:
-				  key1: expected-value
-			`)
+				// Create resource
+				sc.CreateAndWait(ctx, `
+					apiVersion: v1
+					kind: ConfigMap
+					metadata:
+					  name: test-verbosity-check-cm
+					  namespace: default
+					data:
+					  key1: actual-value
+				`)
+			})
 
-			Expect(err).To(HaveOccurred())
-			for _, s := range tc.containsErrs {
-				Expect(err.Error()).To(ContainSubstring(s))
+			verify := func(err error) {
+				GinkgoT().Helper()
+				Expect(err).To(HaveOccurred())
+				for _, s := range tc.containsErrs {
+					Expect(err.Error()).To(ContainSubstring(s))
+				}
+				for _, s := range tc.excludesErrs {
+					Expect(err.Error()).NotTo(ContainSubstring(s))
+				}
 			}
-			for _, s := range tc.excludesErrs {
-				Expect(err.Error()).NotTo(ContainSubstring(s))
-			}
+
+			It("formats the return error correctly (Check)", func() {
+				verify(sc.Check(ctx, mismatchTemplate))
+			})
+
+			It("formats the return error correctly (CheckFunc)", func() {
+				verify(sc.CheckFunc(ctx, mismatchTemplate)())
+			})
 		},
-		Entry("VerbosityMinimal omits diff in return error", verbosityTestCase{
+		Entry("VerbosityMinimal omits diff and verbose context in return error", verbosityTestCase{
 			verbosity: sawchain.VerbosityMinimal,
 			containsErrs: []string{
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-verbosity-check-cm",
 				"data.key1: Invalid value:",
 			},
 			excludesErrs: []string{
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
+				"[ACTUAL]", "[EXPECTED]", "[TEMPLATE]", "[BINDINGS]",
 			},
 		}),
-		Entry("VerbosityNormal includes diff in return error", verbosityTestCase{
+		Entry("VerbosityNormal includes diff but omits verbose context in return error", verbosityTestCase{
 			verbosity: sawchain.VerbosityNormal,
 			containsErrs: []string{
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-verbosity-check-cm",
 				"data.key1: Invalid value:",
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
 			},
-			excludesErrs: nil,
+			excludesErrs: []string{
+				"[ACTUAL]", "[EXPECTED]", "[TEMPLATE]", "[BINDINGS]",
+			},
 		}),
-		Entry("VerbosityVerbose includes diff in return error", verbosityTestCase{
+		Entry("VerbosityVerbose includes diff, full YAML, template, and bindings in return error", verbosityTestCase{
 			verbosity: sawchain.VerbosityVerbose,
 			containsErrs: []string{
-				"Candidate #1 mismatch errors:",
+				"[ERROR]",
 				"v1/ConfigMap/default/test-verbosity-check-cm",
 				"data.key1: Invalid value:",
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
+				"[ACTUAL]", "[EXPECTED]", "[TEMPLATE]", "[BINDINGS]",
 			},
 			excludesErrs: nil,
 		}),

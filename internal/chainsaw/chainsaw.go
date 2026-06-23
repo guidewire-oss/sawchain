@@ -5,23 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
-	"strings"
 
 	"github.com/kyverno/chainsaw/pkg/apis"
 	"github.com/kyverno/chainsaw/pkg/apis/v1alpha1"
 	"github.com/kyverno/chainsaw/pkg/engine/bindings"
 	"github.com/kyverno/chainsaw/pkg/engine/checks"
-	operrors "github.com/kyverno/chainsaw/pkg/engine/operations/errors"
 	"github.com/kyverno/chainsaw/pkg/engine/templating"
 	"github.com/kyverno/chainsaw/pkg/loaders/resource"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/guidewire-oss/sawchain/internal/options"
 )
 
 type Bindings = apis.Bindings
@@ -135,72 +129,36 @@ func RenderTemplateSingle(
 	return rendered[0], nil
 }
 
-// formatMinimalError formats a mismatch as "resource ID + field errors" with no YAML diff.
-func formatMinimalError(obj unstructured.Unstructured, fieldErrs field.ErrorList) string {
-	var parts []string
-	if v := obj.GetAPIVersion(); v != "" {
-		parts = append(parts, v)
-	}
-	if v := obj.GetKind(); v != "" {
-		parts = append(parts, v)
-	}
-	if v := obj.GetNamespace(); v != "" {
-		parts = append(parts, v)
-	}
-	if v := obj.GetName(); v != "" {
-		parts = append(parts, v)
-	}
-	resourceId := strings.Join(parts, "/")
-
-	sorted := make(field.ErrorList, len(fieldErrs))
-	copy(sorted, fieldErrs)
-	slices.SortStableFunc(sorted, func(a, b *field.Error) int {
-		return strings.Compare(a.Error(), b.Error())
-	})
-
-	lines := []string{resourceId}
-	for _, fe := range sorted {
-		lines = append(lines, "* "+fe.Error())
-	}
-	return strings.Join(lines, "\n")
-}
-
-// Match compares candidates with the expectation and returns the first match
-// or an error if no match is found. Does not handle non-resource matching.
+// Match compares candidates with the expectation and returns the first match, or a
+// *MatchError if no match is found. Does not handle non-resource matching.
 // Based on github.com/kyverno/chainsaw/pkg/engine/operations/assert.Exec.
 func Match(
 	ctx context.Context,
 	candidates []unstructured.Unstructured,
 	expected unstructured.Unstructured,
 	bindings Bindings,
-	verbosity options.Verbosity,
 ) (unstructured.Unstructured, error) {
-	var mismatchMessages []string
-	for i, candidate := range candidates {
+	var attempts []MatchAttempt
+	for _, candidate := range candidates {
 		fieldErrs, err := checks.Check(ctx, compilers, candidate.UnstructuredContent(), bindings,
 			ptr.To(v1alpha1.NewCheck(expected.UnstructuredContent())))
 		if err != nil {
 			return unstructured.Unstructured{}, fmt.Errorf("failed to check candidate: %w", err)
 		}
-		if len(fieldErrs) != 0 {
-			var detail string
-			if verbosity >= options.VerbosityNormal {
-				detail = operrors.ResourceError(compilers, expected, candidate, true, bindings, fieldErrs).Error()
-			} else {
-				detail = formatMinimalError(candidate, fieldErrs)
-			}
-			mismatchMessages = append(mismatchMessages, fmt.Sprintf("Candidate #%d mismatch errors:\n%s", i+1, detail))
-		} else {
+		if len(fieldErrs) == 0 {
 			// Match found
 			return candidate, nil
 		}
+		attempts = append(attempts, MatchAttempt{
+			Actual:    candidate,
+			Expected:  expected,
+			FieldErrs: fieldErrs,
+		})
 	}
-	var err error
-	if len(mismatchMessages) > 0 {
-		detail := strings.Join(mismatchMessages, "\n")
-		err = fmt.Errorf("0 of %d candidates match expectation\n\n%s", len(candidates), detail)
+	if len(attempts) == 0 {
+		return unstructured.Unstructured{}, nil
 	}
-	return unstructured.Unstructured{}, err
+	return unstructured.Unstructured{}, &MatchError{Attempts: attempts, Mode: MatchModeVaryActual}
 }
 
 // MatchAll compares candidates with the expectation and returns all matches
@@ -269,7 +227,6 @@ func Check(
 	ctx context.Context,
 	templateContent string,
 	bindings Bindings,
-	verbosity options.Verbosity,
 ) (unstructured.Unstructured, error) {
 	// Render expected resource
 	expected, err := RenderTemplateSingle(ctx, templateContent, bindings)
@@ -292,5 +249,5 @@ func Check(
 	}
 
 	// Return first match
-	return Match(ctx, candidates, expected, bindings, verbosity)
+	return Match(ctx, candidates, expected, bindings)
 }
