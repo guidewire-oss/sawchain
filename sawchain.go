@@ -16,7 +16,8 @@ import (
 	"github.com/guidewire-oss/sawchain/internal/util"
 )
 
-// Verbosity controls the detail level of assertion error output and logging.
+// Verbosity controls the detail level of assertion error output and logging. See the
+// VerbosityMinimal, VerbosityNormal, and VerbosityVerbose constants for the supported levels.
 type Verbosity = options.Verbosity
 
 const (
@@ -43,7 +44,8 @@ type MatchError = chainsaw.MatchError
 type MatchAttempt = chainsaw.MatchAttempt
 
 // MatchMode describes what varied across the attempts in a MatchError, which determines how
-// attempts are labeled when formatted.
+// attempts are labeled when formatted. See the MatchModeVaryActual and MatchModeVaryExpected
+// constants for the supported modes.
 type MatchMode = chainsaw.MatchMode
 
 const (
