@@ -154,3 +154,98 @@ prefix from non-empty lines) and pruning empty documents.
 
 Unlike Chainsaw, Sawchain does not inject any built-in template
 [bindings](https://kyverno.github.io/chainsaw/latest/quick-start/bindings/) (e.g., `$namespace`) by default.
+
+## Error Output
+
+When a match assertion fails, Sawchain renders a single, structured failure message. How much of it you see
+is controlled by the instance's [Verbosity](./api-reference.md#Verbosity), set when constructing Sawchain.
+
+```go
+// Detail level applies to all match failures from this instance
+sc := sawchain.New(t, k8sClient, sawchain.VerbosityVerbose)
+```
+
+The message is built from labeled sections. Which sections appear depends on the verbosity level and the
+number of comparisons performed.
+
+### Single Attempt
+
+For a single failed comparison (e.g., one resource compared against one expectation), the message details that
+one attempt. The examples below show a `ConfigMap` whose `data.version` did not match.
+
+At `VerbosityMinimal`, only the field-level errors are shown.
+
+```txt
+[ERROR]
+v1/ConfigMap/default/test-config
+* data.version: Invalid value: "v1": Expected value: "v2"
+```
+
+At `VerbosityNormal` (the default), a YAML diff of expected vs. actual is added.
+
+```txt
+[ERROR]
+--------------------------------
+v1/ConfigMap/default/test-config
+--------------------------------
+* data.version: Invalid value: "v1": Expected value: "v2"
+
+--- expected
++++ actual
+@@ -1,5 +1,5 @@
+ apiVersion: v1
+ data:
+-  version: v2
++  version: v1
+ kind: ConfigMap
+ metadata:
+```
+
+At `VerbosityVerbose`, the full expected/actual YAML, the un-rendered template, and the resolved bindings are
+added. The `[EXPECTED]`, `[ACTUAL]`, and `[TEMPLATE]` sections are each rendered as fenced YAML code blocks.
+The placeholders below stand in for that content.
+
+```txt
+[EXPECTED]
+<full expected YAML>
+
+[ACTUAL]
+<full actual YAML>
+
+[ERROR]
+<field errors + diff, as in Normal>
+
+[TEMPLATE]
+<un-rendered template content, e.g., version: ($version)>
+
+[BINDINGS]
+<resolved binding values>
+```
+
+### Multiple Attempts
+
+When several resources are compared against one expectation (or one resource against several expectation
+documents), the message reports how many comparisons were performed. At `VerbosityMinimal` and
+`VerbosityNormal`, only the best match (fewest field errors) is detailed and the rest are summarized
+one line each; at `VerbosityVerbose`, every attempt is detailed under `#N` labels.
+
+```txt
+0 of 3 attempts matched expectation; best match: v1/ConfigMap/default/cm-staging (1 field error)
+
+[ERROR #2]
+<best match detail at the current verbosity>
+
+[OTHER ATTEMPTS]
+Attempt #1: v1/ConfigMap/default/cm-dev (5 field errors)
+Attempt #3: v1/ConfigMap/default/cm-prod (3 field errors)
+```
+
+### Section Reference
+
+| Section | Appears at |
+| - | - |
+| `[ERROR]` / `[ERROR #N]` | all levels |
+| YAML diff (`--- expected` / `+++ actual`) | Normal and Verbose |
+| `[EXPECTED]` / `[ACTUAL]` (full YAML) | Verbose |
+| `[TEMPLATE]` / `[BINDINGS]` | Verbose |
+| `[OTHER ATTEMPTS]` summary | Minimal and Normal, multi-attempt only |

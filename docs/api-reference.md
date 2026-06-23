@@ -73,7 +73,7 @@ const (
 ```
 
 <a name="MatchAttempt"></a>
-## type [MatchAttempt](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L43>)
+## type [MatchAttempt](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L44>)
 
 MatchAttempt records the result of comparing one actual resource against one expected resource, including the field\-level errors found.
 
@@ -82,7 +82,7 @@ type MatchAttempt = chainsaw.MatchAttempt
 ```
 
 <a name="MatchError"></a>
-## type [MatchError](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L39>)
+## type [MatchError](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L40>)
 
 MatchError is a structured assertion error describing why one or more match attempts failed, exposing the attempts and their field errors for programmatic inspection. Errors returned by Check and CheckFunc unwrap to a \*MatchError via errors.As.
 
@@ -91,16 +91,16 @@ type MatchError = chainsaw.MatchError
 ```
 
 <a name="MatchMode"></a>
-## type [MatchMode](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L47>)
+## type [MatchMode](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L49>)
 
-MatchMode describes what varied across the attempts in a MatchError, which determines how attempts are labeled when formatted.
+MatchMode describes what varied across the attempts in a MatchError, which determines how attempts are labeled when formatted. See the MatchModeVaryActual and MatchModeVaryExpected constants for the supported modes.
 
 ```go
 type MatchMode = chainsaw.MatchMode
 ```
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L102-L107>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L104-L109>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -115,7 +115,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L158>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L160>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -172,7 +172,7 @@ sc := sawchain.New(t, k8sClient, sawchain.VerbosityVerbose)
 ```
 
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L237>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L239>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -1873,9 +1873,9 @@ sc.UpdateAndWait(ctx, []client.Object{configMap, secret}, `
 ```
 
 <a name="Verbosity"></a>
-## type [Verbosity](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L20>)
+## type [Verbosity](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L21>)
 
-Verbosity controls the detail level of assertion error output and logging.
+Verbosity controls the detail level of assertion error output and logging. See the VerbosityMinimal, VerbosityNormal, and VerbosityVerbose constants for the supported levels.
 
 ```go
 type Verbosity = options.Verbosity
