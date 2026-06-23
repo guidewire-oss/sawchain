@@ -562,7 +562,7 @@ var _ = Describe("MatchYAML verbosity", func() {
 			excludesErrs: []string{
 				"--- expected", "+++ actual",
 				"-  key1: expected-value", "+  key1: actual-value",
-				"[TEMPLATE]", "[BINDINGS]",
+				"[ACTUAL]", "[EXPECTED]", "[TEMPLATE]", "[BINDINGS]",
 			},
 		}),
 		Entry("VerbosityNormal includes diff but omits verbose context in failure message", verbosityTestCase{
@@ -573,7 +573,7 @@ var _ = Describe("MatchYAML verbosity", func() {
 				"-  key1: expected-value", "+  key1: actual-value",
 			},
 			excludesErrs: []string{
-				"[TEMPLATE]", "[BINDINGS]",
+				"[ACTUAL]", "[EXPECTED]", "[TEMPLATE]", "[BINDINGS]",
 			},
 		}),
 		Entry("VerbosityVerbose includes diff, full YAML, template, and bindings in failure message", verbosityTestCase{

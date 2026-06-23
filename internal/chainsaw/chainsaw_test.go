@@ -1261,8 +1261,8 @@ data:
 					"namespace": "default",
 				},
 				"data": map[string]any{
-					"key1": "actual-value-1",
-					"key2": "expected-value",
+					"key1": "actual-value-1a",
+					"key2": "actual-value-1b",
 				},
 			},
 		}
@@ -1275,8 +1275,8 @@ data:
 					"namespace": "default",
 				},
 				"data": map[string]any{
-					"key1": "actual-value-2a",
-					"key2": "actual-value-2b",
+					"key1": "actual-value-2",
+					"key2": "expected-value",
 				},
 			},
 		}
@@ -1311,10 +1311,10 @@ data:
 				Expect(a.FieldErrs).NotTo(BeEmpty())
 			}
 
-			// candidate1 has 1 field error (key1); candidate2 has 2 (key1, key2),
-			// so the best match is candidate1.
+			// candidate1 has 2 field errors (key1, key2); candidate2 has 1 (key1),
+			// so the best match is candidate2.
 			best := me.BestMatch()
-			Expect(best.Actual).To(Equal(candidate1))
+			Expect(best.Actual).To(Equal(candidate2))
 			Expect(best.FieldErrs).To(HaveLen(1))
 		})
 
@@ -2179,7 +2179,7 @@ kind: ConfigMap
 metadata:
   namespace: default
   labels:
-    sawchain-nonexistent: "true"
+    app: target-app
 `,
 				bindings:      map[string]any{},
 				expectedMatch: unstructured.Unstructured{},
