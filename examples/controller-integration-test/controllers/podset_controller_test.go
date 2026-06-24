@@ -72,6 +72,13 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 		podSet.Spec.Template.Containers[1].Image = "test/sidecar:v2"
 		sc.UpdateAndWait(ctx, podSet)
 
+		// Verify the Ready condition reflects the current generation after the update.
+		// Passing podSet.GetGeneration() asserts condition.observedGeneration >= that generation,
+		// distinguishing a freshly-reconciled condition from a stale one.
+		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(
+			sc.HaveStatusCondition("Ready", "True", podSet.GetGeneration()),
+		)
+
 		// Verify pod image versions are updated
 		for _, podName := range podSet.Status.Pods {
 			Eventually(sc.CheckFunc(ctx, `

@@ -145,10 +145,17 @@ func NewChainsawMatcher(
 
 // NewStatusConditionMatcher creates a new chainsawMatcher that checks
 // if resources have the expected status condition.
+//
+// If minGeneration is greater than 0, the matcher additionally requires the matched condition's
+// observedGeneration to be at least minGeneration. This is expressed as a boolean assertion on the
+// matched condition (rather than a filter predicate) so that an insufficient or missing
+// observedGeneration produces a failure that reports the comparison directly. A condition without
+// observedGeneration will not satisfy the check; there is no status-root observedGeneration fallback.
 func NewStatusConditionMatcher(
 	c client.Client,
 	conditionType string,
 	expectedStatus string,
+	minGeneration int64,
 	verbosity options.Verbosity,
 ) types.GomegaMatcher {
 	return &chainsawMatcher{
@@ -175,6 +182,10 @@ status:
 				conditionType,
 				expectedStatus,
 			)
+			// Optionally assert the matched condition's observedGeneration
+			if minGeneration > 0 {
+				templateContent += fmt.Sprintf("\n    (observedGeneration >= `%d`): true", minGeneration)
+			}
 			return templateContent, nil
 		},
 	}

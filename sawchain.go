@@ -69,6 +69,8 @@ const (
 	errObjectInsufficient = prefixErr + "single object insufficient for multi-resource template"
 	errObjectsWrongLength = prefixErr + "objects slice length must match template resource count"
 
+	errTooManyMinGenerationArgs = prefixErr + "expected at most one minGeneration value"
+
 	errCreateNotReflected = prefixErr + "create not reflected within timeout (client cache sync delay)"
 	errUpdateNotReflected = prefixErr + "update not reflected within timeout (client cache sync delay)"
 	errDeleteNotReflected = prefixErr + "delete not reflected within timeout (may be due to finalizers or client cache sync delay)"

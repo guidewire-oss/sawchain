@@ -20,7 +20,8 @@ type PodSetSpec struct {
 }
 
 type PodSetStatus struct {
-	Pods []string `json:"pods,omitempty"`
+	Pods       []string           `json:"pods,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true

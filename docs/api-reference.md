@@ -27,7 +27,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) FetchSingleFunc\(ctx context.Context, args ...any\) func\(\) client.Object](<#Sawchain.FetchSingleFunc>)
   - [func \(s \*Sawchain\) Get\(ctx context.Context, args ...any\) error](<#Sawchain.Get>)
   - [func \(s \*Sawchain\) GetFunc\(ctx context.Context, args ...any\) func\(\) error](<#Sawchain.GetFunc>)
-  - [func \(s \*Sawchain\) HaveStatusCondition\(conditionType, expectedStatus string\) types.GomegaMatcher](<#Sawchain.HaveStatusCondition>)
+  - [func \(s \*Sawchain\) HaveStatusCondition\(conditionType, expectedStatus string, minGeneration ...int64\) types.GomegaMatcher](<#Sawchain.HaveStatusCondition>)
   - [func \(s \*Sawchain\) List\(ctx context.Context, template string, bindings ...map\[string\]any\) \[\]client.Object](<#Sawchain.List>)
   - [func \(s \*Sawchain\) ListFunc\(ctx context.Context, template string, bindings ...map\[string\]any\) func\(\) \[\]client.Object](<#Sawchain.ListFunc>)
   - [func \(s \*Sawchain\) MatchYAML\(template string, bindings ...map\[string\]any\) types.GomegaMatcher](<#Sawchain.MatchYAML>)
@@ -100,7 +100,7 @@ type MatchMode = chainsaw.MatchMode
 ```
 
 <a name="Sawchain"></a>
-## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L104-L109>)
+## type [Sawchain](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L106-L111>)
 
 Sawchain provides utilities for K8s YAML\-driven testing—powered by Chainsaw. It includes helpers to reliably create/update/delete test resources, Gomega\-friendly APIs to simplify assertions, and more.
 
@@ -115,7 +115,7 @@ type Sawchain struct {
 ```
 
 <a name="New"></a>
-### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L160>)
+### func [New](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L162>)
 
 ```go
 func New(t testing.TB, c client.Client, args ...any) *Sawchain
@@ -172,7 +172,7 @@ sc := sawchain.New(t, k8sClient, sawchain.VerbosityVerbose)
 ```
 
 <a name="NewWithGomega"></a>
-### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L239>)
+### func [NewWithGomega](<https://github.com/guidewire-oss/sawchain/blob/main/sawchain.go#L241>)
 
 ```go
 func NewWithGomega(t testing.TB, g gomega.Gomega, c client.Client, args ...any) *Sawchain
@@ -1102,10 +1102,10 @@ The returned function performs the same operations as Get, but is particularly u
 For details on arguments, examples, and behavior, see the documentation for Get.
 
 <a name="Sawchain.HaveStatusCondition"></a>
-### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L134>)
+### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L153>)
 
 ```go
-func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher
+func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string, minGeneration ...int64) types.GomegaMatcher
 ```
 
 HaveStatusCondition returns a Gomega matcher that uses Chainsaw matching to check if a client.Object has a specific status condition.
@@ -1116,11 +1116,15 @@ HaveStatusCondition returns a Gomega matcher that uses Chainsaw matching to chec
 
 - ExpectedStatus \(string\): The expected status value of the condition.
 
+- MinGeneration \(int64\): Optional. If provided, the matcher additionally requires the condition's observedGeneration to be at least MinGeneration. At most one value may be provided.
+
 #### Notes
 
 - Invalid input will result in immediate test failure.
 
 - When dealing with typed objects, the client scheme will be used for internal conversions.
+
+- MinGeneration enables distinguishing a stale condition \(set before a resource update was reconciled\) from a current one, mirroring the semantics of "kubectl wait \-\-for=condition". Pass the object's generation \(e.g. obj.GetGeneration\(\)\) after an update to assert the condition reflects the new desired state. The check is observedGeneration \>= MinGeneration \(not equality\): the generation may advance again between reconcile and assertion, so requiring equality would produce false negatives. A condition without observedGeneration will never satisfy the check; there is no status\-root observedGeneration fallback. Omitting MinGeneration preserves the prior behavior \(no generation check\).
 
 - The detail level of the matcher's failure message follows the Sawchain instance's configured Verbosity.
 
@@ -1138,6 +1142,15 @@ Assert a Pod has condition Ready=True:
 
 ```go
 Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
+```
+
+Assert a resource's Ready=True condition reflects the current generation after an update:
+
+```go
+sc.UpdateAndWait(ctx, obj)
+Eventually(sc.FetchSingle(ctx, obj)).Should(
+    sc.HaveStatusCondition("Ready", "True", obj.GetGeneration()),
+)
 ```
 
 Assert multiple resources have condition Ready=True:

@@ -102,11 +102,23 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 //   - ExpectedStatus (string): The expected status value of the condition.
 //
+//   - MinGeneration (int64): Optional. If provided, the matcher additionally requires the condition's
+//     observedGeneration to be at least MinGeneration. At most one value may be provided.
+//
 // # Notes
 //
 //   - Invalid input will result in immediate test failure.
 //
 //   - When dealing with typed objects, the client scheme will be used for internal conversions.
+//
+//   - MinGeneration enables distinguishing a stale condition (set before a resource update was
+//     reconciled) from a current one, mirroring the semantics of "kubectl wait --for=condition".
+//     Pass the object's generation (e.g. obj.GetGeneration()) after an update to assert the condition
+//     reflects the new desired state. The check is observedGeneration >= MinGeneration (not equality):
+//     the generation may advance again between reconcile and assertion, so requiring equality would
+//     produce false negatives. A condition without observedGeneration will never satisfy the check;
+//     there is no status-root observedGeneration fallback. Omitting MinGeneration preserves the prior
+//     behavior (no generation check).
 //
 //   - The detail level of the matcher's failure message follows the Sawchain instance's configured
 //     Verbosity.
@@ -126,14 +138,26 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 //	Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
 //
+// Assert a resource's Ready=True condition reflects the current generation after an update:
+//
+//	sc.UpdateAndWait(ctx, obj)
+//	Eventually(sc.FetchSingle(ctx, obj)).Should(
+//	    sc.HaveStatusCondition("Ready", "True", obj.GetGeneration()),
+//	)
+//
 // Assert multiple resources have condition Ready=True:
 //
 //	for _, obj := range objs {
 //	    Expect(obj).To(sc.HaveStatusCondition("Ready", "True"))
 //	}
-func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher {
+func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string, minGeneration ...int64) types.GomegaMatcher {
 	s.t.Helper()
-	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus, s.opts.Verbosity)
+	s.g.Expect(len(minGeneration)).To(gomega.BeNumerically("<=", 1), errTooManyMinGenerationArgs)
+	var minGen int64
+	if len(minGeneration) > 0 {
+		minGen = minGeneration[0]
+	}
+	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus, minGen, s.opts.Verbosity)
 	s.g.Expect(matcher).NotTo(gomega.BeNil(), errCreatedMatcherIsNil)
 	return matcher
 }

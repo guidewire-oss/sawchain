@@ -5,6 +5,7 @@
 package v1
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -110,6 +111,13 @@ func (in *PodSetStatus) DeepCopyInto(out *PodSetStatus) {
 		in, out := &in.Pods, &out.Pods
 		*out = make([]string, len(*in))
 		copy(*out, *in)
+	}
+	if in.Conditions != nil {
+		in, out := &in.Conditions, &out.Conditions
+		*out = make([]metav1.Condition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 }
 
