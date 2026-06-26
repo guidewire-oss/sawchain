@@ -81,7 +81,7 @@ spec:
   (replicas > `1` && replicas < `4`): true
 ```
 
-JMESPath considers empty strings, arrays, and maps as falsy values, so `!` can be used to check emptiness:
+JMESPath considers empty strings, arrays, and maps as falsy values, so `!` can be used to check emptiness.
 
 ```yaml
 apiVersion: apps/v1
@@ -94,6 +94,19 @@ spec:
     spec:
       # Assert containers is not empty
       (!containers): false
+```
+
+Use `(field == null): true` to assert a field is not set—this passes whether the field is absent or explicitly `null`, unlike `field: null` which only matches a literal null value.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example
+  namespace: default
+spec:
+  # Assert 'paused' is not set (absent or null)
+  (paused == null): true
 ```
 
 ### Matching Without Identity
