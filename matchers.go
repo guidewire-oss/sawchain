@@ -141,7 +141,7 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 // Assert a resource's Ready=True condition reflects the current generation after an update:
 //
 //	sc.UpdateAndWait(ctx, obj)
-//	Eventually(sc.FetchSingle(ctx, obj)).Should(
+//	Eventually(sc.FetchSingleFunc(ctx, obj)).Should(
 //	    sc.HaveStatusCondition("Ready", "True", obj.GetGeneration()),
 //	)
 //

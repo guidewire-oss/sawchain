@@ -21,6 +21,8 @@ type PodSetSpec struct {
 
 type PodSetStatus struct {
 	Pods       []string           `json:"pods,omitempty"`
+	// +listType=map
+	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
