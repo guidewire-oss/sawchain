@@ -6,7 +6,7 @@ offline (without a K8s cluster)
 
 ## How To Run
 
-1. Ensure you have Docker running and the [Crossplane v2 CLI](https://docs.crossplane.io/latest/cli/) installed
+1. Ensure you have Docker running and the [Crossplane v2 CLI](https://docs.crossplane.io/cli/latest/) installed
 1. Run `ginkgo -v` or `go test -v`
 
 ## Composition Details
