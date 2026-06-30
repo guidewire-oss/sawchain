@@ -1,7 +1,7 @@
 # Example: Crossplane Offline Verification Test
 
 This example demonstrates how Sawchain can be used to test rendering and schema validation of
-Crossplane v2 function-based [compositions](https://docs.crossplane.io/latest/concepts/compositions/)
+Crossplane v2 function-based [compositions](https://docs.crossplane.io/master/composition/compositions/)
 offline (without a K8s cluster)
 
 ## How To Run
