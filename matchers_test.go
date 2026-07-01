@@ -595,7 +595,7 @@ var _ = Describe("HaveStatusCondition", func() {
 		actual              any
 		conditionType       string
 		expectedStatus      string
-		minGeneration       int64
+		minGeneration       []int64
 		expectedFailureLogs []string
 	}
 
@@ -612,8 +612,8 @@ var _ = Describe("HaveStatusCondition", func() {
 
 			// Pass minGeneration only when set, to also cover the no-arg form
 			var genArgs []int64
-			if tc.minGeneration != 0 {
-				genArgs = append(genArgs, tc.minGeneration)
+			if len(tc.minGeneration) > 0 {
+				genArgs = append(genArgs, tc.minGeneration...)
 			}
 
 			// Test HaveStatusCondition
@@ -772,7 +772,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			),
 			conditionType:  "Ready",
 			expectedStatus: "True",
-			minGeneration:  2,
+			minGeneration:  []int64{2},
 		}),
 
 		Entry("generation match when observedGeneration equals minGeneration", testCase{
@@ -786,7 +786,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			),
 			conditionType:  "Ready",
 			expectedStatus: "True",
-			minGeneration:  3,
+			minGeneration:  []int64{3},
 		}),
 
 		Entry("no generation match when observedGeneration is below minGeneration", testCase{
@@ -800,7 +800,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			),
 			conditionType:  "Ready",
 			expectedStatus: "True",
-			minGeneration:  2,
+			minGeneration:  []int64{2},
 			expectedFailureLogs: []string{
 				"Expected actual to match Chainsaw template",
 				"[ERROR]",
@@ -819,7 +819,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			),
 			conditionType:  "Ready",
 			expectedStatus: "True",
-			minGeneration:  2,
+			minGeneration:  []int64{2},
 			expectedFailureLogs: []string{
 				"Expected actual to match Chainsaw template",
 				"[ERROR]",
@@ -828,7 +828,72 @@ var _ = Describe("HaveStatusCondition", func() {
 			},
 		}),
 
+		Entry("no generation check when minGeneration is nil", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 1,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  nil,
+		}),
+
 		// Error cases
+		Entry("error on too many minGeneration values", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{1, 2},
+			expectedFailureLogs: []string{
+				"expected at most one minGeneration value",
+			},
+		}),
+
+		Entry("error on minGeneration of 0", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{0},
+			expectedFailureLogs: []string{
+				"minGeneration must be greater than 0",
+			},
+		}),
+
+		Entry("error on negative minGeneration", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{-1},
+			expectedFailureLogs: []string{
+				"minGeneration must be greater than 0",
+			},
+		}),
+
 		Entry("error on nil input", testCase{
 			client:         standardClient,
 			actual:         nil,
@@ -864,19 +929,4 @@ var _ = Describe("HaveStatusCondition", func() {
 			},
 		}),
 	)
-
-	It("fails immediately when more than one minGeneration value is provided", func() {
-		t := &MockT{TB: GinkgoTB()}
-		sc := sawchain.New(t, clientWithTestResource)
-
-		done := make(chan struct{})
-		go func() {
-			defer close(done)
-			sc.HaveStatusCondition("Ready", "True", 1, 2)
-		}()
-		<-done
-
-		Expect(t.Failed()).To(BeTrue(), "expected failure")
-		Expect(t.ErrorLogs).To(ContainElement(ContainSubstring("expected at most one minGeneration value")))
-	})
 })

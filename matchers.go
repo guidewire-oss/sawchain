@@ -103,7 +103,8 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //   - ExpectedStatus (string): The expected status value of the condition.
 //
 //   - MinGeneration (int64): Optional. If provided, the matcher additionally requires the condition's
-//     observedGeneration to be at least MinGeneration. At most one value may be provided.
+//     observedGeneration to be at least MinGeneration. At most one value may be provided, and it must
+//     be greater than 0.
 //
 // # Notes
 //
@@ -152,10 +153,11 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //	}
 func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string, minGeneration ...int64) types.GomegaMatcher {
 	s.t.Helper()
-	s.g.Expect(len(minGeneration)).To(gomega.BeNumerically("<=", 1), errTooManyMinGenerationArgs)
+	s.g.Expect(len(minGeneration)).To(gomega.BeNumerically("<=", 1), prefixErr+"expected at most one minGeneration value")
 	var minGen int64
 	if len(minGeneration) > 0 {
 		minGen = minGeneration[0]
+		s.g.Expect(minGen).To(gomega.BeNumerically(">", 0), prefixErr+"minGeneration must be greater than 0")
 	}
 	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus, minGen, s.opts.Verbosity)
 	s.g.Expect(matcher).NotTo(gomega.BeNil(), errCreatedMatcherIsNil)

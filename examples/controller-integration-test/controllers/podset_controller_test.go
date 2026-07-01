@@ -64,6 +64,11 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 				    image: test/sidecar:v1
 				`, map[string]any{"name": podName})).Should(Succeed())
 		}
+
+		// Ensure the Podset's Ready condition = True (without generation awareness since it's being created.)
+		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(
+			sc.HaveStatusCondition("Ready", "True", podSet.GetGeneration()),
+		)
 	})
 
 	It("updates pods", func() {
