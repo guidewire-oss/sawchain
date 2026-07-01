@@ -610,7 +610,7 @@ var _ = Describe("HaveStatusCondition", func() {
 			t := &MockT{TB: GinkgoTB()}
 			sc := sawchain.New(t, tc.client)
 
-			// Pass minGeneration only when set, to also cover the no-arg form
+			// Pass minGeneration (if provided)
 			var genArgs []int64
 			if len(tc.minGeneration) > 0 {
 				genArgs = append(genArgs, tc.minGeneration...)
@@ -826,20 +826,6 @@ var _ = Describe("HaveStatusCondition", func() {
 				"(observedGeneration >= `2`)",
 				"Expected value: true",
 			},
-		}),
-
-		Entry("no generation check when minGeneration is nil", testCase{
-			client: clientWithTestResource,
-			actual: testutil.NewTestResource("test-resource", "default",
-				metav1.Condition{
-					Type:               "Ready",
-					Status:             metav1.ConditionTrue,
-					ObservedGeneration: 1,
-				},
-			),
-			conditionType:  "Ready",
-			expectedStatus: "True",
-			minGeneration:  nil,
 		}),
 
 		// Error cases

@@ -660,7 +660,8 @@ data:
 
 			DescribeTable("matching resources against status conditions",
 				func(tc testCase) {
-					matcher := matchers.NewStatusConditionMatcher(tc.client, tc.conditionType, tc.expectedStatus, tc.minGeneration, options.VerbosityNormal)
+					matcher := matchers.NewStatusConditionMatcher(
+						tc.client, tc.conditionType, tc.expectedStatus, tc.minGeneration, options.VerbosityNormal)
 
 					// Test Match
 					match, err := matcher.Match(tc.actual)

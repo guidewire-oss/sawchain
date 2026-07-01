@@ -43,10 +43,8 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 
 	It("creates pods", func() {
 		// Wait for status to be updated
-		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(HaveField("Status.Pods", ConsistOf(
-			"test-pod-0",
-			"test-pod-1",
-		)))
+		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(sc.HaveStatusCondition("Ready", "True"))
+		Expect(podSet).To(HaveField("Status.Pods", ConsistOf("test-pod-0", "test-pod-1")))
 
 		// Check pods
 		for _, podName := range podSet.Status.Pods {
@@ -64,11 +62,6 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 				    image: test/sidecar:v1
 				`, map[string]any{"name": podName})).Should(Succeed())
 		}
-
-		// Ensure the Podset's Ready condition = True (without generation awareness since it's being created.)
-		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(
-			sc.HaveStatusCondition("Ready", "True"),
-		)
 	})
 
 	It("updates pods", func() {
@@ -77,9 +70,7 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 		podSet.Spec.Template.Containers[1].Image = "test/sidecar:v2"
 		sc.UpdateAndWait(ctx, podSet)
 
-		// Verify the Ready condition reflects the current generation after the update.
-		// Passing podSet.GetGeneration() asserts condition.observedGeneration >= that generation,
-		// distinguishing a freshly-reconciled condition from a stale one.
+		// Verify Ready condition reflects current generation after update
 		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(
 			sc.HaveStatusCondition("Ready", "True", podSet.GetGeneration()),
 		)

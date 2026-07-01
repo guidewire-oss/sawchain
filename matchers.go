@@ -103,23 +103,17 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //   - ExpectedStatus (string): The expected status value of the condition.
 //
 //   - MinGeneration (int64): Optional. If provided, the matcher additionally requires the condition's
-//     observedGeneration to be at least MinGeneration. At most one value may be provided, and it must
-//     be greater than 0.
+//     observedGeneration to be at least MinGeneration, distinguishing a stale condition (set before
+//     the latest update was reconciled) from a current one, mirroring "kubectl wait --for=condition"
+//     semantics. There is no fallback to a status-root observedGeneration, so a condition that omits
+//     the field will never satisfy the check. At most one value may be provided, and it must be
+//     greater than 0.
 //
 // # Notes
 //
 //   - Invalid input will result in immediate test failure.
 //
 //   - When dealing with typed objects, the client scheme will be used for internal conversions.
-//
-//   - MinGeneration enables distinguishing a stale condition (set before a resource update was
-//     reconciled) from a current one, mirroring the semantics of "kubectl wait --for=condition".
-//     Pass the object's generation (e.g. obj.GetGeneration()) after an update to assert the condition
-//     reflects the new desired state. The check is observedGeneration >= MinGeneration (not equality):
-//     the generation may advance again between reconcile and assertion, so requiring equality would
-//     produce false negatives. A condition without observedGeneration will never satisfy the check;
-//     there is no status-root observedGeneration fallback. Omitting MinGeneration preserves the prior
-//     behavior (no generation check).
 //
 //   - The detail level of the matcher's failure message follows the Sawchain instance's configured
 //     Verbosity.
