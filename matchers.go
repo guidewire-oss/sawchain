@@ -102,6 +102,13 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 //   - ExpectedStatus (string): The expected status value of the condition.
 //
+//   - MinGeneration (int64): Optional. If provided, the matcher additionally requires the condition's
+//     observedGeneration to be at least MinGeneration, distinguishing a stale condition (set before
+//     the latest update was reconciled) from a current one, mirroring "kubectl wait --for=condition"
+//     semantics. There is no fallback to a status-root observedGeneration, so a condition that omits
+//     the field will never satisfy the check. At most one value may be provided, and it must be
+//     greater than 0.
+//
 // # Notes
 //
 //   - Invalid input will result in immediate test failure.
@@ -126,14 +133,27 @@ func (s *Sawchain) MatchYAML(template string, bindings ...map[string]any) types.
 //
 //	Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
 //
+// Assert a resource's Ready=True condition reflects the current generation after an update:
+//
+//	sc.UpdateAndWait(ctx, obj)
+//	Eventually(sc.FetchSingleFunc(ctx, obj)).Should(
+//	    sc.HaveStatusCondition("Ready", "True", obj.GetGeneration()),
+//	)
+//
 // Assert multiple resources have condition Ready=True:
 //
 //	for _, obj := range objs {
 //	    Expect(obj).To(sc.HaveStatusCondition("Ready", "True"))
 //	}
-func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher {
+func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string, minGeneration ...int64) types.GomegaMatcher {
 	s.t.Helper()
-	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus, s.opts.Verbosity)
+	s.g.Expect(len(minGeneration)).To(gomega.BeNumerically("<=", 1), prefixErr+"expected at most one minGeneration value")
+	var minGen int64
+	if len(minGeneration) > 0 {
+		minGen = minGeneration[0]
+		s.g.Expect(minGen).To(gomega.BeNumerically(">", 0), prefixErr+"minGeneration must be greater than 0")
+	}
+	matcher := matchers.NewStatusConditionMatcher(s.c, conditionType, expectedStatus, minGen, s.opts.Verbosity)
 	s.g.Expect(matcher).NotTo(gomega.BeNil(), errCreatedMatcherIsNil)
 	return matcher
 }

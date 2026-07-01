@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -107,8 +108,17 @@ func (r *PodSetReconciler) reconcile(ctx context.Context, podSet *v1.PodSet, log
 		log.Info("Deleted pod", "pod", pod.Name)
 	}
 
-	// Update status with list of pod names
+	// Update status with list of pod names and a generation-aware Ready condition.
+	// ObservedGeneration is set to the current generation so that, after a spec update,
+	// callers can assert the condition reflects the reconciled generation.
 	podSet.Status.Pods = podNames
+	apimeta.SetStatusCondition(&podSet.Status.Conditions, metav1.Condition{
+		Type:               "Ready",
+		Status:             metav1.ConditionTrue,
+		Reason:             "ReconcileSuccess",
+		Message:            "PodSet successfully reconciled",
+		ObservedGeneration: podSet.Generation,
+	})
 	if err := r.Status().Update(ctx, podSet); err != nil {
 		return reconcile.Result{}, err
 	}

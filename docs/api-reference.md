@@ -27,7 +27,7 @@ import "github.com/guidewire-oss/sawchain"
   - [func \(s \*Sawchain\) FetchSingleFunc\(ctx context.Context, args ...any\) func\(\) client.Object](<#Sawchain.FetchSingleFunc>)
   - [func \(s \*Sawchain\) Get\(ctx context.Context, args ...any\) error](<#Sawchain.Get>)
   - [func \(s \*Sawchain\) GetFunc\(ctx context.Context, args ...any\) func\(\) error](<#Sawchain.GetFunc>)
-  - [func \(s \*Sawchain\) HaveStatusCondition\(conditionType, expectedStatus string\) types.GomegaMatcher](<#Sawchain.HaveStatusCondition>)
+  - [func \(s \*Sawchain\) HaveStatusCondition\(conditionType, expectedStatus string, minGeneration ...int64\) types.GomegaMatcher](<#Sawchain.HaveStatusCondition>)
   - [func \(s \*Sawchain\) List\(ctx context.Context, template string, bindings ...map\[string\]any\) \[\]client.Object](<#Sawchain.List>)
   - [func \(s \*Sawchain\) ListFunc\(ctx context.Context, template string, bindings ...map\[string\]any\) func\(\) \[\]client.Object](<#Sawchain.ListFunc>)
   - [func \(s \*Sawchain\) MatchYAML\(template string, bindings ...map\[string\]any\) types.GomegaMatcher](<#Sawchain.MatchYAML>)
@@ -1102,10 +1102,10 @@ The returned function performs the same operations as Get, but is particularly u
 For details on arguments, examples, and behavior, see the documentation for Get.
 
 <a name="Sawchain.HaveStatusCondition"></a>
-### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L134>)
+### func \(\*Sawchain\) [HaveStatusCondition](<https://github.com/guidewire-oss/sawchain/blob/main/matchers.go#L148>)
 
 ```go
-func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string) types.GomegaMatcher
+func (s *Sawchain) HaveStatusCondition(conditionType, expectedStatus string, minGeneration ...int64) types.GomegaMatcher
 ```
 
 HaveStatusCondition returns a Gomega matcher that uses Chainsaw matching to check if a client.Object has a specific status condition.
@@ -1115,6 +1115,8 @@ HaveStatusCondition returns a Gomega matcher that uses Chainsaw matching to chec
 - ConditionType \(string\): The type of the status condition to check for.
 
 - ExpectedStatus \(string\): The expected status value of the condition.
+
+- MinGeneration \(int64\): Optional. If provided, the matcher additionally requires the condition's observedGeneration to be at least MinGeneration, distinguishing a stale condition \(set before the latest update was reconciled\) from a current one, mirroring "kubectl wait \-\-for=condition" semantics. There is no fallback to a status\-root observedGeneration, so a condition that omits the field will never satisfy the check. At most one value may be provided, and it must be greater than 0.
 
 #### Notes
 
@@ -1138,6 +1140,15 @@ Assert a Pod has condition Ready=True:
 
 ```go
 Expect(pod).To(sc.HaveStatusCondition("Ready", "True"))
+```
+
+Assert a resource's Ready=True condition reflects the current generation after an update:
+
+```go
+sc.UpdateAndWait(ctx, obj)
+Eventually(sc.FetchSingleFunc(ctx, obj)).Should(
+    sc.HaveStatusCondition("Ready", "True", obj.GetGeneration()),
+)
 ```
 
 Assert multiple resources have condition Ready=True:

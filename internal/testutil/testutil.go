@@ -256,6 +256,7 @@ func NewUnstructuredTestResource(name, namespace string, optionalArgs ...any) *u
 			"reason":             condition.Reason,
 			"message":            condition.Message,
 			"lastTransitionTime": condition.LastTransitionTime.String(),
+			"observedGeneration": condition.ObservedGeneration,
 		}
 		conditionsData[i] = conditionMap
 	}

@@ -595,6 +595,7 @@ var _ = Describe("HaveStatusCondition", func() {
 		actual              any
 		conditionType       string
 		expectedStatus      string
+		minGeneration       []int64
 		expectedFailureLogs []string
 	}
 
@@ -609,11 +610,17 @@ var _ = Describe("HaveStatusCondition", func() {
 			t := &MockT{TB: GinkgoTB()}
 			sc := sawchain.New(t, tc.client)
 
+			// Pass minGeneration (if provided)
+			var genArgs []int64
+			if len(tc.minGeneration) > 0 {
+				genArgs = append(genArgs, tc.minGeneration...)
+			}
+
 			// Test HaveStatusCondition
 			done := make(chan struct{})
 			go func() {
 				defer close(done)
-				NewWithT(t).Expect(tc.actual).To(sc.HaveStatusCondition(tc.conditionType, tc.expectedStatus))
+				NewWithT(t).Expect(tc.actual).To(sc.HaveStatusCondition(tc.conditionType, tc.expectedStatus, genArgs...))
 			}()
 			<-done
 
@@ -753,7 +760,126 @@ var _ = Describe("HaveStatusCondition", func() {
 			},
 		}),
 
+		// Generation-aware cases
+		Entry("generation match when observedGeneration exceeds minGeneration", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{2},
+		}),
+
+		Entry("generation match when observedGeneration equals minGeneration", testCase{
+			client: standardClient,
+			actual: testutil.NewUnstructuredTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{3},
+		}),
+
+		Entry("no generation match when observedGeneration is below minGeneration", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 1,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{2},
+			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
+				"(observedGeneration >= `2`)",
+				"Expected value: true",
+			},
+		}),
+
+		Entry("no generation match when observedGeneration is absent", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:   "Ready",
+					Status: metav1.ConditionTrue,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{2},
+			expectedFailureLogs: []string{
+				"Expected actual to match Chainsaw template",
+				"[ERROR]",
+				"(observedGeneration >= `2`)",
+				"Expected value: true",
+			},
+		}),
+
 		// Error cases
+		Entry("error on too many minGeneration values", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{1, 2},
+			expectedFailureLogs: []string{
+				"expected at most one minGeneration value",
+			},
+		}),
+
+		Entry("error on minGeneration of 0", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{0},
+			expectedFailureLogs: []string{
+				"minGeneration must be greater than 0",
+			},
+		}),
+
+		Entry("error on negative minGeneration", testCase{
+			client: clientWithTestResource,
+			actual: testutil.NewTestResource("test-resource", "default",
+				metav1.Condition{
+					Type:               "Ready",
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: 3,
+				},
+			),
+			conditionType:  "Ready",
+			expectedStatus: "True",
+			minGeneration:  []int64{-1},
+			expectedFailureLogs: []string{
+				"minGeneration must be greater than 0",
+			},
+		}),
+
 		Entry("error on nil input", testCase{
 			client:         standardClient,
 			actual:         nil,

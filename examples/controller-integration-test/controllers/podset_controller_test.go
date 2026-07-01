@@ -43,10 +43,8 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 
 	It("creates pods", func() {
 		// Wait for status to be updated
-		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(HaveField("Status.Pods", ConsistOf(
-			"test-pod-0",
-			"test-pod-1",
-		)))
+		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(sc.HaveStatusCondition("Ready", "True"))
+		Expect(podSet).To(HaveField("Status.Pods", ConsistOf("test-pod-0", "test-pod-1")))
 
 		// Check pods
 		for _, podName := range podSet.Status.Pods {
@@ -71,6 +69,11 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 		podSet.Spec.Template.Containers[0].Image = "test/app:v2"
 		podSet.Spec.Template.Containers[1].Image = "test/sidecar:v2"
 		sc.UpdateAndWait(ctx, podSet)
+
+		// Verify Ready condition reflects current generation after update
+		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(
+			sc.HaveStatusCondition("Ready", "True", podSet.GetGeneration()),
+		)
 
 		// Verify pod image versions are updated
 		for _, podName := range podSet.Status.Pods {

@@ -652,6 +652,7 @@ data:
 				actual              any
 				conditionType       string
 				expectedStatus      string
+				minGeneration       int64
 				shouldMatch         bool
 				expectedInternalErr string
 				expectedMatchErrs   []string
@@ -659,7 +660,8 @@ data:
 
 			DescribeTable("matching resources against status conditions",
 				func(tc testCase) {
-					matcher := matchers.NewStatusConditionMatcher(tc.client, tc.conditionType, tc.expectedStatus, options.VerbosityNormal)
+					matcher := matchers.NewStatusConditionMatcher(
+						tc.client, tc.conditionType, tc.expectedStatus, tc.minGeneration, options.VerbosityNormal)
 
 					// Test Match
 					match, err := matcher.Match(tc.actual)
@@ -813,6 +815,76 @@ data:
 					expectedMatchErrs: []string{
 						"[ERROR]",
 						"* status: Required value: field not found in the input object",
+					},
+				}),
+
+				// Generation-aware cases
+				Entry("generation match when observedGeneration exceeds minGeneration", testCase{
+					client: clientWithTestResource,
+					actual: testutil.NewTestResource("test-resource", "default",
+						metav1.Condition{
+							Type:               "Ready",
+							Status:             metav1.ConditionTrue,
+							ObservedGeneration: 3,
+						},
+					),
+					conditionType:  "Ready",
+					expectedStatus: "True",
+					minGeneration:  2,
+					shouldMatch:    true,
+				}),
+
+				Entry("generation match when observedGeneration equals minGeneration", testCase{
+					client: clientWithTestResource,
+					actual: testutil.NewUnstructuredTestResource("test-resource", "default",
+						metav1.Condition{
+							Type:               "Ready",
+							Status:             metav1.ConditionTrue,
+							ObservedGeneration: 3,
+						},
+					),
+					conditionType:  "Ready",
+					expectedStatus: "True",
+					minGeneration:  3,
+					shouldMatch:    true,
+				}),
+
+				Entry("no generation match when observedGeneration is below minGeneration", testCase{
+					client: clientWithTestResource,
+					actual: testutil.NewTestResource("test-resource", "default",
+						metav1.Condition{
+							Type:               "Ready",
+							Status:             metav1.ConditionTrue,
+							ObservedGeneration: 1,
+						},
+					),
+					conditionType:  "Ready",
+					expectedStatus: "True",
+					minGeneration:  2,
+					shouldMatch:    false,
+					expectedMatchErrs: []string{
+						"[ERROR]",
+						"(observedGeneration >= `2`)",
+						"Expected value: true",
+					},
+				}),
+
+				Entry("no generation match when observedGeneration is absent", testCase{
+					client: clientWithTestResource,
+					actual: testutil.NewTestResource("test-resource", "default",
+						metav1.Condition{
+							Type:   "Ready",
+							Status: metav1.ConditionTrue,
+						},
+					),
+					conditionType:  "Ready",
+					expectedStatus: "True",
+					minGeneration:  2,
+					shouldMatch:    false,
+					expectedMatchErrs: []string{
+						"[ERROR]",
+						"(observedGeneration >= `2`)",
+						"Expected value: true",
 					},
 				}),
 
