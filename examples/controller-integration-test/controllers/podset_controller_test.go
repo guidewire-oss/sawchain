@@ -67,7 +67,7 @@ var _ = Describe("PodSet Controller", Ordered, func() {
 
 		// Ensure the Podset's Ready condition = True (without generation awareness since it's being created.)
 		Eventually(sc.FetchSingleFunc(ctx, podSet)).Should(
-			sc.HaveStatusCondition("Ready", "True", podSet.GetGeneration()),
+			sc.HaveStatusCondition("Ready", "True"),
 		)
 	})
 
