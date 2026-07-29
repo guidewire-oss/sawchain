@@ -20,7 +20,7 @@ jobs:
         run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
       - name: Install vela
-        run: curl -fsSl https://kubevela.io/script/install.sh | bash
+        run: curl -fsSL https://kubevela.io/script/install.sh | bash
 
       - name: Run tests
         run: make test-all
