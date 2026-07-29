@@ -1,6 +1,9 @@
 name: Run tests and upload coverage
 
-on: push
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   test:
@@ -13,8 +16,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
 
+      - name: Install k3d
+        run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+
+      - name: Install vela
+        run: curl -fsSl https://kubevela.io/script/install.sh | bash
+
       - name: Run tests
-        run: make test
+        run: make test-all
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
