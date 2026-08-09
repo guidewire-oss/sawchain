@@ -15,5 +15,5 @@ manifests:
 	controller-gen crd paths=./...
 
 .PHONY: test
-test:
+test: init
 	KUBEBUILDER_ASSETS="$(shell setup-envtest use -p path)" go test ./... -v
