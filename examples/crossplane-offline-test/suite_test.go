@@ -28,10 +28,11 @@ type CrossplaneRenderArgs struct {
 	ObservedResourcesPath string // optional
 }
 
-// RunCrossplaneRender runs `crossplane render --include-full-xr` with the given arguments
-// and returns stdout, stderr, and an error if the command fails.
+// RunCrossplaneRender runs `crossplane composition render --include-full-xr` with the given
+// arguments and returns stdout, stderr, and an error if the command fails.
 func RunCrossplaneRender(args CrossplaneRenderArgs) (stdout, stderr string, err error) {
 	cmdArgs := []string{
+		"composition",
 		"render",
 		"--include-full-xr",
 		args.XrPath,
@@ -72,11 +73,11 @@ type CrossplaneValidateArgs struct {
 	ResourcesYaml   string // optional - when provided, takes precedence over resourcesPaths and is fed via stdin
 }
 
-// RunCrossplaneValidate runs `crossplane beta validate --error-on-missing-schemas` with the
-// given arguments and returns stdout, stderr, and an error if the command fails.
+// RunCrossplaneValidate runs `crossplane resource validate --error-on-missing-schemas` with
+// the given arguments and returns stdout, stderr, and an error if the command fails.
 func RunCrossplaneValidate(args CrossplaneValidateArgs) (stdout, stderr string, err error) {
 	cmdArgs := []string{
-		"beta",
+		"resource",
 		"validate",
 		"--error-on-missing-schemas",
 	}

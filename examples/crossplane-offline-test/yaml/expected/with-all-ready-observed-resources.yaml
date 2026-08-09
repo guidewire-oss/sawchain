@@ -1,5 +1,5 @@
 # Expected output of:
-#   crossplane render --include-full-xr yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+#   crossplane composition render --include-full-xr yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
 #     --xrd=yaml/xrd.yaml --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/ready
 ---
 apiVersion: example.com/v1alpha1
