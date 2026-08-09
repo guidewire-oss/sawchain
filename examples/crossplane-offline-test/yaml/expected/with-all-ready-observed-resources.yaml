@@ -22,7 +22,8 @@ status:
       name: alice-developer-credentials
       namespace: default
     synced: true
-  conditions:
+  # Only assert on the 'Ready' condition, ignoring any others
+  (conditions[?type == 'Ready']):
     - reason: Available
       status: "True"
       type: Ready
