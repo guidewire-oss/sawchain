@@ -22,6 +22,11 @@ jobs:
       - name: Install vela
         run: curl -fsSL https://kubevela.io/script/install.sh | bash
 
+      - name: Install crossplane
+        run: |
+          curl -sfL "https://cli.crossplane.io/install.sh" | sh
+          sudo mv crossplane /usr/local/bin
+
       - name: Run tests
         run: make test-all
 
