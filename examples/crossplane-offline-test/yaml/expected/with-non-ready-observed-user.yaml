@@ -52,7 +52,6 @@ metadata:
       controller: true
       kind: IAMUser
       name: developer-alice
-      uid: ""
 spec:
   forProvider:
     user: alice-developer
