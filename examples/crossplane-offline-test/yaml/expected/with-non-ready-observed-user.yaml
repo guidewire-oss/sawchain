@@ -1,5 +1,5 @@
 # Expected output of:
-#   crossplane render --include-full-xr yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
+#   crossplane composition render --include-full-xr yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml \
 #     --xrd=yaml/xrd.yaml --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/non-ready
 ---
 apiVersion: example.com/v1alpha1
@@ -22,7 +22,8 @@ status:
       name: alice-developer-credentials
       namespace: default
     synced: false
-  conditions:
+  # Only assert on the 'Ready' condition, ignoring any others
+  (conditions[?type == 'Ready']):
     - reason: Creating
       status: "False"
       type: Ready
@@ -51,7 +52,6 @@ metadata:
       controller: true
       kind: IAMUser
       name: developer-alice
-      uid: ""
 spec:
   forProvider:
     user: alice-developer

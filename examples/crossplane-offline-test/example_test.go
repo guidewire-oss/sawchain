@@ -29,8 +29,8 @@ var (
 // the rendered output matches expectations using Crossplane CLI tools and Sawchain assertions.
 type testCase struct {
 	xrPath                 string   // Path to the composite resource (XR) YAML file to test
-	requiredResourcesPath  string   // Path to file or directory containing required resources (passed to crossplane render --required-resources)
-	observedResourcesPath  string   // Path to file or directory containing observed resources (passed to crossplane render --observed-resources)
+	requiredResourcesPath  string   // Path to file or directory containing required resources (passed to crossplane composition render --required-resources)
+	observedResourcesPath  string   // Path to file or directory containing observed resources (passed to crossplane composition render --observed-resources)
 	expectedOutputsPath    string   // Path to YAML file containing expected rendered outputs for Sawchain verification
 	expectedValidationErrs []string // Expected error substrings from XR schema validation; if provided, validation is expected to fail
 	expectedRenderingErrs  []string // Expected error substrings from composition rendering; if provided, rendering is expected to fail
@@ -39,7 +39,7 @@ type testCase struct {
 // Example using static YAML files for input and expectations
 var _ = DescribeTable("IAMUser Composition",
 	func(tc testCase) {
-		By("Validating XR using `crossplane beta validate`")
+		By("Validating XR using `crossplane resource validate`")
 		validationStdout, _, err := RunCrossplaneValidate(CrossplaneValidateArgs{
 			ExtensionsPaths: []string{xrdPath},
 			ResourcesPaths:  []string{tc.xrPath},
@@ -55,7 +55,7 @@ var _ = DescribeTable("IAMUser Composition",
 			Expect(validationStdout).To(ContainSubstring("0 failure cases"), "Unexpected validation output")
 		}
 
-		By("Rendering composition using `crossplane render`")
+		By("Rendering composition using `crossplane composition render`")
 		renderStdout, renderStderr, err := RunCrossplaneRender(CrossplaneRenderArgs{
 			XrPath:                tc.xrPath,
 			CompositionPath:       compositionPath,
@@ -75,7 +75,7 @@ var _ = DescribeTable("IAMUser Composition",
 			Expect(renderStdout).NotTo(BeEmpty(), "Unexpected render output")
 		}
 
-		By("Validating composition outputs using `crossplane beta validate`")
+		By("Validating composition outputs using `crossplane resource validate`")
 		validationStdout, _, err = RunCrossplaneValidate(CrossplaneValidateArgs{
 			ExtensionsPaths: []string{xrdPath, providersPath},
 			ResourcesYaml:   renderStdout,
@@ -96,7 +96,7 @@ var _ = DescribeTable("IAMUser Composition",
 
 	// VALIDATION CASES
 
-	// crossplane beta validate yaml/xrd.yaml yaml/xr-unknown-property.yaml
+	// crossplane resource validate yaml/xrd.yaml yaml/xr-unknown-property.yaml
 	Entry("XR with unknown spec property -> should be rejected", testCase{
 		xrPath: filepath.Join(yamlPath, "xr-unknown-property.yaml"),
 		expectedValidationErrs: []string{
@@ -106,7 +106,7 @@ var _ = DescribeTable("IAMUser Composition",
 		},
 	}),
 
-	// crossplane beta validate yaml/xrd.yaml yaml/xr-missing-username.yaml
+	// crossplane resource validate yaml/xrd.yaml yaml/xr-missing-username.yaml
 	Entry("XR with missing spec.username value -> should be rejected", testCase{
 		xrPath: filepath.Join(yamlPath, "xr-missing-username.yaml"),
 		expectedValidationErrs: []string{
@@ -116,7 +116,7 @@ var _ = DescribeTable("IAMUser Composition",
 		},
 	}),
 
-	// crossplane beta validate yaml/xrd.yaml yaml/xr-invalid-username.yaml
+	// crossplane resource validate yaml/xrd.yaml yaml/xr-invalid-username.yaml
 	Entry("XR with invalid spec.username value -> should be rejected", testCase{
 		xrPath: filepath.Join(yamlPath, "xr-invalid-username.yaml"),
 		expectedValidationErrs: []string{
@@ -128,40 +128,40 @@ var _ = DescribeTable("IAMUser Composition",
 
 	// NEGATIVE RENDERING CASES
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml
+	// crossplane composition render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml
 	Entry("Missing EnvironmentConfig -> should fail to render", testCase{
 		xrPath: filepath.Join(yamlPath, "xr-valid.yaml"),
 		expectedRenderingErrs: []string{
-			"cannot render composite resource: pipeline step \"load-environment-config\" returned a fatal result",
+			"cannot compose resources: pipeline step \"load-environment-config\" returned a fatal result",
 			"cannot get selected environment configs: Required environment config \"example-environment\" not found",
 		},
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
+	// crossplane composition render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-missing-value.yaml
 	Entry("With EnvironmentConfig missing 'environment' value -> should fail to render", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
 		requiredResourcesPath: filepath.Join(requiredPath, "envcfg-missing-value.yaml"),
 		expectedRenderingErrs: []string{
-			"cannot render composite resource: pipeline step \"create-iam-user\" returned a fatal result",
+			"cannot compose resources: pipeline step \"create-iam-user\" returned a fatal result",
 			"EnvironmentConfig must contain 'environment' key in data",
 		},
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
+	// crossplane composition render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-invalid-value.yaml
 	Entry("With EnvironmentConfig with invalid 'environment' value -> should fail to render", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
 		requiredResourcesPath: filepath.Join(requiredPath, "envcfg-invalid-value.yaml"),
 		expectedRenderingErrs: []string{
-			"cannot render composite resource: pipeline step \"create-iam-user\" returned a fatal result",
+			"cannot compose resources: pipeline step \"create-iam-user\" returned a fatal result",
 			"EnvironmentConfig 'environment' value must be a string",
 		},
 	}),
 
 	// POSITIVE RENDERING CASES
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
+	// crossplane composition render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-valid.yaml
 	Entry("With no observed resources -> should only render User, non-ready/empty XR status", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
@@ -169,7 +169,7 @@ var _ = DescribeTable("IAMUser Composition",
 		expectedOutputsPath:   filepath.Join(expectedPath, "with-no-observed-resources.yaml"),
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
+	// crossplane composition render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/non-ready
 	Entry("With non-ready observed User -> should render everything, non-ready/partial XR status", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
@@ -178,7 +178,7 @@ var _ = DescribeTable("IAMUser Composition",
 		expectedOutputsPath:   filepath.Join(expectedPath, "with-non-ready-observed-user.yaml"),
 	}),
 
-	// crossplane render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
+	// crossplane composition render yaml/xr-valid.yaml yaml/composition.yaml yaml/functions.yaml --xrd=yaml/xrd.yaml \
 	//   --required-resources=yaml/required/envcfg-valid.yaml --observed-resources=yaml/observed/ready
 	Entry("With all ready observed resources -> should render everything, ready/complete XR status", testCase{
 		xrPath:                filepath.Join(yamlPath, "xr-valid.yaml"),
