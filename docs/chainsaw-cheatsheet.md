@@ -43,6 +43,7 @@ spec:
   concatenated: (concat($stringValue, '-suffix'))
   joined: (join('-', ['prefix', $stringValue, 'suffix']))
   encoded: (base64_encode($stringValue))
+  parsed: (parse_yaml($yamlString))
 ```
 
 ## Assertions
